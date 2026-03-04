@@ -14,47 +14,40 @@ body {
 }
 
 /* Navigation Bar */
-header {
+.navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #333;
+    padding: 20px 40px;
 }
 
-.logo {
-    font-size: 40px;
-    font-weight: bold;
-    letter-spacing: 2px;
-}
+.logo { font-size: 2.5rem; font-weight: 900; letter-spacing: 2px; }
 
 nav ul {
     list-style: none;
     display: flex;
-    gap: 15px;
+    gap: 10px;
     margin: 0;
 }
 
 nav a {
-    text-decoration: none;
     color: white;
-    font-size: 14px;
+    text-decoration: none;
+    margin: 0 10px;
+    font-weight: bold;
+    font-size: 0.85rem;
     text-transform: uppercase;
 }
 
 .active-link {
-    color: #c500fc; /* Neon Green */
+    color: #39FF14;
 }
 
 .profile-icon {
-    background-color: #5fb48a;
-    width: 35px;
-    height: 35px;
+    background-color: #557a63;
+    width: 35px; height: 35px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
 }
 
 /* Settings List */
