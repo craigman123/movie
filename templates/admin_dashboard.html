@@ -81,17 +81,10 @@
     <!-- ----------- mian content starts here ------------ -->
 
     <main class="main-content hidden">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                <div class="alert {{ category }}">
-                    {{ message }}
-                </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <form action="/add_movie" method="POST" enctype="multipart/form-data">
-        <div class="main-sub-container">
+
+        <form id="addForm" action="/add_movie" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="venue_date" id="venue_date_input">
+            <div class="main-sub-container">
 
     <!-- ---------------- image uploader starts here ---------------- -->
 
@@ -135,72 +128,72 @@
                     <div class="genre-section"> 
                         <h2>GENRE</h2>
                         <label class="custom-checkbox action">
-                            <input type="checkbox" name="genres[]" value="Action">
+                            <input id="genre" type="checkbox" name="genres[]" value="Action">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Action</span>
                         </label>
                         <label class="custom-checkbox adventure">
-                            <input type="checkbox" name="genres[]" value="Adventure">
+                            <input id="genre" type="checkbox" name="genres[]" value="Adventure">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Adventure</span>
                         </label>
                         <label class="custom-checkbox animation">
-                            <input type="checkbox" name="genres[]" value="Animation">
+                            <input id="genre" type="checkbox" name="genres[]" value="Animation">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Animation</span>
                         </label>
                         <label class="custom-checkbox comedy">
-                            <input type="checkbox" name="genres[]" value="Comedy">
+                            <input id="genre" type="checkbox" name="genres[]" value="Comedy">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Comedy</span>
                         </label>
                         <label class="custom-checkbox drama">
-                            <input type="checkbox" name="genres[]" value="Drama">
+                            <input id="genre" type="checkbox" name="genres[]" value="Drama">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Drama</span>
                         </label>
                         <label class="custom-checkbox family">
-                            <input type="checkbox" name="genres[]" value="Family">
+                            <input id="genre" type="checkbox" name="genres[]" value="Family">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Family</span>
                         </label>
                         <label class="custom-checkbox fantasy">
-                            <input type="checkbox" name="genres[]" value="Fantasy">
+                            <input id="genre" type="checkbox" name="genres[]" value="Fantasy">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Fantasy</span>
                         </label>
                         <label class="custom-checkbox horror">
-                            <input type="checkbox" name="genres[]" value="Horror">
+                            <input id="genre" type="checkbox" name="genres[]" value="Horror">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Horror</span>
                         </label>
                         <label class="custom-checkbox romance">
-                            <input type="checkbox" name="genres[]" value="Romance">
+                            <input id="genre" type="checkbox" name="genres[]" value="Romance">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Romance</span>
                         </label>
                         <label class="custom-checkbox sci-fi">
-                            <input type="checkbox" name="genres[]" value="Sci-Fi">
+                            <input id="genre" type="checkbox" name="genres[]" value="Sci-Fi">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Sci-fi</span>
                         </label>
                         <label class="custom-checkbox thriller">
-                            <input type="checkbox" name="genres[]" value="Thriller">
+                            <input id="genre" type="checkbox" name="genres[]" value="Thriller">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Thriller</span>
                         </label>
                         <label class="custom-checkbox musical">
-                            <input type="checkbox" name="genres[]" value="Musical">
+                            <input id="genre" type="checkbox" name="genres[]" value="Musical">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Musical</span>
                         </label>
                         <label class="custom-checkbox historical">
-                            <input type="checkbox" name="genres[]" value="Historical">
+                            <input id="genre" type="checkbox" name="genres[]" value="Historical">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Historical</span>
                         </label>
                         <label class="custom-checkbox mistery">
-                            <input type="checkbox" name="genres[]" value="Mistery">
+                            <input id="genre" type="checkbox" name="genres[]" value="Mistery">
                             <div class="checkbox-box"></div>
                             <span class="checkbox-text">Mistery</span>
                         </label>
@@ -275,7 +268,7 @@
                     </div>
 
                     <div class="description-border">
-                        <textarea placeholder="MOVIE DESCRIPTION..." required></textarea>
+                        <textarea name="description" placeholder="MOVIE DESCRIPTION..." required></textarea>
                     </div>
                 </div>
 
@@ -343,9 +336,19 @@
                 </div>
             </div>
 
-                <button type="submit" class="submit-btn"> ADD MOVIE
-                </button>
-            
+            <div class="validation-container">
+                <div class="bottom-validation">
+                    <h3>VALIDATION CHECKLIST (required)</h3>
+                    <span id="check-poster">Poster Photo </span> <br>
+                    <span id="check-trailer">Movie Trailer</span> <br>
+                    <span id="check-venue">Venue Image</span> <br>
+                    <span id="check-genre">Genre Selection</span>
+                </div>
+                <div class="submit-container">
+                    <button type="submit" class="submit-btn" id="submit-btn"> ADD MOVIE
+                    </button>
+                </div>
+            </div>
 
             <!-- ---------------------- venue section end here --------------------- -->
 
