@@ -93,7 +93,6 @@ header {
     text-decoration: none;
     background: #212121;
     padding: 10px;
-    margin-left: 1vw;
     align-items: center;
     gap: 10px;
     transition: all 0.3s ease-in-out;
@@ -903,7 +902,7 @@ input:hover {
     align-items: center;
     justify-content: center;
     padding: 5px;
-    background: linear-gradient(120deg, rgba(255, 0, 0, 0.322), rgba(65, 42, 42, 0.2));
+    background: linear-gradient(120deg, rgba(128, 255, 0, 0.322), rgba(54, 65, 42, 0.2));
 }
 
 .availability{
@@ -1242,7 +1241,7 @@ input:hover {
     align-items: center;
     justify-content: center;
     flex: 1;
-    width: 100%;
+    width: 20vh;
     height: 8vh;
     border-radius: 20px;
     margin: 2vh 10px 2vh 20px;
@@ -1258,24 +1257,35 @@ input:hover {
     transition: all 0.15s ease-in-out;
 }
 
-.submit-btn:hover {
-    background-color: #05a60ac8;
-    color: #fff;
+.submit-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50%;
 }
 
-.alert{
-    padding:10px;
-    margin:10px;
-    border-radius:6px;
-    font-weight:bold;
+.bottom-validation {
+    width: 50vh;
+    height: auto;
+    padding: 10px;
+    color: rgb(255, 0, 0);
+    background: linear-gradient(135deg, rgba(73, 73, 73, 0.429), rgb(0, 0, 0));
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    font-size: 1vw;
+    font-weight: 500;
+    border-radius: 10px;
 }
 
-.alert.danger{
-    background:#ffdddd;
-    color:#a40000;
+.bottom-validation h3 {
+    color: rgb(255, 255, 255);
 }
 
-.alert.success{
-    background:#ddffdd;
-    color:#006400;
+.validation-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
 }

@@ -34,17 +34,15 @@ class Venue(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), nullable=False)
     venue_name = db.Column(db.String(100), nullable=False) #/checked
-    location = db.Column(db.String(200), nullable=False) #/checked
-    seating_capacity = db.Column(db.Integer, nullable=False) #/checked
     venue_image = db.Column(db.String(1000), nullable=False) #/checked
     schedule_open = db.Column(db.String(1000), nullable=False) #/checked
     venue_linkMap = db.Column(db.String(1000), nullable=False) #/checked
+    venue_room = db.Column(db.String(100), nullable=False) #/checked
     
 class Libraries(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     library_name = db.Column(db.String(100), nullable=False) #/checked
     user_id = db.Column(db.String(200), nullable=False) #/checked
-    seating_capacity = db.Column(db.Integer, nullable=False) #/checked
     library_image = db.Column(db.String(1000), nullable=False) #/checked
     schedule_open = db.Column(db.String(1000), nullable=False) #/checked
     library_linkMap = db.Column(db.String(1000), nullable=False) #/checked
@@ -57,7 +55,6 @@ class Movies(db.Model):
     movie_trailer = db.Column(db.String(1000), nullable=False) #/checked
     movie_date = db.Column(db.String(50), nullable=False) #/checked
     status = db.Column(db.String(50), nullable=False) #/checked
-    age_rating = db.Column(db.String(10), nullable=False) #/checked
     language = db.Column(db.String(50), nullable=False) #/checked
     duration = db.Column(db.String(20), nullable=False) #/checked
     genre = db.Column(db.String(50), nullable=False) #/checked
@@ -115,17 +112,31 @@ def add_movie():
         trailer_file = request.files.get('trailer')
         venue_image_file = request.files.get('venue_image')
 
-        # --- Validation ---
+        # --- Poster Validation ---
         if not poster_file or poster_file.filename == "":
             flash("Please upload a movie poster.", "danger")
             return redirect(url_for('admin_dashboard'))
 
+        if not allowed_file(poster_file.filename, ALLOWED_IMAGE_EXTENSIONS):
+            flash("Poster must be an image file.", "danger")
+            return redirect(url_for('admin_dashboard'))
+
+        # --- Trailer Validation ---
         if not trailer_file or trailer_file.filename == "":
             flash("Please upload a movie trailer.", "danger")
             return redirect(url_for('admin_dashboard'))
 
+        if not allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS):
+            flash("Trailer must be an MP4 video.", "danger")
+            return redirect(url_for('admin_dashboard'))
+
+        # --- Venue Image Validation ---
         if not venue_image_file or venue_image_file.filename == "":
             flash("Please upload a venue image.", "danger")
+            return redirect(url_for('admin_dashboard'))
+
+        if not allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
+            flash("Venue image must be an image file.", "danger")
             return redirect(url_for('admin_dashboard'))
 
         # --- Movie Info ---
@@ -158,10 +169,49 @@ def add_movie():
             venue_image_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(venue_image_file.filename))
             venue_image_file.save(venue_image_path)
 
-        flash("Movie uploaded successfully!", "success")
-        return redirect(url_for('admin_dashboard'))
+        genre_string = ", ".join(genres)
 
-    return render_template('admin_dashboard.html', form=request.form)
+        new_movie = Movies(
+            movie_name=movie_name,
+            description=description,
+            movie_image=poster_path,
+            movie_trailer=trailer_path,
+            movie_date=release_date,
+            status="Showing",
+            language=language,
+            duration=duration,
+            genre=genre_string,
+            movie_schedule=venue_availability,
+            scheduled_date=venue_date
+        )
+
+        db.session.add(new_movie)
+        db.session.commit()
+
+        new_venue = Venue(
+            movie_id=new_movie.id,
+            venue_name=venue_name,
+            venue_room=room,
+            venue_image=venue_image_path,
+            schedule_open=venue_availability,
+            venue_linkMap=venue_link
+            
+        )
+
+        db.session.add(new_venue)
+
+        new_tickets = Tickets(
+            movie_id=new_movie.id,
+            standard_tickets=regular_count,
+            premium_tickets=premium_count
+        )
+
+        db.session.add(new_tickets)
+
+        db.session.commit()
+
+    flash("Movie uploaded successfully!", "success")
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin_dashboard')
 def admin_dashboard():
@@ -210,15 +260,15 @@ def login():
 
     if not user:
         flash("Account does not exist!.", "danger")
-        return render_template('login.html', error="User not found. Please register first.")
+        return redirect(url_for('gotologin'))
 
     if user.access == "Inactive":
         flash("Account disable contact support, or make a new account!", "danger")
-        return render_template('login.html', error="Your account is disabled ask for access.")
+        return redirect(url_for('gotologin'))
 
     if not user.check_password(password):
         flash("Incorrect password or email!", "danger")
-        return render_template('login.html', error="Incorrect password or email. Please try again.")
+        return redirect(url_for('gotologin'))
 
     session['user_id'] = user.id
     session['email'] = email
@@ -245,13 +295,12 @@ def register():
     
     if existing_user:
         flash("Email already exists. Please choose a different one.", "danger")
-        return render_template('login.html', error="Email already exists. Please choose a different one.")
+        return redirect(url_for('gotologin'))
 
     new_user = User(username=username, email=email, access='active')
     new_user.set_password(password)
     db.session.add(new_user)
     db.session.commit()
-
     # Log the user in after registration
     session['user_id'] = new_user.id
     session['email'] = new_user.email

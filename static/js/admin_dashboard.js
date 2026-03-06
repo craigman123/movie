@@ -19,9 +19,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('DOMContentLoaded', () => {
 
-    // Trailer
     const trailerInput = document.getElementById('filetrailer');
-    const trailerHeader = trailerInput.closest('.file-container').querySelector('.file-header');
 
     trailerInput.addEventListener('change', function () {
         const file = this.files[0];
@@ -32,22 +30,33 @@ window.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const trailerContainer = trailerInput.closest('.file-container').querySelector('.file-header');
+
+        trailerContainer.innerHTML = '';
+
+        // Create a video element
+        const video = document.createElement('video');
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'cover';
+        video.style.borderRadius = '10px';
+        video.controls = true;
+        video.autoplay = true;
+        video.muted = true;
+        video.loop = true;
+
+        // Set video source
         const reader = new FileReader();
         reader.onload = function (e) {
-            trailerHeader.innerHTML = `
-                <video 
-                    src="${e.target.result}" 
-                    style="width:100%; height:100%; object-fit:cover; border-radius:10px;" 
-                    controls
-                    autoplay
-                    muted
-                    loop
-                ></video>
-            `;
+            video.src = e.target.result;
+            trailerContainer.appendChild(video);
         };
         reader.readAsDataURL(file);
 
-        BorderTrial(document.getElementById('bordertrial'));
+        // Optional: trigger border effect
+        if (typeof BorderTrial === 'function') {
+            BorderTrial(document.getElementById('bordertrial'));
+        }
     });
 });
 
@@ -356,4 +365,63 @@ document.addEventListener("DOMContentLoaded", () => {
     inputs.forEach(input => input.addEventListener("input", updateMapBorder));
 
     updateMapBorder();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const venueDateSpan = document.querySelector('.venue-date');
+    const venueDate = venueDateSpan.textContent;
+
+    const hiddenInput = document.getElementById('venue_date_input');
+    hiddenInput.value = venueDate; 
+});
+
+// =========================== VALIDATION CHECKLIST ===========================
+
+document.addEventListener("DOMContentLoaded", () => {
+    const posterInput = document.getElementById('fileposter');
+    const trailerInput = document.getElementById('filetrailer');
+    const venueInput = document.getElementById('filevenue');
+    const genreCheckboxes = document.querySelectorAll('input[name="genres[]"]');
+
+    const posterCheck = document.getElementById('check-poster');
+    const trailerCheck = document.getElementById('check-trailer');
+    const venueCheck = document.getElementById('check-venue');
+    const genreCheck = document.getElementById('check-genre');
+
+    const submitBtn = document.getElementById('submit-btn');
+
+    function updateCheck(input, checkElement) {
+        checkElement.style.color = input.files.length > 0 ? 'green' : '';
+    }
+
+    function updateGenreCheck() {
+        const anyChecked = Array.from(genreCheckboxes).some(c => c.checked);
+        genreCheck.style.color = anyChecked ? 'green' : '';
+    }
+
+    function updateSubmitButton() {
+        const allValid =
+            posterInput.files.length > 0 &&
+            trailerInput.files.length > 0 &&
+            venueInput.files.length > 0 &&
+            Array.from(genreCheckboxes).some(c => c.checked);
+
+        submitBtn.style.backgroundColor = allValid ? 'green' : '';
+    }
+
+    [posterInput, trailerInput, venueInput].forEach(input => {
+        input.addEventListener('change', () => {
+            updateCheck(posterInput, posterCheck);
+            updateCheck(trailerInput, trailerCheck);
+            updateCheck(venueInput, venueCheck);
+            updateSubmitButton();
+        });
+    });
+
+    genreCheckboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            updateGenreCheck();
+            updateSubmitButton();
+        });
+    });
 });
