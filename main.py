@@ -85,6 +85,8 @@ def inject_now():
     """Adds a changing timestamp to all templates."""
     return {'now': int(time.time())}
 
+app.context_processor(inject_now)
+
 @app.route('/gotologin')
 def gotologin():
     if 'user_id' in session:
@@ -172,6 +174,33 @@ def admin_dashboard():
     user = User.query.get(session['user_id'])
     return render_template('admin_dashboard.html', user=user, current_date=today)
 
+@app.route('/user_dashboard')
+def user_dashboard():
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+    
+    if session.get('role') != 'user':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('admin_dashboard'))
+    
+    user = User.query.get(session['user_id'])
+    # Fetch movies or whatever is needed
+    movies = Movies.query.all()
+    return render_template('user_dashboard.html', user=user, movies=movies)
+
+@app.route('/settings')
+def settings():
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+    
+    return render_template('settings.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
 @app.route('/login', methods=['POST'])
 def login():
     password = request.form['password']
@@ -198,8 +227,11 @@ def login():
 
     if user.role == "admin":
         return redirect(url_for('admin_dashboard'))
-    else:
+    elif user.role == "user":
         return redirect(url_for('user_dashboard'))
+    else:
+        flash("Invalid user role", "danger")
+        return redirect(url_for('gotologin'))
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -220,8 +252,14 @@ def register():
     db.session.add(new_user)
     db.session.commit()
 
+    # Log the user in after registration
+    session['user_id'] = new_user.id
+    session['email'] = new_user.email
+    session['role'] = new_user.role
+    session['username'] = new_user.username
+
     flash("Registration successful!", "success")
-    return render_template('user_dashboard.html', alert_message="Registration successful!")
+    return redirect(url_for('user_dashboard'))
 
 if __name__ == '__main__':
 

@@ -13,44 +13,47 @@ body{
 /* ================= HEADER ================= */
 
 .navbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:20px 60px;
-    background:#111;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
 }
 
 .logo{
-    font-size:32px;
-    font-weight:bold;
+    font-size: 2.5rem;
+    font-weight: 900;
+    letter-spacing: 2px;
 }
 
 .nav-links{
-    display:flex;
-    gap:25px;
+    display: flex;
+    gap: 10px;
 }
 
 .nav-links a{
-    text-decoration:none;
-    color:white;
-    font-size:14px;
-    transition:0.3s;
+    color: white;
+    text-decoration: none;
+    margin: 0 10px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    transition: 0.3s;
 }
 
 .nav-links a.active,
 .nav-links a:hover{
-    color:#00ff88;
+    color: #39FF14;
 }
 
 .profile{
-    width:35px;
-    height:35px;
-    border-radius:50%;
-    background:#2ecc71;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
+    background-color: #557a63;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
 }
 
 /* ================= ABOUT ================= */

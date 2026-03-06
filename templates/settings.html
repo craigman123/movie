@@ -2,27 +2,27 @@
 
 {% block head %}
     <title>Luma Settings UI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='settings.css') }}?v={{ now }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}?v={{ now }}">
     <script src="{{ url_for('static', filename='settings.js') }}?v={{ now }}"></script>
 {% endblock %}
 
 {% block body %}
 
-<header>
+<header class="navbar">
     <div class="logo">LUMA</div>
     <nav>
         <ul>
-            <li><a href="#">Home</a></li>
+            <li><a href="user_dashboard">Home</a></li>
             <li><a href="#">Order</a></li>
-            <li><a href="about.html">About</a></li>
+            <li><a href="about">About</a></li>
             <li><a href="#">Libraries</a></li>
-            <li><a href="#">Latest</a></li>
+            
             <li><a href="#">Most Rated</a></li>
             <li><a href="#">Most Watched</a></li>
             <li><a href="#" class="active-link">Settings</a></li>
         </ul>
     </nav>
-    <div class="profile-icon">C</div>
+    <div class="profile">L</div>
 </header>
 
 <div class="settings-container">
