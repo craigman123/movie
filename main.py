@@ -56,7 +56,7 @@ class Movies(db.Model):
     movie_schedule = db.Column(db.String(1000), nullable=False) #/checked
     scheduled_date = db.Column(db.String(1000), nullable=False) #/checked
     movie_status = db.Column(db.String(20), nullable=False)
-    movie_time = db.Column(db.String(30), nullable=False)
+    movie_time = db.Column(db.String(300), nullable=False)
     
     venue = db.relationship('Venue', backref='movie', lazy=True)
 
@@ -89,6 +89,26 @@ def gotologin():
             return redirect(url_for('user_dashboard'))
 
     return render_template('login.html')
+
+@app.route('/users')
+def view_users():
+    return render_template('viewUsers.html')
+
+@app.route('/moviewView')
+def movieViewAdmin():
+    return render_template('movieViewAdmin.html')
+
+@app.route('/adminAccount')
+def AdminAccount():
+    return render_template('AdminAccount.html')
+
+@app.route('/sales')
+def view_sales():
+    return render_template('viewSales.html')
+
+@app.route('/logs')
+def view_logs():
+    return render_template('viewLogs.html')
 
 @app.route('/')
 def index():
@@ -138,18 +158,20 @@ def add_movie():
         # --- Movie Info ---
         movie_name = request.form.get('movie_name')
         duration = request.form.get('duration')
-        language = request.form.get('language')
+        language = request.form.get('language') or 'English'
         release_date = request.form.get('release_date')
         genres = request.form.getlist('genres[]')
         venue_name = request.form.get('venue_name')
         venue_availability = request.form.get('venue_availability')
         room = request.form.get('room')
         venue_date = request.form.get('venue_date')
+        scheduled_date = venue_date if venue_date else ""
+        
         venue_link = request.form.get('venue_link')
         description = request.form.get('description')
         venue_cap = request.form.get('cap')
         movie_status = request.form.get('movie_status')
-        movie_time = request.form.get('time_avail')
+        movie_schedule = request.form.get('time_avail') or 'Morning'
 
         # --- Save Files: only store filename in DB ---
         poster_filename = trailer_filename = venue_filename = None
@@ -172,17 +194,17 @@ def add_movie():
         new_movie = Movies(
             movie_name=movie_name,
             description=description,
-            movie_image=poster_filename,        # <-- just filename
-            movie_trailer=trailer_filename,     # <-- just filename
+            movie_image=poster_filename,     
+            movie_trailer=trailer_filename,    
             movie_date=release_date,
             status="Showing",
             language=language,
             duration=duration,
             genre=genre_string,
             movie_schedule=venue_availability,
-            scheduled_date=venue_date,
+            scheduled_date=scheduled_date,
             movie_status=movie_status,
-            movie_time=movie_time
+            movie_time=movie_schedule
         )
         db.session.add(new_movie)
         db.session.commit()

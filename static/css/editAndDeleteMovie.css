@@ -98,12 +98,6 @@ header {
     transition: all 0.3s ease-in-out;
 }
 
-.menu-btn a {
-    text-decoration: none;
-    width: 100%;
-    height: 100%;
-}
-
 .menu-container {
     display: flex;
     flex-direction: column;
@@ -682,7 +676,7 @@ img {
     flex: 1 1 0; 
     width: 100%;
     padding: 0.5rem 1rem;
-    height: auto;
+    height: 5.7vh;
     border-radius: 20px;
     margin-top: 1.7vh;
     border: none;
@@ -1049,13 +1043,10 @@ input:hover {
 }
 
 .venue-section {
-    display: grid;          
-    grid-template-columns: .6fr 1fr 1fr;
-    grid-template-areas: 
-    "venue-image movie_avilability movie_avilability"
-    "venue-info movie_avilability movie_avilability"
-    "dateamap movie_avilability movie_avilability"
-    ;   
+    display: flex;          
+    flex-direction: row;   
+    flex-wrap: nowrap;  
+    justify-content: space-between;     
     gap: 15px;              
     width: 100%;             
     max-width: 100%;         
@@ -1063,26 +1054,6 @@ input:hover {
     padding: 10px;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.559), rgba(0, 0, 0, 0.274));
     overflow-x: auto;          
-}
-
-.venue-image {
-    grid-area: venue-image;
-}
-
-.venue-info {
-    grid-area: venue-info;
-}
-
-.movie-venue_schedule {
-    grid-area: movieVenue_schedule;
-}
-
-.map-border {
-    grid-area: dateamap;
-}
-
-.movie_avilability {
-    grid-area: movie_avilability;
 }
 
 .bordervenue,
@@ -1142,6 +1113,77 @@ input:hover {
     animation: glow 3s ease infinite;
 }
 
+.calendar {
+    background-color: #4d4d4d;
+    border-radius: 10px;
+    box-shadow: 0 0 30px #222222;
+    overflow: hidden;
+    width: 20vw;
+    height: 41vh;
+    color: rgb(0, 0, 0);
+    padding: 5px 20px 20px 20px;
+    margin-top: 20px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+.btn {
+    cursor: pointer;
+    font-size: 1vw;
+}
+
+#month-year {
+    font-weight: bold;
+    font-size: 1vw;
+}
+
+.weekdays, .days {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 1vw;
+}
+
+.days {
+    height: 5vh;
+}
+
+.weekdays div, .days div {
+    width: 14.28%;
+    text-align: center;
+    padding: 10px 0;
+    border-radius: 5px;
+}
+
+.days div {
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.days div:hover {
+    background-color: rgb(0, 0, 0);
+    color: rgb(255, 255, 255);
+}
+
+.days .today {
+    background-color: rgb(111, 255, 0);
+    color: rgb(0, 0, 0);
+}
+
+.days .fade {
+    color: #555;
+}
+
+.days .selected {
+    background-color: rgb(143, 143, 143);
+    color: rgb(132, 255, 0);
+    border: 2px solid rgb(140, 255, 0);
+}
+
 .map-border {
     width: 17vw;
     height: 42vh;
@@ -1163,7 +1205,7 @@ input:hover {
     margin: 5px;
     flex: 1;
     width: 100%;
-    height: 10vh;
+    height: 100%;
     background: #2a2a2a;
     padding: 15px;
     border-radius: 12px;
@@ -1274,310 +1316,4 @@ input:hover {
 
 .status-select option{
     color:black; 
-}
-
-.movie_avilability {
-    width: 100%;
-    height: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.559), rgba(0, 0, 0, 0.274));
-    border-radius: 10px;
-    padding: 10px;
-    margin: 10px;
-}
-
-.movie-schedule {
-  display: block;
-  flex-direction: column;
-  text-align: center;
-  width: 100%;
-  height: 100%;
-  justify-content: center;
-  background-color: #212121;
-  border-radius: 15px;
-  padding: 10px 10px 0 10px;
-  box-sizing: border-box; 
-}
-
-.movie-schedule h4 {
-    margin: 1vh 0 0 0;
-    font-size: 1.5vw;
-    font-weight: 500;
-    color: #fff;
-    animation: glow 10s ease infinite;
-    margin-bottom: 1vh;
-}
-
-.Btn {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  width: 45px;
-  height: 45px;
-  border-radius: calc(45px/2);
-  border: none;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition-duration: .8s;
-  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
-  background: linear-gradient(144deg,#40ff96,#42f34e 50%,#00ebd4);
-}
-
-.sign {
-  width: 100%;
-  font-size: 2.2em;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: rgb(0, 0, 0);
-  transition-duration: .3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.text {
-  position: absolute;
-  right: 0%;
-  width: 0%;
-  opacity: 0;
-  color: rgb(0, 0, 0);
-  font-size: 1.4em;
-  font-weight: 500;
-  transition-duration: .3s;
-}
-
-.Btn:hover {
-  width: 17vw;
-  transition-duration: .3s;
-}
-
-.Btn:hover .sign {
-  width: 30%;
-  transition-duration: .3s;
-  padding-left: 15px;
-}
-
-.Btn:hover .text {
-  opacity: 1;
-  width: 70%;
-  transition-duration: .3s;
-  padding-right: 15px;
-}
-
-.Btn:active {
-  transform: translate(2px ,2px);
-}
-
-.movie-border{
-    flex: 0 0 auto;         
-    width: 100%;            
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 5px;
-    border-radius: 10px;
-    background: linear-gradient(120deg, rgba(255, 0, 0, 0.322), rgba(65, 42, 42, 0.2));
-}
-
-#availability-modal {
-    display: none;
-    position: fixed;
-    top:0; 
-    left:0;
-    width:100%; 
-    height:100%;
-    background: rgba(0,0,0,0.5); 
-    justify-content: center;
-    align-items: center;
-    z-index: 9999; 
-}
-
-.modal-content {
-    background: #fff; 
-    padding: 20px; 
-    border-radius: 8px;
-    width: auto;
-    max-height: 90vh;  
-    overflow-y: auto;
-    text-align: center;
-}
-
-.modal-content h4 {
-    margin: 10px;
-}
-
-.calendar-container { 
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas: 
-    "calendar calendar2"
-    "time time";
-    gap: 20px;
-}
-
-.calendar { grid-area: calendar; }
-.calendar2 { grid-area: calendar2; }
-#time1 { grid-area: time; margin-bottom: 10px;}
-#time2 { grid-area: time2; margin-bottom: 10px;}
-
-.calendar-box { 
-    flex: 1; 
-    min-width: 250px; 
-}
-
-.days { 
-    display: grid; 
-    grid-template-columns: repeat(7, 1fr); 
-    gap: 4px; 
-    margin-bottom: 10px; 
-}
-
-.days div { 
-    padding: 12px 0; 
-    text-align: center; 
-    border-radius: 4px; 
-    cursor: pointer; 
-    border: 1px solid #ccc; 
-}
-
-.days div.selected { 
-    background: #3498db; 
-    color: #fff; 
-}
-
-.calendar, .calendar2 {
-    background-color: #000000;
-    border-radius: 10px;
-    box-shadow: 0 0 30px #222222;
-    overflow: hidden;
-    width: 16vw;
-    color: white;
-    padding: 20px;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-}
-
-.btn {
-    cursor: pointer;
-}
-
-#month-year, #month-year2 {
-    font-weight: bold;
-    font-size: 20px;
-}
-
-.weekdays, .days, .weekdays2, .days2 {
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.weekdays div, .days div, .weekdays2 div, .days2 div {
-    width: 14.28%;
-    text-align: center;
-    padding: 10px 0;
-    border-radius: 5px;
-}
-
-.days div, .days2 div {
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.days div:hover, .days2 div:hover {
-    background-color: white;
-    color: orangered;
-}
-
-.days .today, .days2 .today {
-    background-color: orangered;
-    color: white;
-}
-
-.days .fade, .days2 .fade {
-    color: #555;
-}
-
-.fade {
-    color: #ffffff;
-}
-
-.time-size {
-    flex: 1 1 0; 
-    width: 100%;
-    border-radius: 20px;
-    margin-top: 1.7vh;
-    padding: 0 0 0 10px;
-    height: 8vh;
-    border: none;
-    outline: none;
-    box-shadow: 0px 10px 20px -18px;
-    font-size: 1.2vw;
-    background-color: #5a5a5a;
-    color: #ffffff;
-    transition: all 0.15s ease-in-out;
-}
-
-.done-btn {
-    background: #129b00;
-    color: #ffffff;
-    border: none;
-    outline: none;
-    box-shadow: 0px 10px 20px -18px;
-    font-size: 1.2vw;
-    line-height: 1.2;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    margin-top: 1.7vh;
-}
-
-.done-btn:hover {
-    background: #00ff00;
-}
-
-.cancel-btn {
-    background: #9b0000;
-    color: #ffffff;
-    border: none;
-    outline: none;
-    box-shadow: 0px 10px 20px -18px;
-    font-size: 1.2vw;
-    line-height: 1.2;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    margin-top: 1.7vh;
-}
-
-.cancel-btn:hover {
-    background: #ff0000;
-}
-
-.displayDate {
-
-    padding: 20px;
-    width: 100%;
-    height: auto;
-    display: flex;
-    justify-content: center;
-    font-size: 1.2vw;
-    color: #ffffff;
-    margin-top: 1vh;
-    background: rgb(58, 58, 58);
-}
-
-.displayDate div{
-        display: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    margin-top: 6px;
-    font-size: 3vw;
 }
