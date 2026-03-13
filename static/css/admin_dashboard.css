@@ -548,7 +548,6 @@ main {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin: 1vw;
     gap: 5px;
     background-color: rgb(215, 215, 215);
     background: linear-gradient(120deg, rgba(255, 0, 0, 0.521), rgba(67, 55, 55, 0.2));
@@ -572,7 +571,7 @@ main {
 
 .bordervenue{
     transition: background 1s ease;
-    height: 40vh;
+    height: 45vh;
     width: 17vw;
     border-radius: 20px;
     box-shadow: 4px 4px 30px rgba(206, 206, 206, 0.2);
@@ -644,6 +643,36 @@ img {
   border: none;
 }
 
+.file-poster {
+  background-color: rgba(0, 110, 255, 0.075);
+  font-size: 1vw;
+  width: 100%;
+  height: 5vh;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: black;
+  border: none;
+}
+
+.file-venue {
+  background-color: rgba(139, 0, 139, 0.275);
+  font-size: 1vw;
+  width: 100%;
+  height: 5vh;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #fff;
+  border: none;
+}
+
 .file-footer svg {
   height: 130%;
   fill: royalblue;
@@ -682,7 +711,7 @@ img {
     flex: 1 1 0; 
     width: 100%;
     padding: 0.5rem 1rem;
-    height: auto;
+    height: 7.5vh;
     border-radius: 20px;
     margin-top: 1.7vh;
     border: none;
@@ -1049,13 +1078,10 @@ input:hover {
 }
 
 .venue-section {
-    display: grid;          
-    grid-template-columns: .6fr 1fr 1fr;
+    display: grid;      
+    grid-template-columns: 1fr 1fr;
     grid-template-areas: 
-    "venue-image movie_avilability movie_avilability"
-    "venue-info movie_avilability movie_avilability"
-    "dateamap movie_avilability movie_avilability"
-    ;   
+    "venue movie";
     gap: 15px;              
     width: 100%;             
     max-width: 100%;         
@@ -1065,24 +1091,12 @@ input:hover {
     overflow-x: auto;          
 }
 
-.venue-image {
-    grid-area: venue-image;
-}
-
-.venue-info {
-    grid-area: venue-info;
-}
-
-.movie-venue_schedule {
-    grid-area: movieVenue_schedule;
-}
-
-.map-border {
-    grid-area: dateamap;
-}
-
 .movie_avilability {
-    grid-area: movie_avilability;
+    grid-area: movie;
+}
+
+.venue-availability {
+    grid-area: venue;
 }
 
 .bordervenue,
@@ -1310,7 +1324,7 @@ input:hover {
     margin-bottom: 1vh;
 }
 
-.Btn {
+.Btn, .Btn-venue {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -1324,9 +1338,10 @@ input:hover {
   transition-duration: .8s;
   box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
   background: linear-gradient(144deg,#40ff96,#42f34e 50%,#00ebd4);
+  margin-bottom: 10px;
 }
 
-.sign {
+.Btn .sign, .Btn-venue .sign {
   width: 100%;
   font-size: 2.2em;
   font-weight: 500;
@@ -1338,7 +1353,7 @@ input:hover {
   justify-content: center;
 }
 
-.text {
+.Btn .text, .Btn-venue .text {
   position: absolute;
   right: 0%;
   width: 0%;
@@ -1350,24 +1365,29 @@ input:hover {
 }
 
 .Btn:hover {
-  width: 17vw;
+  width: 19vw;
   transition-duration: .3s;
 }
 
-.Btn:hover .sign {
+.Btn-venue:hover {
+  width: 23vw;
+  transition-duration: .5s;
+}
+
+.Btn:hover .sign, .Btn-venue:hover .sign {
   width: 30%;
   transition-duration: .3s;
   padding-left: 15px;
 }
 
-.Btn:hover .text {
+.Btn:hover .text, .Btn-venue:hover .text {
   opacity: 1;
   width: 70%;
   transition-duration: .3s;
   padding-right: 15px;
 }
 
-.Btn:active {
+.Btn:active, .Btn-venue:active {
   transform: translate(2px ,2px);
 }
 
@@ -1398,32 +1418,65 @@ input:hover {
 }
 
 .modal-content {
-    background: #fff; 
-    padding: 20px; 
+    display: flex;
+    flex-direction: column;
+
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    gap: 15px;
+    padding: 20px;
     border-radius: 8px;
     width: auto;
-    max-height: 90vh;  
+    max-height: 90vh;
     overflow-y: auto;
     text-align: center;
 }
 
+.modal-content::-webkit-scrollbar {
+    width: 1vw;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: none;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 40px;
+}
+
+.calendar-container {
+    grid-area: calendar;
+}
+
+.time-container {
+    grid-area: time;
+}
+
+.selected-date-time {
+    grid-area: info;
+}
+
+.done-btn, .cancel-btn {
+    grid-area: buttons;
+}
+
 .modal-content h4 {
-    margin: 10px;
+    grid-area: header;
+    color: #ffffff;
+    font-size: 1.5vw;
+    font-weight: 500;
 }
 
 .calendar-container { 
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas: 
-    "calendar calendar2"
-    "time time";
+    display: flex;
     gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
 }
-
-.calendar { grid-area: calendar; }
-.calendar2 { grid-area: calendar2; }
-#time1 { grid-area: time; margin-bottom: 10px;}
-#time2 { grid-area: time2; margin-bottom: 10px;}
 
 .calendar-box { 
     flex: 1; 
@@ -1457,7 +1510,7 @@ input:hover {
     overflow: hidden;
     width: 16vw;
     color: white;
-    padding: 20px;
+    padding: 0 10px 10px 20px;
 }
 
 .header {
@@ -1469,6 +1522,7 @@ input:hover {
 
 .btn {
     cursor: pointer;
+    color: white;
 }
 
 #month-year, #month-year2 {
@@ -1511,13 +1565,32 @@ input:hover {
     color: #ffffff;
 }
 
+.time-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.time-label {
+    color: #ffffff;
+    font-size: 1.2vw;
+    font-weight: 500;
+    margin-bottom: 1vh;
+}
+
+.selected-date-time {
+    font-size: 1.2vw;
+    color: #ffffff;
+    font-weight: 500;
+}
+
 .time-size {
-    flex: 1 1 0; 
     width: 100%;
     border-radius: 20px;
-    margin-top: 1.7vh;
     padding: 0 0 0 10px;
-    height: 8vh;
+    height: 4vh;
     border: none;
     outline: none;
     box-shadow: 0px 10px 20px -18px;
@@ -1537,7 +1610,7 @@ input:hover {
     line-height: 1.2;
     padding: 0.5rem 1rem;
     border-radius: 20px;
-    margin-top: 1.7vh;
+    width: 50%;
 }
 
 .done-btn:hover {
@@ -1555,6 +1628,7 @@ input:hover {
     padding: 0.5rem 1rem;
     border-radius: 20px;
     margin-top: 1.7vh;
+    width: 50%;
 }
 
 .cancel-btn:hover {
@@ -1575,9 +1649,17 @@ input:hover {
 }
 
 .displayDate div{
-        display: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    margin-top: 6px;
-    font-size: 3vw;
+    display: none;
+padding: 8px 12px;
+border-radius: 6px;
+margin-top: 6px;
+font-size: 3vw;
+}
+
+.venue-information-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
 }

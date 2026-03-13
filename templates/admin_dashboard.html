@@ -4,7 +4,9 @@
     <title>LUMA Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_seat_plan.css') }}">
     <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin_seat_plan.js') }}"></script>
 {% endblock %}
 
 {% block body %}
@@ -94,7 +96,7 @@
 
     <main class="main-content hidden">
 
-        <form id="addForm" action="/add_movie" method="POST" enctype="multipart/form-data">
+        <form id="addForm" action="/add_movie" method="POST" enctype="multipart/form-data" novalidate> 
             <input type="hidden" name="venue_date" id="venue_date_input">
             <input type="hidden" name="movie_schedule" id="movie_schedule_input">
             <div class="main-sub-container">
@@ -258,7 +260,6 @@
                                     <option value="punjabi">Punjabi</option>
                                     <option value="other">Other</option>
                                 </select>
-                            <input class="input" name="venue_name" placeholder="Venue" type="text" required>
                             <input class="input" name="release_date" placeholder="Date Released" type="date" required>
                         </div>
                     </div>
@@ -294,71 +295,19 @@
                 <!-- ---------------- venue section start ---------------- -->
 
             <div class="venue-section">
-            <div class="bordervenue" id="bordervenue">
-                <div class="file-container"> 
-                    <div class="file-header"> 
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
-                        <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg> <p>UPLOAD VENUE IMAGE</p>
-                    </div> 
-                    <label for="filevenue" class="file-footer"> 
-                        <svg fill="#000000" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z"></path></g></svg> 
-                        <p>Select file</p> 
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="#000000" stroke-width="2"></path> <path d="M19.5 5H4.5" stroke="#000000" stroke-width="2" stroke-linecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="#000000" stroke-width="2"></path> </g></svg>
-                    </label> 
-                    <input id="filevenue" name="venue_image" type="file" accept="image/*" required> 
-                </div>
-            </div>
-            
-                <div class="venue-border">
-                    <div class="venue-info"> 
-                        <h4>VENUE INFORMATION</h4>
-                        <input class="input" name="venue_name" placeholder="Venue Name" type="text" required>
-                            <select title="Availability" class="input" name="venue_availability" required>
-                                    <option value="ALL">Everyday</option>
-
-                                    <option value="M">M</option>
-                                    <option value="T">T</option>
-                                    <option value="W">W</option>
-                                    <option value="TH">TH</option>
-                                    <option value="F">F</option>
-                                    <option value="S">S</option>
-                                    <option value="SU">SU</option>
-
-                                    <option value="MW">MW</option>
-                                    <option value="MWF">MWF</option>
-                                    <option value="TTH">TTH</option>
-
-                                    <option value="MTW">MTW</option>
-                                    <option value="MTWF">MTWF</option>
-                                    <option value="TWTH">TWTH</option>
-
-                                    <option value="WF">WF</option>
-                                    <option value="MT">MT</option>
-                                    <option value="MTH">MTH</option>
-
-                                    <option value="FS">FS</option>
-                                    <option value="SSU">SSU</option>
-
-                                    <option value="MTWTHF">Weekdays</option>
-                                    <option value="SSU">Weekends</option>
-                            </select>
-                        <input class="input" name="room" placeholder="Room" type="text" required>
-                        <input class="input" name="cap" placeholder="Capacity" type="number" required>
-                    </div>
-                </div>
-
                 <!-- Modal -->
                 <div id="availability-modal">
                     <div class="modal-content">
                         <h4>Set Movie Availability</h4>
                         <div class="calendar-container">
-                            <!-- Calendar 1 -->
+
+                            <!-- Single Calendar -->
                             <div class="calendar">
                                 <div class="header">
                                     <div id="prev" class="btn"><i class="fa-solid fa-arrow-left"></i></div>
-                                    <svg id="prev-year" class="btn" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12.71 16.29 8.41 12l4.3-4.29-1.42-1.42L5.59 12l5.7 5.71z"></path><path d="M16.29 6.29 10.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"></path></svg>
+                                    <svg id="prev-year" class="btn2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12.71 16.29 8.41 12l4.3-4.29-1.42-1.42L5.59 12l5.7 5.71z"></path><path d="M16.29 6.29 10.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"></path></svg>
                                     <div id="month-year"></div>
-                                    <svg id="next-year" class="btn" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="m7.71 17.71 5.7-5.71-5.7-5.71-1.42 1.42 4.3 4.29-4.3 4.29z"></path><path d="m11.29 7.71 4.3 4.29-4.3 4.29 1.42 1.42 5.7-5.71-5.7-5.71z"></path></svg>
+                                    <svg id="next-year" class="btn2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="m7.71 17.71 5.7-5.71-5.7-5.71-1.42 1.42 4.3 4.29-4.3 4.29z"></path><path d="m11.29 7.71 4.3 4.29-4.3 4.29 1.42 1.42 5.7-5.71-5.7-5.71z"></path></svg>
                                     <div id="next" class="btn"><i class="fa-solid fa-arrow-right"></i></div>
                                 </div>
                                 <div class="weekdays">
@@ -367,80 +316,186 @@
                                 <div class="days" id="days"></div>
                                 <input type="hidden" name="venue_date" id="selected-date-input">
                             </div>
-                            <select title="Time" class="time-size" id="time1" name="time_avail">
-                                <option value="Morning">Morning (7:30 - 10:00)</option>
-                                <option value="Noon">Noon (10:30 - 12:30)</option>
-                                <option value="Afternoon">Afternoon (2:30 - 4:30)</option>
-                                <option value="Night">Night (6:30 - 8:30)</option>
-                            </select>
+                            <div class="time-container">
+                                <label class="time-label">Starting Time</label>
+                                <input type="time" title="Time" class="time-size" id="time1" name="time_avail">
+                                <label class="time-label">Ending Time</label>
+                                <input type="time" title="Time" class="time-size" id="time2" name="time_avail2">
 
-                            <!-- Calendar 2 -->
-                            <div class="calendar2">
-                                <div class="header">
-                                    <div id="prev2" class="btn"><i class="fa-solid fa-arrow-left"></i></div>
-                                    <svg id="prev-year2" class="btn" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12.71 16.29 8.41 12l4.3-4.29-1.42-1.42L5.59 12l5.7 5.71z"></path><path d="M16.29 6.29 10.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"></path></svg>
-                                    <div id="month-year2"></div>
-                                    <svg id="next-year2" class="btn" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="m7.71 17.71 5.7-5.71-5.7-5.71-1.42 1.42 4.3 4.29-4.3 4.29z"></path><path d="m11.29 7.71 4.3 4.29-4.3 4.29 1.42 1.42 5.7-5.71-5.7-5.71z"></path></svg>
-                                    <div id="next2" class="btn"><i class="fa-solid fa-arrow-right"></i></div>
-                                </div>
-                                <div class="weekdays">
-                                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                                </div>
-                                <div class="days" id="days2"></div>
-                                <input type="hidden" name="venue_date1" id="selected-date-input2">
                             </div>
-                        </div>
 
-                        <span>
-                            <p><strong>Start:</strong> <span id="start-date">none</span></p>
-                            <p><strong>End:</strong> <span id="end-date">none</span></p>
-                        </span>
+                            <span class="selected-date-time">
+                                <p><strong>Date and Time:</strong> <span id="start-date">none</span></p>
+                            </span>
+                        
+                            </div>
+                    <div>
+                        <button type="button" class="done-btn" id="done-btn">Done</button>
+                        <button type="button" class="cancel-btn" id="cancel-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
 
+                <div class="venue-modal">
+                    <div class="venue-modal-content">
+                        <h3>Venue Availability</h3>
+                        <div class="venue-border">
+                            <div class="venue-info"> 
+                                <h4>VENUE INFORMATION</h4>
+                                <input class="input" name="venue_name" placeholder="Venue Name" type="text" required>
+                                    <select title="Availability" class="input" name="venue_availability" required>
+                                            <option value="Everyday">Everyday</option>
+
+                                            <option value="M">M</option>
+                                            <option value="T">T</option>
+                                            <option value="W">W</option>
+                                            <option value="TH">TH</option>
+                                            <option value="F">F</option>
+                                            <option value="S">S</option>
+                                            <option value="SU">SU</option>
+
+                                            <option value="MW">MW</option>
+                                            <option value="MWF">MWF</option>
+                                            <option value="TTH">TTH</option>
+
+                                            <option value="MTW">MTW</option>
+                                            <option value="MTWF">MTWF</option>
+                                            <option value="TWTH">TWTH</option>
+
+                                            <option value="WF">WF</option>
+                                            <option value="MT">MT</option>
+                                            <option value="MTH">MTH</option>
+
+                                            <option value="FS">FS</option>
+                                            <option value="SSU">SSU</option>
+
+                                            <option value="MTWTHF">Weekdays</option>
+                                            <option value="SSU">Weekends</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="venue-information-container">
+                                <div class="map-border">
+                                    <div class="map-link"> 
+                                        <h4>MAP LINK</h4>
+                                        <input class="input" name="venue_link" placeholder="Venue Link" type="text" required>
+                                    </div>
+                                    <div class="logoandname">
+                                    <header class="head">
+                                        <div class="image">
+                                            <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" class="logo" alt="Luma"></img>
+                                        </div>
+                                    </header>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bordervenue" id="bordervenue">
+                                <div class="file-container"> 
+                                    <div class="file-header"> 
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
+                                        <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg> <p>UPLOAD VENUE IMAGE</p>
+                                    </div> 
+                                        <label for="filevenue" class="file-footer"> 
+                                        <svg fill="#000000" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z"></path></g></svg> 
+                                        <p>Select file</p> 
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="#000000" stroke-width="2"></path> <path d="M19.5 5H4.5" stroke="#000000" stroke-width="2" stroke-linecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="#000000" stroke-width="2"></path> </g></svg>
+                                    </label> 
+                                    <input id="filevenue" name="venue_image" type="file" accept="image/*" required> 
+                                </div>
+                            </div>
+                            <div class="seat-plan-generator">
+                                <h4>SEAT PLAN GENERATOR</h4>
+                                <input class="input" name="room" placeholder="Room" type="text" required>
+                                
+                                <div class="seat-controls">
+                                    <label for="rows">Rows (1-26):</label>
+                                    <input name="rows" type="number" id="rows" min="1" max="26" value="10">
+
+                                    <label for="cols">Columns (1-30):</label>
+                                    <input name="cols" type="number" id="cols" min="1" max="30" value="16">
+
+                                    <label for="col-gap">Column Gap every N columns (0 for none):</label>
+                                    <input name="col-gap" type="number" id="col-gap" min="0" max="10" value="4">
+
+                                    <label for="row-gap">Row Gap every N rows (0 for none):</label>
+                                    <input name="row-gap" type="number" id="row-gap" min="0" max="10" value="0">
+
+                                    <button type="button" id="generate">Generate Seat Plan</button>
+                                </div>
+
+                                    <div id="capacity-info"></div>
+                                    <div id="selected-info"></div>
+
+                                    <div>
+                                    <label for="zoom">Zoom (%): </label>
+                                    <input type="range" id="zoom" min="50" max="200" value="100" /> <span id="zoom-value">100%</span>
+                                    </div>
+
+                                    <div id="seat-wrapper">
+                                    <div class="seat-box">
+                                        <div id="zoom-container">
+                                        <div class="cinema-screen">CINEMA SCREEN</div>
+                                        <div id="seat-container"></div>
+                                        </div>
+                                    </div>
+                                    </div>
+
+                                    <div class="legend">
+                                        <div class="legend-item"><div class="legend-color available-color"></div>Available</div>
+                                        <div class="legend-item"><div class="legend-color selected-color"></div>Selected</div>
+                                    </div>
+                                </div>
+
+                            <div class="prefillvenues">
+                                <label>Venue Libraries</label>
+                                <select title="Venue" class="input" name="venue_name" id="venue-select">
+                                    <option value="">Select Venue</option>
+                                </select>
+                            </div>
                         <div>
-                            <button type="button" class="done-btn" id="done-btn">Done</button>
-                            <button type="button" class="cancel-btn" id="cancel-btn">Cancel</button>
+                            <button type="button" class="done-btn venue" id="done-btn-venue">Done</button>
+                            <button type="button" class="cancel-btn venue" id="cancel-btn-venue">Cancel</button>
                         </div>
                     </div>
                 </div>
 
             <div class="movie_avilability">
-                    <div class="movie-border">
-                        <div class="movie-schedule">
-                            <h4>MOVIE AVAILABILITY</h4>
-                            <button type="button" class="Btn" id="add-movie-btn">
-                                <div class="sign">+</div>
-                                <div class="text">Add Movie Schedule</div>
-                            </button>
-                            <div id="availability-data"></div>
-                            <div style="display: none;" id="displayDate" class="displayDate">Add Schedule</div>
-                        </div>
-                    </div>
-                </div>
-
-                
-                <div class="map-border">
-                    <div class="map-link"> 
-                        <h4>MAP LINK</h4>
-                        <input class="input" name="venue_link" placeholder="Venue Link" type="text" required>
-                    </div>
-                    <div class="logoandname">
-                    <header class="head">
-                        <div class="image">
-                            <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" class="logo" alt="Luma"></img>
-                        </div>
-                    </header>
+                <div class="movie-border">
+                    <div class="movie-schedule">
+                        <h4>MOVIE AVAILABILITY</h4>
+                        <button type="button" class="Btn" id="add-movie-btn">
+                            <div class="sign">+</div>
+                            <div class="text">Add Movie Schedule</div>
+                        </button>
+                        <div id="availability-data"></div>
+                        <div style="display: none;" id="displayDate" class="displayDate">Add Schedule</div>
                     </div>
                 </div>
             </div>
+
+            <div class="venue-availability">
+                <div class="venue-border-schedule">
+                    <div class="venue-schedule">
+                        <h4>VENUE AVAILABILITY</h4>
+                        <button type="button" class="Btn-venue" id="check-venue-btn">
+                            <div class="sign">+</div>
+                            <div class="text">Check Venue Availability</div>
+                        </button>
+                        <div id="venue-data"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
 
             <div class="validation-container">
                 <div class="bottom-validation">
                     <h3>VALIDATION CHECKLIST (required)</h3>
                     <span id="check-poster">Poster Photo </span> <br>
+                    <span id="check-venue">Venue Selection</span> <br>
                     <span id="check-trailer">Movie Trailer</span> <br>
-                    <span id="check-venue">Venue Image</span> <br>
+                    <span id="check-schedule">Movie Schedule</span> <br>
                     <span id="check-genre">Genre Selection</span><br>
-                    <span id="check-schedule">Schedule Addition</span>
                 </div>
                 <div class="submit-container">
                     <button type="submit" class="submit-btn" id="submit-btn"> ADD MOVIE

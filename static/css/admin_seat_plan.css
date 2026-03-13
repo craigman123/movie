@@ -1,0 +1,368 @@
+.seat-plan-generator {
+    font-family: Arial, sans-serif;
+    background: #1e1e2f;
+    color: #eee;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 20px;
+}
+
+h1 {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  label, input, button {
+    font-size: 1rem;
+    margin: 5px;
+  }
+
+  #seat-wrapper {
+    width: auto;
+    max-width: 100vh;
+    height: 500px;
+    border: 1px solid #444;
+    background: #222;
+    overflow: auto;
+    margin-top: 20px;
+    padding: 10px;
+    display: block;
+    
+  }
+
+  .seat-box {
+    display: block;
+    flex-direction: column;
+    align-items: center;
+    width: max-content;
+  }
+
+  .cinema-screen {
+    background-color: #333;
+    color: #ccc;
+    padding: 10px 0 10px 0;
+    width: 100%;
+    text-align: center;
+    border: 2px solid #444;
+    margin-bottom: 60px;
+    font-weight: bold;
+    border-radius: 6px;
+  }
+
+  #seat-container {
+    display: inline-block;
+    transform-origin: top left;
+    transition: transform 0.2s ease;
+  }
+
+  #zoom-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    transform-origin: top left;
+    transition: transform 0.2s ease;
+  }
+
+  .seat-grid {
+    border-collapse: collapse;
+  }
+
+  .seat-grid td, .seat-grid th {
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #444;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .seat-grid th {
+    background: #333;
+    color: #ccc;
+    cursor: default;
+  }
+
+  .seat.available { background-color: #007bff; }   /* blue */
+  .seat.selected { background-color: #28a745; }    /* green */
+  .gap-cell { 
+    background-color: transparent;
+    border: none;
+    width: 15px;
+    height: 15px;
+    pointer-events: none;
+  }
+
+  .legend {
+    margin-top: 15px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+  }
+
+  .available-color { background-color: #007bff; }
+  .selected-color { background-color: #28a745; }
+
+  #capacity-info, #selected-info {
+    margin-top: 15px;
+    font-weight: bold;
+  }
+
+  #zoom {
+    width: 200px;
+    margin-left: 10px;
+  }
+
+  #seat-wrapper::-webkit-scrollbar {
+    height: 12px;
+    width: 12px;
+  }
+  #seat-wrapper::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 6px;
+  }
+  #seat-wrapper::-webkit-scrollbar-track {
+    background: #222;
+  }
+
+  .seat svg {
+  width: 20px;
+  height: 20px;
+  fill: #bbb;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.seat:hover svg {
+  transform: scale(1.15);
+}
+
+.seat.selected svg {
+  fill: #4caf50;
+}
+
+.seat.available svg {
+  fill: #cccccc;
+}
+
+.seat-controls {
+    max-width: 420px;
+    padding: 20px;
+    border-radius: 10px;
+    background: #f9fafb;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    gap: 12px 15px;
+    align-items: center;
+
+    font-family: Arial, sans-serif;
+}
+
+.seat-controls label {
+    font-size: 14px;
+    color: #333;
+}
+
+.seat-controls input {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+.seat-controls input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
+}
+
+.seat-controls button {
+    grid-column: span 2;
+    margin-top: 10px;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background: #4f46e5;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.seat-controls button:hover {
+    background: #4338ca;
+}
+
+.seat-controls input[type="number"] {
+    font-size: 14px;
+    line-height: 1.2;
+    transform: none;
+}
+
+.seat-controls input[type="number"]:focus {
+    font-size: 14px;     /* prevents zoom effect */
+    transform: none;     /* removes scaling */
+    outline: none;
+}
+
+.venue-modal {
+    display: none;
+    position: fixed;
+    top:0; 
+    left:0;
+    width:100%; 
+    height:100%;
+    background: rgba(0,0,0,0.5); 
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.venue-availability {
+  width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.559), rgba(0, 0, 0, 0.274));
+    border-radius: 10px;
+    padding: 10px;
+    margin: 10px;
+}
+
+.venue-border-schedule {
+  flex: 0 0 auto;         
+    width: 100%;            
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 10px;
+    background: linear-gradient(120deg, rgba(255, 0, 0, 0.322), rgba(65, 42, 42, 0.2));
+}
+
+.venue-schedule {
+  display: block;
+  flex-direction: column;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  background-color: #212121;
+  border-radius: 15px;
+  padding: 10px 10px 0 10px;
+  box-sizing: border-box; 
+}
+
+.venue-schedule h4 {
+  margin: 1vh 0 0 0;
+    font-size: 1.5vw;
+    font-weight: 500;
+    color: #fff;
+    animation: glow 10s ease infinite;
+    margin-bottom: 1vh;
+}
+
+.venue-schedule .Btn:hover {
+  width: 23vw;
+  transition-duration: .5s;
+}
+
+.venue-modal-content {
+    display: grid;
+    grid-template-columns: 1fr 2.5fr;
+    grid-template-areas: 
+    "head head"
+    "prefillvenues seatplan"
+    "info1 seatplan"
+    "info2 seatplan"
+    "info3 seatplan"
+    "info3 buttons";
+
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    gap: 15px;
+    padding: 20px;
+    border-radius: 8px;
+    width: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    text-align: center;
+}
+
+.venue-modal-content h3 {
+    grid-area: head;
+    margin: 0;
+    padding: 0;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.venue-border {
+    grid-area: info1;
+}
+
+.venue-information-container {
+  grid-area: info2;
+}
+
+.bordervenue {
+    grid-area: info3;
+}
+
+.seat-plan-generator {
+    grid-area: seatplan;
+}
+
+.prefillvenues {
+    grid-area: prefillvenues;
+}
+
+.prefillvenues label {
+  font-size: 1.2vw;
+  color: #ffff;
+}
+
+.done-btn.venue,
+.cancel-btn.venue,
+.done-btn.venue,
+#done-btn-venue,
+#cancel-btn-venue {
+    grid-area: buttons;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    z-index: 10000 !important;
+}
+
+#venue-data {
+  color: white;
+}
+
+.file-header img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+}

@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import time, os, uuid, json
-from datetime import datetime
+from datetime import datetime, time as dt_time
 from national import nationalities
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
@@ -23,42 +23,55 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 db = SQLAlchemy(app)
-    
-class Venue(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), nullable=False)
-    venue_name = db.Column(db.String(100), nullable=False) #/checked
-    venue_image = db.Column(db.String(1000), nullable=False) #/checked
-    schedule_open = db.Column(db.String(1000), nullable=False) #/checked
-    venue_linkMap = db.Column(db.String(1000), nullable=False) #/checked
-    venue_room = db.Column(db.String(100), nullable=False) #/checked
-    venue_cap = db.Column(db.Integer, nullable=False)
-    
-class Libraries(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    library_name = db.Column(db.String(100), nullable=False) #/checked
-    user_id = db.Column(db.String(200), nullable=False) #/checked
-    library_image = db.Column(db.String(1000), nullable=False) #/checked
-    schedule_open = db.Column(db.String(1000), nullable=False) #/checked
-    library_linkMap = db.Column(db.String(1000), nullable=False) #/checked
 
 class Movies(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    movie_name = db.Column(db.Text, nullable=False) #/checked
-    description = db.Column(db.Text, nullable=False) #/checked
-    movie_image = db.Column(db.String(1000), nullable=False) #/checked
-    movie_trailer = db.Column(db.String(1000), nullable=False) #/checked
-    movie_date = db.Column(db.String(50), nullable=False) #/checked
-    status = db.Column(db.String(50), nullable=False) #/checked
-    language = db.Column(db.String(50), nullable=False) #/checked
-    duration = db.Column(db.String(20), nullable=False) #/checked
-    genre = db.Column(db.String(50), nullable=False) #/checked
-    movie_schedule = db.Column(db.String(1000), nullable=False) #/checked
-    scheduled_date = db.Column(db.String(1000), nullable=False) #/checked
-    movie_status = db.Column(db.String(20), nullable=False)
-    movie_time = db.Column(db.String(300), nullable=False)
-    
-    venue = db.relationship('Venue', backref='movie', lazy=True)
+    movie_name = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    movie_image = db.Column(db.String(1000), nullable=False)
+    movie_trailer = db.Column(db.String(1000), nullable=False)
+    movie_date_created = db.Column(db.Date, nullable=False)
+    movie_status = db.Column(db.String(50), nullable=False)
+    language = db.Column(db.String(50), nullable=False)
+    duration = db.Column(db.Integer, nullable=False)
+    genre = db.Column(db.String(50), nullable=False)
+
+    schedules = db.relationship('Schedule', backref='movie', lazy=True)
+
+class Venue(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    venue_name = db.Column(db.String(100), nullable=False)
+    venue_image = db.Column(db.String(1000), nullable=False)
+    venue_linkMap = db.Column(db.String(1000), nullable=False)
+    venue_room = db.Column(db.String(100), nullable=False)
+    venue_cap = db.Column(db.Integer, nullable=False)
+    venue_row = db.Column(db.Integer, nullable=False)
+    venue_col = db.Column(db.Integer, nullable=False)
+    venue_row_gap = db.Column(db.Integer, nullable=False)
+    venue_col_gap = db.Column(db.Integer, nullable=False)
+    venue_availability = db.Column(db.String(50), nullable=False)
+
+    schedules = db.relationship('Schedule', backref='venue', lazy=True)
+
+class Schedule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
+
+    date = db.Column(db.Date, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+
+
+class Libraries(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    library_name = db.Column(db.String(100), nullable=False)
+    user_id = db.Column(db.String(200), nullable=False)
+    library_image = db.Column(db.String(1000), nullable=False)
+    schedule_open = db.Column(db.String(1000), nullable=False)
+    library_linkMap = db.Column(db.String(1000), nullable=False)
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -137,19 +150,23 @@ def add_movie():
             flash("Poster must be an image file.", "danger")
             return redirect(url_for('admin_dashboard'))
 
-        # --- Trailer Validation ---
-        if not trailer_file or trailer_file.filename == "":
-            flash("Please upload a movie trailer.", "danger")
-            return redirect(url_for('admin_dashboard'))
+        # --- Trailer OPTIONAL ---
+        trailer_filename = None
+        if trailer_file and trailer_file.filename != "":
+            if not allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS):
+                flash("Trailer must be an MP4 video.", "danger")
+                return redirect(url_for('admin_dashboard'))
+            trailer_filename = secure_filename(trailer_file.filename)
+            trailer_file.save(os.path.join(app.config['UPLOAD_FOLDER'], trailer_filename))
 
-        if not allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS):
-            flash("Trailer must be an MP4 video.", "danger")
-            return redirect(url_for('admin_dashboard'))
-
-        # --- Venue Image Validation ---
-        if not venue_image_file or venue_image_file.filename == "":
-            flash("Please upload a venue image.", "danger")
-            return redirect(url_for('admin_dashboard'))
+        # --- Venue Image OPTIONAL ---
+        venue_filename = None
+        if venue_image_file and venue_image_file.filename != "":
+            if not allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
+                flash("Venue image must be an image file.", "danger")
+                return redirect(url_for('admin_dashboard'))
+            venue_filename = secure_filename(venue_image_file.filename)
+            venue_image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], venue_filename))
 
         if not allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
             flash("Venue image must be an image file.", "danger")
@@ -164,14 +181,15 @@ def add_movie():
         venue_name = request.form.get('venue_name')
         venue_availability = request.form.get('venue_availability')
         room = request.form.get('room')
-        venue_date = request.form.get('venue_date')
-        scheduled_date = venue_date if venue_date else ""
         
         venue_link = request.form.get('venue_link')
         description = request.form.get('description')
         venue_cap = request.form.get('cap')
         movie_status = request.form.get('movie_status')
-        movie_schedule = request.form.get('time_avail') or 'Morning'
+        
+        # Get the full schedule data from hidden input (format: date | date | time ||| date | date | time)
+        movie_schedule = request.form.get('venue_date') or ''
+        scheduled_date = movie_schedule
 
         # --- Save Files: only store filename in DB ---
         poster_filename = trailer_filename = venue_filename = None
@@ -189,6 +207,23 @@ def add_movie():
             venue_image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], venue_filename))
 
         genre_string = ", ".join(genres)
+        
+        if release_date:
+            try:
+                release_date_obj = datetime.strptime(release_date, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Invalid release date format. Use YYYY-MM-DD.", "danger")
+                return redirect(url_for('admin_dashboard'))
+        else:
+            release_date_obj = None 
+            
+        rows_str = request.form.get('rows', '10')
+        cols_str = request.form.get('cols', '16')
+        row_gap_str = request.form.get('row-gap', '0')
+        col_gap_str = request.form.get('col-gap', '4')
+        rows = int(rows_str)
+        cols = int(cols_str)
+        capacity = rows * cols
 
         # --- Save Movie ---
         new_movie = Movies(
@@ -196,32 +231,66 @@ def add_movie():
             description=description,
             movie_image=poster_filename,     
             movie_trailer=trailer_filename,    
-            movie_date=release_date,
-            status="Showing",
+            movie_date_created=release_date_obj,
             language=language,
             duration=duration,
-            genre=genre_string,
-            movie_schedule=venue_availability,
-            scheduled_date=scheduled_date,
+            genre=genre_string,    
             movie_status=movie_status,
-            movie_time=movie_schedule
         )
         db.session.add(new_movie)
         db.session.commit()
 
         # --- Save Venue ---
         new_venue = Venue(
-            movie_id=new_movie.id,
             venue_name=venue_name,
             venue_room=room,
-            venue_image=venue_filename,         # <-- just filename
-            schedule_open=venue_availability,
+            venue_image=venue_filename,      
+            venue_availability=venue_availability,
             venue_linkMap=venue_link,
-            venue_cap=venue_cap
+            venue_row=rows,
+            venue_col=cols,
+            venue_row_gap=int(row_gap_str),
+            venue_col_gap=int(col_gap_str),
+            venue_cap=capacity
         )
         db.session.add(new_venue)
+        db.session.flush()  
 
-        db.session.commit()
+        if scheduled_date:
+            try:
+                # Extract the first date part before any '|' if present
+                date_part = scheduled_date.split('|')[0].strip()  # e.g., 'Mar 15, 2026'
+
+                # Parse using the correct format
+                schedule_date_obj = datetime.strptime(date_part, "%b %d, %Y").date()
+
+                # Set default start and end times
+                start_hour = int(request.form.get('time_avail', 9))
+                end_hour = int(request.form.get('time_avail2', 12))
+
+                start_time_input = dt_time(start_hour, 0)
+                end_time_input = dt_time(end_hour, 0)
+
+                # Only create schedule if start and end times exist
+                if start_time_input and end_time_input:
+                    new_schedule = Schedule(
+                        movie_id=new_movie.id,
+                        venue_id=new_venue.id,
+                        date=schedule_date_obj,
+                        start_time=start_time_input,
+                        end_time=end_time_input
+                    )
+                    db.session.add(new_schedule)
+                    db.session.commit()
+                    print("Schedule added.")
+                else:
+                    print("Incomplete schedule info, not adding to database.")
+
+            except ValueError as e:
+                print(f"Error parsing scheduled_date: {e}")
+        else:
+            print("No schedule provided, skipping database insert.")
+
 
     flash("Movie uploaded successfully!", "success")
     return redirect(url_for('admin_dashboard'))
@@ -244,11 +313,54 @@ def admin_dashboard():
     if 'user_id' not in session or session.get('role') != 'admin':
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
-    
+
     today = datetime.today().strftime('%B %d, %Y')
 
     user = User.query.get(session['user_id'])
-    return render_template('admin_dashboard.html', user=user, current_date=today)
+    venues = Venue.query.all()
+
+    venue_data = [
+        {
+            "id": v.id,
+            "venue_name": v.venue_name,
+            "venue_link": v.venue_linkMap,
+            "venue_room": v.venue_room,
+            "venue_cap": v.venue_cap,
+            "row": v.venue_row,
+            "column": v.venue_col,
+            "row_gap": v.venue_row_gap,
+            "col_gap": v.venue_col_gap
+        }
+        for v in venues
+    ]
+
+    return render_template(
+        'admin_dashboard.html',
+        user=user,
+        current_date=today,
+        venues=venue_data
+    )
+    
+@app.route('/api/venues')
+def get_venues():
+    venues = Venue.query.all()
+
+    venue_data = []
+    for v in venues:
+        venue_data.append({
+            "id": v.id,
+            "venue_name": v.venue_name,
+            "venue_link": v.venue_linkMap,
+            "room": v.venue_room,
+            "cap": v.venue_cap,
+            "row": v.venue_row,
+            "column": v.venue_col,
+            "row_gap": v.venue_row_gap,
+            "col_gap": v.venue_col_gap,
+            "image": v.venue_image
+        })
+
+    return jsonify(venue_data)
 
 @app.route('/user_dashboard')
 def user_dashboard():

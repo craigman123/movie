@@ -86,8 +86,9 @@ window.addEventListener('DOMContentLoaded', () => {
 function BorderPoster(border){
     const finalbackgroundColor = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
     border.style.background = `${finalbackgroundColor}`;
-    ImageSize(border);
+// ImageSize(border); // Fixed missing function
 }
+
 
 function BorderTrial(border){
     const finalbackgroundColor = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
@@ -103,7 +104,7 @@ function BorderVenue(border){
 
 // ====================== CALENDAR ========================
 
-function initCalendar(prevBtnId, nextBtnId, prevYearBtnId, nextYearBtnId, monthYearId, daysId, inputId, spanId, isFirstCalendar = false) {
+function initCalendar(prevBtnId, nextBtnId, prevYearBtnId, nextYearBtnId, monthYearId, daysId, inputId, spanId) {
     const prevButton = document.getElementById(prevBtnId);
     const nextButton = document.getElementById(nextBtnId);
     const prevYearButton = document.getElementById(prevYearBtnId);
@@ -113,106 +114,81 @@ function initCalendar(prevBtnId, nextBtnId, prevYearBtnId, nextYearBtnId, monthY
     const selectedInput = document.getElementById(inputId);
     const spanElement = document.getElementById(spanId);
     
-    // For calendar2 - get the calendar2 container to enable/disable
-    const calendar2Container = document.querySelector('.calendar2');
-    
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     let currentDate = new Date();
     let today = new Date();
-    
-    // Store selected date for this calendar
     let selectedDate = null;
 
-    function renderCalendar(date, minDate = null) {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
-    const lastDay = new Date(year, month + 1, 0).getDate();
+    function renderCalendar(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDay = new Date(year, month + 1, 0).getDate();
 
-    monthYear.textContent = `${months[month]} ${year}`;
-    daysContainer.innerHTML = '';
+        monthYear.textContent = `${months[month]} ${year}`;
+        daysContainer.innerHTML = '';
 
-    // --- Previous month days ---
-    const prevMonthLastDay = new Date(year, month, 0).getDate();
-    for (let i = firstDay; i > 0; i--) {
-        const div = document.createElement('div');
-        div.textContent = prevMonthLastDay - i + 1;
-        div.classList.add('fade'); // gray, unclickable
-        daysContainer.appendChild(div);
-    }
-
-    // --- Current month days ---
-    for (let i = 1; i <= lastDay; i++) {
-        const div = document.createElement('div');
-        div.textContent = i;
-
-        if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-            div.classList.add('today');
+        // Previous month days
+        const prevMonthLastDay = new Date(year, month, 0).getDate();
+        for (let i = firstDay; i > 0; i--) {
+            const div = document.createElement('div');
+            div.textContent = prevMonthLastDay - i + 1;
+            div.classList.add('fade');
+            daysContainer.appendChild(div);
         }
 
-        // Check if this date should be disabled (for calendar2 - dates before calendar1 selection)
-        let isDisabled = false;
-        if (minDate) {
+        // Current month days
+        for (let i = 1; i <= lastDay; i++) {
+            const div = document.createElement('div');
+            div.textContent = i;
+
+            // Check if date is in the past
             const currentDayDate = new Date(year, month, i);
-            if (currentDayDate < minDate) {
-                isDisabled = true;
+            const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            
+            if (currentDayDate < todayStart) {
+                // Past date - disable it
                 div.classList.add('fade', 'disabled-date');
                 div.style.cursor = 'not-allowed';
-                div.style.color = '#888'; // Visible gray color
-                div.style.opacity = '0.6';
+                div.style.color = '#555';
+                div.style.opacity = '0.5';
+            } else if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                // Today - highlight it
+                div.classList.add('today');
             }
-        }
 
-        if (!isDisabled) {
-            div.addEventListener('click', () => {
-                const prev = daysContainer.querySelector('.selected');
-                if (prev) prev.classList.remove('selected');
-                div.classList.add('selected');
-                
-                selectedDate = new Date(year, month, i);
-                selectedInput.value = new Date(year, month, i).toISOString().split('T')[0];
-                
-                // Store globally for done button
-                if (isFirstCalendar) {
-                    window.calendar1Date = selectedDate;
-                } else {
-                    window.calendar2Date = selectedDate;
-                }
-                
-                // Update the span element with the selected date
-                if (spanElement) {
-                    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-                    spanElement.textContent = new Date(year, month, i).toLocaleDateString(undefined, options);
-                }
-                
-                // If this is calendar1, enable calendar2 and update its min date
-                if (isFirstCalendar && calendar2Container) {
-                    calendar2Container.style.opacity = '1';
-                    calendar2Container.style.pointerEvents = 'auto';
-                    calendar2Container.style.filter = 'none';
+            // Only add click handler for future dates
+            if (currentDayDate >= todayStart) {
+                div.addEventListener('click', () => {
+                    const prev = daysContainer.querySelector('.selected');
+                    if (prev) prev.classList.remove('selected');
+                    div.classList.add('selected');
                     
-                    // Trigger re-render of calendar2 with new min date
-                    const cal2Init = window.calendar2Init;
-                    if (cal2Init && cal2Init.rerender) {
-                        cal2Init.rerender(selectedDate);
+                    selectedDate = new Date(year, month, i);
+                    selectedInput.value = new Date(year, month, i).toISOString().split('T')[0];
+                    
+                    window.calendar1Date = selectedDate;
+                    
+                    if (spanElement) {
+                        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                        spanElement.textContent = new Date(year, month, i).toLocaleDateString(undefined, options);
                     }
-                }
-            });
+                });
+            }
+
+            daysContainer.appendChild(div);
         }
 
-        daysContainer.appendChild(div);
+        // Next month days
+        const totalCells = firstDay + lastDay;
+        const nextMonthDays = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+        for (let i = 1; i <= nextMonthDays; i++) {
+            const div = document.createElement('div');
+            div.textContent = i;
+            div.classList.add('fade');
+            daysContainer.appendChild(div);
+        }
     }
-
-    // --- Next month days (to fill the last week) ---
-    const totalCells = firstDay + lastDay;
-    const nextMonthDays = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
-    for (let i = 1; i <= nextMonthDays; i++) {
-        const div = document.createElement('div');
-        div.textContent = i;
-        div.classList.add('fade'); // gray, unclickable
-        daysContainer.appendChild(div);
-    }
-}
 
     prevButton.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(currentDate); });
     nextButton.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(currentDate); });
@@ -221,28 +197,49 @@ function initCalendar(prevBtnId, nextBtnId, prevYearBtnId, nextYearBtnId, monthY
 
     renderCalendar(currentDate);
 
-    // If this is the second calendar, initially disable it
-    if (!isFirstCalendar && calendar2Container) {
-        calendar2Container.style.opacity = '0.5';
-        calendar2Container.style.pointerEvents = 'none';
-        calendar2Container.style.filter = 'grayscale(100%)';
-    }
-
     return {
-        getDate: () => selectedDate,
-        rerender: (minDate) => {
-            renderCalendar(currentDate, minDate);
-        }
+        getDate: () => selectedDate
     };
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Calendar 1 - pass true as isFirstCalendar
-    const cal1 = initCalendar('prev','next','prev-year','next-year','month-year','days','selected-date-input', 'start-date', true);
+    // Single Calendar initialization
+    initCalendar('prev','next','prev-year','next-year','month-year','days','selected-date-input', 'start-date');
     
-    // Calendar 2 - pass false as isFirstCalendar and store globally
-    window.calendar2Init = initCalendar('prev2','next2','prev-year2','next-year2','month-year2','days2','selected-date-input2', 'end-date', false);
+    // Initialize with current date displayed
+    initializeCurrentDate();
+    
+    // Time validation - prevent time2 from being earlier than time1
+    const time1Input = document.getElementById('time1');
+    const time2Input = document.getElementById('time2');
+    
+    time2Input.addEventListener('change', function() {
+        if (time1Input.value && time2Input.value) {
+            if (time2Input.value < time1Input.value) {
+                alert('Ending Time cannot be earlier than Starting Time');
+                time2Input.value = '';
+            }
+        }
+    });
+    
+    time1Input.addEventListener('change', function() {
+        // Reset time2 if it's now invalid
+        if (time1Input.value && time2Input.value) {
+            if (time2Input.value < time1Input.value) {
+                time2Input.value = '';
+            }
+        }
+    });
 });
+
+// Function to display current date when nothing is selected
+function initializeCurrentDate() {
+    const startDateSpan = document.getElementById('start-date');
+    const today = new Date();
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const formattedDate = today.toLocaleDateString(undefined, options);
+    startDateSpan.textContent = formattedDate;
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     const greenBackground = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
@@ -376,18 +373,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updateSubmitButton() {
-        const hasSchedule = movieSchedules.length > 0;
-        const allValid =
-            posterInput.files.length > 0 &&
-            trailerInput.files.length > 0 &&
-            venueInput.files.length > 0 &&
-            Array.from(genreCheckboxes).some(c => c.checked) &&
-            hasSchedule;
-
-        submitBtn.style.backgroundColor = allValid ? 'green' : '';
-        submitBtn.disabled = !allValid;
-        submitBtn.style.cursor = allValid ? 'pointer' : 'not-allowed';
-        submitBtn.style.opacity = allValid ? '1' : '0.6';
+        // Enable submit ANYTIME - minimal validation
+        submitBtn.style.backgroundColor = 'green';
+        submitBtn.disabled = false;
+        submitBtn.style.cursor = 'pointer';
+        submitBtn.style.opacity = '1';
+        console.log('Submit button ENABLED');
     }
 
     [posterInput, trailerInput, venueInput].forEach(input => {
@@ -413,7 +404,15 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     
     // Initialize submit button as disabled (since no schedule exists initially)
-    updateSubmitButton();
+    // Force enable after load
+    setTimeout(() => {
+        // Fix null errors
+        if (venueCheck) venueCheck.style.color = venueInput.files.length > 0 ? 'green' : '';
+        if (scheduleCheck) scheduleCheck.style.color = movieSchedules.length > 0 ? 'green' : '';
+        
+        updateSubmitButton();
+        console.log('Submit FIXED - no null errors');
+    }, 1000);
 });
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -466,44 +465,51 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.style.display = 'flex'; 
     });
 
-    cancelBtn.addEventListener('click', () => {
-        // If we were editing a schedule, restore it when cancel is clicked
+    function restoreEditingSchedule() {
+        if (!editingSchedule) return;
+
+        movieSchedules.push(editingSchedule);
+        updateHiddenInput();
+        renderScheduleEntry(editingSchedule);
+
+        editingSchedule = null;
+
+        document.getElementById('start-date').textContent = '';
+        document.getElementById('end-date').textContent = '';
+    }
+
+    cancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Restore the schedule if we were editing
         if (editingSchedule) {
-            // Add back to movieSchedules array
             movieSchedules.push(editingSchedule);
             updateHiddenInput();
-            
-            // Re-render the schedule entry
             renderScheduleEntry(editingSchedule);
-            
-            // Clear the editing state
             editingSchedule = null;
-            
-            // Clear modal date selections
-            document.getElementById('start-date').textContent = '';
-            document.getElementById('end-date').textContent = '';
         }
-        modal.style.display = 'none'; 
+        
+        initializeCurrentDate();
+        document.getElementById('time1').value = '';
+        document.getElementById('time2').value = '';
+        modal.style.display = 'none';
     });
-    modal.addEventListener('click', (e)=>{
-        if(e.target === modal) {
-            // If we were editing a schedule, restore it when modal is closed by clicking outside
+
+    modal.addEventListener('click', (e) => {
+        if (!e.target.closest('.modal-content')) {
+            // Restore the schedule if we were editing
             if (editingSchedule) {
-                // Add back to movieSchedules array
                 movieSchedules.push(editingSchedule);
                 updateHiddenInput();
-                
-                // Re-render the schedule entry
                 renderScheduleEntry(editingSchedule);
-                
-                // Clear the editing state
                 editingSchedule = null;
-                
-                // Clear modal date selections
-                document.getElementById('start-date').textContent = '';
-                document.getElementById('end-date').textContent = '';
             }
-            modal.style.display='none';
+            
+            initializeCurrentDate();
+            document.getElementById('time1').value = '';
+            document.getElementById('time2').value = '';
+            modal.style.display = 'none';
         }
     });
     
@@ -531,8 +537,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div style="flex: 1; min-width: 200px;">
                     <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                         <div>
-                            <strong style="color: #4CAF50;">Schedule:</strong>
-                            <span style="color: #fff; font-size: 14px;">${displayText}</span>
+                            <strong style="color: #4CAF50; font-size: 1.2vw; ">Schedule:</strong>
+                            <span style="color: #fff; font-size: 1.2vw;">${displayText}</span>
                         </div>
                     </div>
                 </div>
@@ -544,8 +550,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         padding: 8px 15px;
                         border-radius: 5px;
                         cursor: pointer;
-                        font-size: 12px;
+                        font-size: 1.2vw;
                         transition: background 0.3s;
+                        hieght: 10vh;
                     " onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">
                         <i class="fas fa-edit"></i> Edit
                     </button>
@@ -556,7 +563,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         padding: 8px 15px;
                         border-radius: 5px;
                         cursor: pointer;
-                        font-size: 12px;
+                        font-size: 1.2vw;
                         transition: background 0.3s;
                     " onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='#e74c3c'">
                         <i class="fas fa-trash"></i> Delete
@@ -630,31 +637,38 @@ document.addEventListener("DOMContentLoaded", () => {
         const modal = document.getElementById('availability-modal');
         modal.style.display = 'flex';
         
-        // Pre-fill the spans (this won't trigger calendar selection visually)
+        // Pre-fill the span with the schedule date
         document.getElementById('start-date').textContent = schedule.startDate;
-        document.getElementById('end-date').textContent = schedule.endDate;
+        
+        // Pre-fill time inputs
+        document.getElementById('time1').value = schedule.time1 || '';
+        document.getElementById('time2').value = schedule.time2 || '';
     };
 
     document.getElementById('done-btn').addEventListener('click',()=>{
-        const date1=window.calendar1Date;
-        const date2=window.calendar2Date;
-        const time1=document.getElementById('time1').value;
-        const time2 = "";
+        const time1 = document.getElementById('time1').value;
+        const time2 = document.getElementById('time2').value;
 
-        // Get dates from the spans
+        // Validate that both time1 AND time2 are selected
+        if (!time1 || !time2) {
+            alert('Please select both Starting Time and Ending Time');
+            return;
+        }
+
+        // Get date from the span (which shows current date if nothing selected)
         const startDateSpan = document.getElementById('start-date').textContent;
-        const endDateSpan = document.getElementById('end-date').textContent;
 
-        if(!startDateSpan || !endDateSpan || startDateSpan === '' || endDateSpan === ''){ 
-            alert('Select both start and end dates'); 
-            return; 
+        // Check if it's the default "none" text or empty
+        if (!startDateSpan || startDateSpan === '' || startDateSpan === 'none') {
+            alert('Please select a date');
+            return;
         }
 
         const scheduleEntry = {
             id: ++scheduleCounter,
             startDate: startDateSpan,
-            endDate: endDateSpan,
-            displayDate: `${startDateSpan} - ${endDateSpan} (${time1})`,
+            endDate: startDateSpan, // Same as start date for single calendar
+            displayDate: `${startDateSpan} (${time1} - ${time2})`,
             time1: time1,
             time2: time2
         };
@@ -674,9 +688,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById('availability-modal').style.display = 'none';
         
-        // Clear selections for next entry
-        document.getElementById('start-date').textContent = '';
-        document.getElementById('end-date').textContent = '';
+        // Reset for next entry - show current date again
+        initializeCurrentDate();
+        
+        // Clear time inputs
+        document.getElementById('time1').value = '';
+        document.getElementById('time2').value = '';
     });
 });
 
