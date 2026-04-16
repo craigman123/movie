@@ -1,0 +1,102 @@
+.calendar-container { 
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.calendar-box { 
+    flex: 1; 
+    min-width: 250px; 
+}
+
+.days div { 
+    padding: 12px 0; 
+    text-align: center; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    border: 1px solid #ccc; 
+}
+
+.days div.selected { 
+    background: #3498db; 
+    color: #fff; 
+}
+
+.calendar, .calendar2 {
+    background-color: #000000;
+    border-radius: 10px;
+    box-shadow: 0 0 30px #222222;
+    overflow: hidden;
+    width: 100%;
+    color: white;
+    padding: 5px 30px 20px 30px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn {
+    cursor: pointer;
+    color: white;
+}
+
+#month-year, #month-year2 {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.weekdays, .weekdays2, .days2 {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.weekdays div, .days div, .weekdays2 div, .days2 div {
+    width: 14.28%;
+    text-align: center;
+    padding: 10px 0;
+    border-radius: 5px;
+}
+
+.days div, .days2 div {
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.days div:hover, .days2 div:hover {
+    background-color: white;
+    color: orangered;
+}
+
+.days .today, .days2 .today {
+    background-color: orangered;
+    color: white;
+    width: auto;
+}
+
+.days .fade, .days2 .fade {
+    color: #555;
+    opacity: 0.2;
+    width: auto;
+}
+
+.days .SelectableDate, .days2 .SelectableDate {
+    color: white;
+    width: auto;
+}
+
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    width: auto;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.fade {
+    color: #ffffff;
+}

@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, session, url_for, s
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
-import time, os, uuid, json
+import time, os, uuid, json, traceback
 from datetime import datetime, time as dt_time
 from national import nationalities
 from sqlalchemy import text
@@ -31,10 +31,10 @@ class Movies(db.Model):
     movie_image = db.Column(db.String(1000), nullable=False)
     movie_trailer = db.Column(db.String(1000), nullable=False)
     movie_date_created = db.Column(db.Date, nullable=False)
-    movie_status = db.Column(db.String(50), nullable=False)
     language = db.Column(db.String(50), nullable=False)
     duration = db.Column(db.Integer, nullable=False)
     genre = db.Column(db.String(50), nullable=False)
+    age_restrict = db.Column(db.String(100), nullable=False)
 
     schedules = db.relationship('Schedule', backref='movie', lazy=True)
 
@@ -62,6 +62,8 @@ class Schedule(db.Model):
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
+    
+    active = db.Column(db.String(50), nullable=False, default="True")
 
 
 class Libraries(db.Model):
@@ -93,6 +95,7 @@ def inject_now():
 
 app.context_processor(inject_now)
 
+# ======== ROUTES =================       
 @app.route('/gotologin')
 def gotologin():
     if 'user_id' in session:
@@ -109,7 +112,132 @@ def view_users():
 
 @app.route('/moviewView')
 def movieViewAdmin():
-    return render_template('movieViewAdmin.html')
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    if session.get('role') != 'admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('user_dashboard'))
+
+    user = User.query.get(session['user_id'])
+    movies = Movies.query.all()
+    # movie = Movies.query.all()
+
+    now = datetime.now()
+
+    showing_movies = []
+    coming_soon_movies = []
+    ended_movies = []
+    no_schedules_movies = []
+    cancelled_movies = []
+
+    for movie in movies:
+        schedules = movie.schedules
+
+        if not schedules:
+            no_schedules_movies.append(movie)
+            continue
+        
+        upcoming_schedules = []
+        for s in schedules:
+            date = s.date.date() if isinstance(s.date, datetime) else s.date
+            start = datetime.combine(date, s.start_time)
+
+            if start >= now:
+                upcoming_schedules.append((start, s))
+
+            upcoming_schedules.sort(key=lambda x: x[0])
+            skip_movie = False
+
+        if upcoming_schedules:
+            next_schedule = upcoming_schedules[0][1]
+            
+            print(f"{movie.movie_name} -> Next Active:", next_schedule.active, type(next_schedule.active))
+            
+            if str(next_schedule.active) != "True":
+                cancelled_movies.append(movie)
+                print("CANCELLED MOVIE ADDED:", movie.movie_name)
+        
+        if skip_movie:
+            continue
+
+        is_showing = False
+        is_coming = True
+        is_ended = True
+
+        for s in schedules:
+            date = s.date.date() if isinstance(s.date, datetime) else s.date
+
+            start = datetime.combine(date, s.start_time)
+            end = datetime.combine(date, s.end_time)
+
+            if start <= now and now <= end:
+                is_showing = True
+                
+            if now >= start:
+                is_coming = False
+
+            if now <= end:
+                is_ended = False
+
+        if is_showing:
+            showing_movies.append(movie)
+
+        elif all(s_end < now for s_end in [
+            datetime.combine(
+                s.date.date() if hasattr(s.date, "date") else s.date,
+                s.end_time
+            ) for s in movie.schedules
+        ]):
+            ended_movies.append(movie)
+        
+        else:
+            coming_soon_movies.append(movie)
+    
+    today = date.today()
+    
+    for movie in movies:
+        movie.schedule_data = []
+
+        for s in movie.schedules:
+            
+            if s.date > today:
+                status = "Coming Soon"
+            elif s.date < today:
+                status = "Ended"
+            elif s.date == today:
+                status = "On Schedule"
+            else:
+                status = "Unknown"
+                
+            if s.active == "True":
+                active = "Active"
+            else:
+                active = "Inactive"
+                status = "Canceled"
+
+            movie.schedule_data.append({
+                "id": s.id,
+                "venue": s.venue.venue_name,
+                "date": s.date.strftime("%Y-%m-%d"),
+                "start": s.start_time.strftime("%H:%M"),
+                "end": s.end_time.strftime("%H:%M"),
+                "time_status": status,
+                "active_status": active
+            })
+
+    return render_template(
+        'movieViewAdmin.html',
+        user=user,
+        movie=movie,
+        movies=movies,
+        no_schedules_movies=no_schedules_movies,
+        showing_movies=showing_movies,
+        coming_soon_movies=coming_soon_movies,
+        ended_movies=ended_movies,
+        cancelled_movies=cancelled_movies
+    )
 
 @app.route('/adminAccount')
 def AdminAccount():
@@ -133,167 +261,7 @@ ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv'}
 def allowed_file(filename, allowed_ext):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_ext
 
-@app.route('/add_movie', methods=['GET', 'POST'])
-def add_movie():
-    if request.method == 'POST':
-        
-        poster_file = request.files.get('poster')
-        trailer_file = request.files.get('trailer')
-        venue_image_file = request.files.get('venue_image')
-
-        # --- Poster Validation ---
-        if not poster_file or poster_file.filename == "":
-            flash("Please upload a movie poster.", "danger")
-            return redirect(url_for('admin_dashboard'))
-
-        if not allowed_file(poster_file.filename, ALLOWED_IMAGE_EXTENSIONS):
-            flash("Poster must be an image file.", "danger")
-            return redirect(url_for('admin_dashboard'))
-
-        # --- Trailer OPTIONAL ---
-        trailer_filename = None
-        if trailer_file and trailer_file.filename != "":
-            if not allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS):
-                flash("Trailer must be an MP4 video.", "danger")
-                return redirect(url_for('admin_dashboard'))
-            trailer_filename = secure_filename(trailer_file.filename)
-            trailer_file.save(os.path.join(app.config['UPLOAD_FOLDER'], trailer_filename))
-
-        # --- Venue Image OPTIONAL ---
-        venue_filename = None
-        if venue_image_file and venue_image_file.filename != "":
-            if not allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
-                flash("Venue image must be an image file.", "danger")
-                return redirect(url_for('admin_dashboard'))
-            venue_filename = secure_filename(venue_image_file.filename)
-            venue_image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], venue_filename))
-
-        if not allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
-            flash("Venue image must be an image file.", "danger")
-            return redirect(url_for('admin_dashboard'))
-
-        # --- Movie Info ---
-        movie_name = request.form.get('movie_name')
-        duration = request.form.get('duration')
-        language = request.form.get('language') or 'English'
-        release_date = request.form.get('release_date')
-        genres = request.form.getlist('genres[]')
-        venue_name = request.form.get('venue_name')
-        venue_availability = request.form.get('venue_availability')
-        room = request.form.get('room')
-        
-        venue_link = request.form.get('venue_link')
-        description = request.form.get('description')
-        venue_cap = request.form.get('cap')
-        movie_status = request.form.get('movie_status')
-        
-        # Get the full schedule data from hidden input (format: date | date | time ||| date | date | time)
-        movie_schedule = request.form.get('venue_date') or ''
-        scheduled_date = movie_schedule
-
-        # --- Save Files: only store filename in DB ---
-        poster_filename = trailer_filename = venue_filename = None
-
-        if allowed_file(poster_file.filename, ALLOWED_IMAGE_EXTENSIONS):
-            poster_filename = secure_filename(poster_file.filename)
-            poster_file.save(os.path.join(app.config['UPLOAD_FOLDER'], poster_filename))
-
-        if allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS):
-            trailer_filename = secure_filename(trailer_file.filename)
-            trailer_file.save(os.path.join(app.config['UPLOAD_FOLDER'], trailer_filename))
-
-        if allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
-            venue_filename = secure_filename(venue_image_file.filename)
-            venue_image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], venue_filename))
-
-        genre_string = ", ".join(genres)
-        
-        if release_date:
-            try:
-                release_date_obj = datetime.strptime(release_date, '%Y-%m-%d').date()
-            except ValueError:
-                flash("Invalid release date format. Use YYYY-MM-DD.", "danger")
-                return redirect(url_for('admin_dashboard'))
-        else:
-            release_date_obj = None 
-            
-        rows_str = request.form.get('rows', '10')
-        cols_str = request.form.get('cols', '16')
-        row_gap_str = request.form.get('row-gap', '0')
-        col_gap_str = request.form.get('col-gap', '4')
-        rows = int(rows_str)
-        cols = int(cols_str)
-        capacity = rows * cols
-
-        # --- Save Movie ---
-        new_movie = Movies(
-            movie_name=movie_name,
-            description=description,
-            movie_image=poster_filename,     
-            movie_trailer=trailer_filename,    
-            movie_date_created=release_date_obj,
-            language=language,
-            duration=duration,
-            genre=genre_string,    
-            movie_status=movie_status,
-        )
-        db.session.add(new_movie)
-        db.session.commit()
-
-        # --- Save Venue ---
-        new_venue = Venue(
-            venue_name=venue_name,
-            venue_room=room,
-            venue_image=venue_filename,      
-            venue_availability=venue_availability,
-            venue_linkMap=venue_link,
-            venue_row=rows,
-            venue_col=cols,
-            venue_row_gap=int(row_gap_str),
-            venue_col_gap=int(col_gap_str),
-            venue_cap=capacity
-        )
-        db.session.add(new_venue)
-        db.session.flush()  
-
-        if scheduled_date:
-            try:
-                # Extract the first date part before any '|' if present
-                date_part = scheduled_date.split('|')[0].strip()  # e.g., 'Mar 15, 2026'
-
-                # Parse using the correct format
-                schedule_date_obj = datetime.strptime(date_part, "%b %d, %Y").date()
-
-                # Set default start and end times
-                start_hour = int(request.form.get('time_avail', 9))
-                end_hour = int(request.form.get('time_avail2', 12))
-
-                start_time_input = dt_time(start_hour, 0)
-                end_time_input = dt_time(end_hour, 0)
-
-                # Only create schedule if start and end times exist
-                if start_time_input and end_time_input:
-                    new_schedule = Schedule(
-                        movie_id=new_movie.id,
-                        venue_id=new_venue.id,
-                        date=schedule_date_obj,
-                        start_time=start_time_input,
-                        end_time=end_time_input
-                    )
-                    db.session.add(new_schedule)
-                    db.session.commit()
-                    print("Schedule added.")
-                else:
-                    print("Incomplete schedule info, not adding to database.")
-
-            except ValueError as e:
-                print(f"Error parsing scheduled_date: {e}")
-        else:
-            print("No schedule provided, skipping database insert.")
-
-
-    flash("Movie uploaded successfully!", "success")
-    return redirect(url_for('admin_dashboard'))
+from datetime import date
 
 @app.route('/view_movie/<int:movie_id>')
 def view_movie(movie_id):
@@ -302,12 +270,28 @@ def view_movie(movie_id):
         return redirect(url_for('gotologin'))
 
     movie = Movies.query.get_or_404(movie_id)
-
+    schedule = Schedule.query.filter_by(movie_id=movie.id).first()
     venue = Venue.query.filter_by(movie_id=movie.id).first()
-    tickets = Tickets.query.filter_by(movie_id=movie.id).first()
 
-    return render_template('view_movie.html', movie=movie, venue=venue, tickets=tickets)
+    status = None
 
+    if schedule and schedule.date:  # make sure schedule exists
+        today = date.today()
+
+        if schedule.date == today:
+            status = 'onscreen'
+        elif schedule.date > today:
+            status = 'onschedule'
+        else:
+            status = 'ended'
+
+    return render_template(
+        'view_movie.html',
+        movie=movie,
+        venue=venue,
+        schedule=schedule,
+        status=status
+    )
 @app.route('/admin_dashboard')
 def admin_dashboard():
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -325,6 +309,7 @@ def admin_dashboard():
             "venue_name": v.venue_name,
             "venue_link": v.venue_linkMap,
             "venue_room": v.venue_room,
+            "venue_availability": v.venue_availability,
             "venue_cap": v.venue_cap,
             "row": v.venue_row,
             "column": v.venue_col,
@@ -351,6 +336,7 @@ def get_venues():
             "id": v.id,
             "venue_name": v.venue_name,
             "venue_link": v.venue_linkMap,
+            "venue_availability": v.venue_availability,
             "room": v.venue_room,
             "cap": v.venue_cap,
             "row": v.venue_row,
@@ -434,7 +420,7 @@ def register():
         flash("Email already exists. Please choose a different one.", "danger")
         return render_template('login.html')
 
-    new_user = User(username=username, email=email, access='active')
+    new_user = User(username=username, email=email, role='admin', access='active')
     new_user.set_password(password)
     db.session.add(new_user)
     db.session.commit()
@@ -446,6 +432,373 @@ def register():
 
     flash("Registration successful!", "success")
     return redirect(url_for('user_dashboard'))
+
+
+
+# ======================= CRUD FOR MOVIE =======================
+@app.route('/add_movie', methods=['GET', 'POST'])
+def add_movie():
+    if request.method == 'POST':
+        
+        poster_file = request.files.get('poster')
+        trailer_file = request.files.get('trailer')
+        venue_image_file = request.files.get('venue_image')
+
+        # --- Poster Validation ---
+        if not poster_file or poster_file.filename == "":
+            flash("Please upload a movie poster.", "danger")
+            return redirect(url_for('admin_dashboard'))
+
+        if not allowed_file(poster_file.filename, ALLOWED_IMAGE_EXTENSIONS):
+            flash("Poster must be an image file.", "danger")
+            return redirect(url_for('admin_dashboard'))
+
+        # --- Trailer OPTIONAL ---
+        trailer_filename = None
+        if trailer_file and trailer_file.filename != "":
+            if not allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS):
+                flash("Trailer must be an MP4 video.", "danger")
+                return redirect(url_for('admin_dashboard'))
+            trailer_filename = secure_filename(trailer_file.filename)
+            trailer_file.save(os.path.join(app.config['UPLOAD_FOLDER'], trailer_filename))
+
+        # --- Venue Image OPTIONAL ---
+        venue_filename = None
+        if venue_image_file and venue_image_file.filename != "":
+            if not allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
+                flash("Venue image must be an image file.", "danger")
+                return redirect(url_for('admin_dashboard'))
+            venue_filename = secure_filename(venue_image_file.filename)
+            venue_image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], venue_filename))
+
+        if not allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
+            flash("Venue image must be an image file.", "danger")
+            return redirect(url_for('admin_dashboard'))
+
+        # --- Movie Info ---
+        movie_name = request.form.get('movie_name')
+        duration = request.form.get('duration')
+        language = request.form.get('language') or 'English'
+        release_date = request.form.get('release_date')
+        genres = request.form.getlist('genres[]')
+        venue_name = request.form.get('venue_name')
+        venue_availability = request.form.get('venue_availability')
+        room = request.form.get('room')
+        age_restrict = request.form.get('age_restrict')
+        
+        venue_link = request.form.get('venue_link')
+        description = request.form.get('description')
+        venue_cap = request.form.get('cap')
+        
+        # Get the full schedule data from hidden input (format: date | date | time ||| date | date | time)
+        venue_date = request.form.get('venue_date') or ''
+        scheduled_date = venue_date
+        print(f"DEBUG: Raw venue_date length={len(venue_date) if venue_date else 0}, value='{venue_date[:100]}...'")
+
+        # --- Save Files: only store filename in DB ---
+        poster_filename = trailer_filename = venue_filename = None
+
+        if allowed_file(poster_file.filename, ALLOWED_IMAGE_EXTENSIONS):
+            poster_filename = secure_filename(poster_file.filename)
+            poster_file.save(os.path.join(app.config['UPLOAD_FOLDER'], poster_filename))
+
+        if allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS):
+            trailer_filename = secure_filename(trailer_file.filename)
+            trailer_file.save(os.path.join(app.config['UPLOAD_FOLDER'], trailer_filename))
+
+        if allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
+            venue_filename = secure_filename(venue_image_file.filename)
+            venue_image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], venue_filename))
+
+        genre_string = ", ".join(genres)
+        
+        if release_date:
+            try:
+                release_date_obj = datetime.strptime(release_date, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Invalid release date format. Use YYYY-MM-DD.", "danger")
+                return redirect(url_for('admin_dashboard'))
+        else:
+            release_date_obj = None 
+            
+        rows_str = request.form.get('rows', '10')
+        cols_str = request.form.get('cols', '16')
+        row_gap_str = request.form.get('row-gap', '0')
+        col_gap_str = request.form.get('col-gap', '4')
+
+        rows = int(rows_str)
+        cols = int(cols_str)
+        capacity = rows * cols
+
+        # --- Save Movie ---
+        new_movie = Movies(
+            movie_name=movie_name,
+            description=description,
+            movie_image=poster_filename,
+            movie_trailer=trailer_filename,
+            movie_date_created=release_date_obj,
+            language=language,
+            duration=duration,
+            genre=genre_string,
+            age_restrict=age_restrict,
+        )
+
+        db.session.add(new_movie)
+        db.session.flush()  # get movie id without committing
+
+
+        # --- Check if venue already exists ---
+        existing_venue = Venue.query.filter_by(
+            venue_name=venue_name,
+            venue_room=room,
+            venue_row=rows,
+            venue_col=cols,
+            venue_row_gap=int(row_gap_str),
+            venue_col_gap=int(col_gap_str),
+            venue_cap=capacity
+        ).first()
+
+        if existing_venue:
+            venue_id_to_use = existing_venue.id
+            print("Venue already exists. Using existing venue.")
+        else:
+            new_venue = Venue(
+                venue_name=venue_name,
+                venue_room=room,
+                venue_image=venue_filename,
+                venue_availability=venue_availability,
+                venue_linkMap=venue_link,
+                venue_row=rows,
+                venue_col=cols,
+                venue_row_gap=int(row_gap_str),
+                venue_col_gap=int(col_gap_str),
+                venue_cap=capacity
+            )
+
+            db.session.add(new_venue)
+            db.session.flush()   # get venue id
+            venue_id_to_use = new_venue.id
+            print("New venue created.")
+
+        if scheduled_date:
+            try:
+                print(f"DEBUG: Split into {len([s for s in scheduled_date.split('|||') if s.strip()])} schedules")
+                schedules = scheduled_date.split("|||")
+                schedule_count = 0
+
+                try:
+                    duration_minutes = int(duration or 120)
+                except (ValueError, TypeError):
+                    duration_minutes = 120
+                    print(f"DEBUG: Invalid duration '{duration}', default 120min")
+                duration_hours = duration_minutes // 60
+
+                for sched in schedules:
+                    parts = [p.strip() for p in sched.split("|")]
+
+                    if len(parts) < 3:
+                        print(f"Skipping invalid schedule: {sched}")
+                        continue
+
+                    date_str = parts[0]
+                    start_time_str = parts[2]
+
+                    schedule_date_obj = datetime.strptime(date_str, "%b %d, %Y").date()
+
+                    # Parse hour from HH:MM
+                    if ':' in start_time_str:
+                        start_hour = int(start_time_str.split(':')[0])
+                    else:
+                        start_hour = int(start_time_str)
+
+                    start_time_input = dt_time(start_hour, 0)
+
+                    # Calculate end time using duration
+                    end_hour = (start_hour + duration_hours) % 24
+                    end_time_input = dt_time(end_hour, 0)
+
+                    new_schedule = Schedule(
+                        movie_id=new_movie.id,
+                        venue_id=venue_id_to_use,
+                        date=schedule_date_obj,
+                        start_time=start_time_input,
+                        end_time=end_time_input
+                    )
+
+                    db.session.add(new_schedule)
+                    schedule_count += 1
+                    print(f"Added schedule: {schedule_date_obj} {start_time_input}-{end_time_input}")
+
+                flash(f'Movie added with {schedule_count} schedules!', 'success')
+
+            except ValueError as e:
+                flash(f'Schedule date/time parse error: {str(e)}', 'danger')
+                print(f"Parse error: {e}")
+            except Exception as e:
+                flash(f'Schedule creation error: {str(e)}', 'danger')
+                print(f"Unexpected error: {e}")
+
+        db.session.commit()
+
+        flash(f"Movies added successfully! Schedules: {schedule_count if 'schedule_count' in locals() else 0}", "success")
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/delete_movie/<int:movie_id>', methods=['DELETE'])
+def delete_movie(movie_id):
+    try:
+        movie = Movies.query.get_or_404(movie_id)
+
+        for s in movie.schedules:
+            db.session.delete(s)
+
+        db.session.delete(movie)
+        db.session.commit()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print("DELETE ERROR:", e)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/delete_schedule/<int:schedule_id>', methods=['DELETE'])
+def delete_schedule(schedule_id):
+
+    schedule = Schedule.query.get_or_404(schedule_id)
+
+    db.session.delete(schedule)
+    db.session.commit()
+
+    return jsonify({"success": True})
+@app.route('/update_movie/<int:movie_id>', methods=['POST'])
+def update_movie(movie_id):
+
+    movie = Movies.query.get_or_404(movie_id)
+    
+    print("🔥 UPDATE HIT")
+    print(request.form)
+    print(request.files)
+
+    movie.movie_name = request.form.get('movie_name')
+    movie.duration = request.form.get('duration')
+    movie.language = request.form.get('language')
+    movie.description = request.form.get('description')
+    movie.age_restrict = request.form.get('age_restrict')
+    movie.genre = ", ".join(request.form.getlist('genres[]'))
+    
+    movie.release_date = datetime.strptime(request.form['release_date'],"%Y-%m-%d").date()
+
+    poster = request.files.get('poster')
+    if poster and poster.filename:
+        filename = f"{uuid.uuid4()}_{secure_filename(poster.filename)}"
+        poster.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        movie.movie_image = filename
+
+    trailer = request.files.get('trailer')
+    if trailer and trailer.filename:
+        filename = f"{uuid.uuid4()}_{secure_filename(trailer.filename)}"
+        trailer.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        movie.trailer = filename
+
+    db.session.commit()
+    
+    print("✅ UPDATED:", movie.movie_name, movie.genre)
+
+    flash("Movie updated successfully", "success")
+    return redirect(url_for('movieViewAdmin'))
+
+@app.route("/api/venue/create", methods=["POST"])
+def create_venue():
+    try:
+        data = request.get_json()
+        
+        print("📦 RECEIVED DATA:", data)
+
+        if not data:
+            return jsonify({"success": False, "error": "No JSON received"}), 400
+
+        movie_id = data.get("movie_id")
+        venue = data.get("venue")
+        schedules = data.get("schedules", [])
+
+        if not movie_id or not venue:
+            return jsonify({"success": False, "error": "Missing movie_id or venue"}), 400
+
+        venue_id = insert_venue(venue)
+
+        for s in schedules:
+            date_obj = datetime.strptime(s.get("date"), "%b %d, %Y").date()
+            start_time_obj = datetime.strptime(s.get("startTime"), "%H:%M").time()
+            end_time_obj = datetime.strptime(s.get("endTime"), "%H:%M").time()
+            
+            insert_schedule(
+                venue_id=venue_id,
+                movie_id=movie_id,
+                date=date_obj,
+                start=start_time_obj,
+                end=end_time_obj
+            )
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print("🔥 ERROR:", e)
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+def insert_schedule(venue_id, date, start, end, movie_id):
+
+    new_schedule = Schedule(
+        venue_id=venue_id,
+        movie_id=movie_id,
+        date=date,
+        start_time=start,
+        end_time=end,
+        active="True"
+    )
+
+    db.session.add(new_schedule)
+    db.session.commit()
+
+    return new_schedule.id
+
+def insert_venue(venue):
+
+    rows = int(venue.get("rows") or 0)
+    cols = int(venue.get("cols") or 0)
+    cap = rows * cols or None
+
+    # 🔍 Check if venue already exists
+    existing_venue = Venue.query.filter_by(
+        venue_name=venue.get("name"),
+        venue_room=venue.get("room"),
+        venue_row=rows,
+        venue_col=cols,
+        venue_row_gap=venue.get("row_gap"),
+        venue_col_gap=venue.get("col_gap"),
+    ).first()
+
+    # ✅ If exists, reuse it
+    if existing_venue:
+        return existing_venue.id
+
+    # 🆕 Otherwise create new
+    new_venue = Venue(
+        venue_name=venue.get("name"),
+        venue_image=venue.get("image"),
+        venue_linkMap=venue.get("link"),
+        venue_room=venue.get("room"),
+        venue_cap=cap,
+        venue_row=rows,
+        venue_col=cols,
+        venue_row_gap=venue.get("row_gap"),
+        venue_col_gap=venue.get("col_gap"),
+        venue_availability=venue.get("availability"),
+    )
+
+    db.session.add(new_venue)
+    db.session.commit()
+
+    return new_venue.id
 
 if __name__ == '__main__':
 

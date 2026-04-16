@@ -1,16 +1,8 @@
-# Fix Venue Form Validation Errors (Invalid form control not focusable)
-
-## Status: [IN PROGRESS] 
+# Movie Genre Edit Prefill TODO
 
 ## Steps:
-- [x] **Step 1**: Update `static/js/admin_seat_plan.js` ✅ - Added dynamic `required` toggling (`setVenueRequired()`), open/edit/done/cancel/backdrop handlers.
-- [ ] **Step 2**: Verify no console errors on page load (hidden inputs).
-- [ ] **Step 3**: Test venue modal: Open → validation works → close → no errors.
-- [ ] **Step 4**: Run `py main.py`, load admin dashboard, confirm fix in browser console.
-- [ ] **Step 5**: Complete tests, attempt_completion.
-
-**Changes**: JS now sets required=false (hidden), true (visible). Preserves UX/backend.
-
-**Test**: Reload page → check console (F12). Click "Check Venue" → validate → submit form.
-**Run**: `py main.py`
-
+1. [x] Add edit button to templates/movieViewAdmin.html movie cards
+2. [x] Add /admin/edit_movie/<int:movie_id> route in main.py (GET: show form with prefilled genres; POST: update genres)
+3. [x] Create templates/editMovie.html with genre checkboxes prefilled from movie.genre.split(', ')
+4. [x] Test: Add movie with genres → Go to movies → Click Edit → Verify prefill → Submit update
+5. [x] [Complete] Run `py main.py` and verify.

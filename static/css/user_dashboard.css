@@ -54,14 +54,14 @@ body {
 /* Movie Grid & Cards */
 .movie-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 30px;
 }
 
 .movie-card {
     position: relative;
     border-radius: 10px;
-    overflow: hidden; /* Clips the image and details-btn */
+    overflow: hidden; 
     background: #000;
     transition: transform 0.3s;
 }

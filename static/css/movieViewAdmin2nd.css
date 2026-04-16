@@ -1,0 +1,518 @@
+.assign-schedule {
+    display: flex;
+    justify-content: center;
+}
+
+/* Main Button */
+.Btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 10px;
+    width: 140px;
+    height: 45px;
+    border: none;
+    border-radius: 40px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #46e55e, #76ed3a);
+    box-shadow: 0 8px 20px rgba(70, 229, 150, 0.3);
+}
+
+/* Plus icon box */
+.Btn .sign {
+    width: 40px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+    color: rgb(0, 0, 0);
+    transition: width 0.3s ease;
+}
+
+/* Text */
+.Btn .text {
+    color: rgb(0, 0, 0);
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Hover effect */
+.Btn:hover {
+    width: 170px;
+    box-shadow: 0 10px 25px rgba(58, 237, 213, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Expand icon area slightly on hover */
+.Btn:hover .sign {
+    width: 45px;
+}
+
+/* Click effect */
+.Btn:active {
+    transform: scale(0.95);
+}
+
+.addSchedModal {
+    display: none;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+
+    justify-content: center;
+    align-items: center;
+}
+
+/* Modal box */
+.addSchedModal-content {
+    width: 100%;
+    height: 100%;
+    background: #363636;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    z-index: 9999;
+
+    animation: popIn 0.25s ease-out;
+}
+
+/* Header */
+.addSchedModal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #46e59d, #3aed58);
+    color: #163b00;
+}
+
+.addSchedModal-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.AddActionBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 12vw;
+    height: auto;
+    padding: auto;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Close button */
+.addSchedModal-close, .confirmAddSchedModal {
+    font-size: 1vw;
+    margin-left: 1vw;
+    font-weight: 500;
+    color: #000000;
+    cursor: pointer;
+    transition: 0.2s;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.addSchedModal-close:hover {
+    transform: scale(1.0);
+    color: #ffffff;
+    background: #7a0000;
+}
+
+.confirmAddSchedModal:hover {
+    transform: scale(1.0);
+    color: #ffffff;
+    background: #005203;
+}
+
+
+.addSchedModal-body {
+    display: grid;
+    grid-template-columns: 0.8fr 1fr;
+    gap: 10px;
+    grid-template-areas: 
+    "image presets"
+    "image infos"
+    "seat-plan seat-plan"
+    "time time"
+    "dispTime dispTime";
+    padding: 20px;
+}
+
+.venue-schedule {
+    grid-area: dispTime;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.ActScheduleBtn {
+    grid-area: actionbtn;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.AddScheduleTime {
+    grid-area: time;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.time-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.time-label {
+    color: #ffffff;
+    font-size: 1.2vw;
+    font-weight: 500;
+    margin-bottom: 1vh;
+}
+
+.selected-date-time {
+    font-size: 1.2vw;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.time-size {
+    width: 100%;
+    border-radius: 20px;
+    padding: 0 0 0 10px;
+    height: 4vh;
+    border: none;
+    outline: none;
+    box-shadow: 0px 10px 20px -18px;
+    font-size: 1.2vw;
+    background-color: #5a5a5a;
+    color: #ffffff;
+    transition: all 0.15s ease-in-out;
+}
+
+.selectScheduleModalBackdrop, .editScheduleModalBackdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999999999;
+}
+
+.selectScheduleModal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #3b3b3b;
+    width: 420px;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.selectScheduleModal h4 {
+    color: white;
+}
+
+.ActScheduleBtn .done-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+
+.ActScheduleBtn .done-btn:hover {
+    background-color: #218838;
+    transform: scale(1.03);
+}
+
+.ActScheduleBtn .cancel-btn  {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+
+.ActScheduleBtn .cancel-btn :hover {
+    background-color: #c82333;
+    transform: scale(1.03);
+}
+
+.add-btn {
+    background-color: #007693;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+
+.add-btn:hover {
+    background-color: #006080;
+    transform: scale(1.03);
+}
+
+.schedule-presets {
+    grid-area: presets;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #474747;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    padding: 15px;
+    overflow: auto;
+    color: #fff;
+    font-size: 1.2vw;
+    overflow: hidden;
+}
+
+.file-container {
+    grid-area: image;
+}
+
+.seat-plan-generator {
+    grid-area: seat-plan;
+}
+
+.schedule-infos {
+    grid-area: infos;
+    background: #393939;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    padding: 15px;
+    overflow: auto;
+    color: #fff;
+    font-size: 1.2vw;
+    overflow: hidden;
+}
+
+.schedule-infos label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 1.5vw;
+}
+
+.schedule-infos input {
+    width: 100%;
+    height: 5.5vh;
+    color: #fff;
+    background: #2b2b2b;
+    padding: 5px;
+    border-radius: 5px;
+    border: none;
+    margin-bottom: 10px;
+}
+
+.schedule-infos select, 
+.schedule-presets select {
+    width: 100%;
+    height: 5.5vh;
+    color: #fff;
+    background: #2b2b2b;
+    padding: 5px;
+    border-radius: 5px;
+    border: none;
+    margin-bottom: 10px;
+    margin-left: 5px;
+}
+
+.done-btn.venue,
+.cancel-btn.venue,
+.done-btn.venue,
+#done-btn-venue,
+#cancel-btn-venue {
+    grid-area: buttons;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    z-index: 10000 !important;
+    margin-bottom: 20px;
+}
+
+#venue-data {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Each schedule row */
+.venue-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #1e1e2f;
+    width: 56vw;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: 0.2s ease;
+}
+
+.venue-row:hover {
+    transform: translateY(-2px);
+    background: #24243a;
+}
+
+/* Text format */
+.venue-text {
+    font-size: 14px;
+    letter-spacing: 0.3px;
+    font-family: Arial, sans-serif;
+}
+
+/* Button group */
+.venue-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Edit button */
+.venue-edit {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.venue-edit:hover {
+    background: #2980b9;
+}
+
+/* Delete button */
+.venue-delete {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.venue-delete:hover {
+    background: #c0392b;
+}
+
+.EditMovieActionBtn {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Button */
+.action-movie-btn {
+    background: linear-gradient(135deg, #4dfffc, #00e69d);
+    width: 20vw;
+    height: 7vh;
+    color: rgb(0, 0, 0);
+    border: none;
+    padding: 10px 18px;
+    font-size: 1.5vw;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.9s ease-in-out;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Hover effect */
+.action-movie-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+    animation: pulseState 5s infinite;
+}
+
+@keyframes pulseState {
+    0% {
+        transform: translateY(-2px) scale(1);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+        filter: brightness(1);
+    }
+
+    50% {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 10px 25px rgba(0, 230, 157, 0.4),
+                    0 0 20px rgba(77, 255, 252, 0.3);
+        filter: brightness(1.1);
+    }
+
+    100% {
+        transform: translateY(-2px) scale(1);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+        filter: brightness(1);
+    }
+}
+
+/* Click effect */
+.action-movie-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Focus accessibility */
+.action-movie-btn:focus {
+    outline: 2px solid rgba(255, 77, 77, 0.5);
+    outline-offset: 2px;
+}
+
+/* Animation */
+@keyframes popIn {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+

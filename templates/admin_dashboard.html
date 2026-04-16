@@ -5,13 +5,15 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_seat_plan.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/calendar-pack.css') }}">
+    <script src="{{ url_for('static', filename='js/calendar-pack.js') }}"></script>
     <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
     <script src="{{ url_for('static', filename='js/admin_seat_plan.js') }}"></script>
 {% endblock %}
 
 {% block body %}
 
-    <aside class="sidebar sidehide" id="sidebar">
+    <aside class="sidebar" id="sidebar">
         <nav class="nav">
             <div class="logoandname">
                 <header class="head">
@@ -268,18 +270,12 @@
                             <div class="availability">
                                 <h4>STATUS</h4>
                                     <select title="Age Restriction" id="age_restrict" name="age_restrict" class="input" required>
-                                        <option value="G">G — General Audiences (All Ages)</option>
+                                        <option value="G" selected>G — General Audiences (All Ages)</option>
                                         <option value="PG">PG — Parental Guidance Suggested</option>
                                         <option value="PG-13">PG-13 — Parents Strongly Cautioned (13+)</option>
                                         <option value="R">R — Restricted (17+)</option>
                                         <option value="NC-17">NC-17 — Adults Only (18+)</option>
                                         <option value="18+">18+ — Explicit Content</option>
-                                    </select>
-                                    <select title="status" class="status-select" id="statusSelect" class="status-select" name="movie_status" required>
-                                        <option class="input" value="onscreen" selected>On Screen</option>
-                                        <option class="input" value="schedule">On Schedule</option>
-                                        <option class="input" value="cancel">Cancelled</option>
-                                        <option class="input" value="hold">On Hold</option>
                                     </select>
                             </div>
                         </div>
@@ -321,15 +317,14 @@
                                 <input type="time" title="Time" class="time-size" id="time1" name="time_avail">
                                 <label class="time-label">Ending Time</label>
                                 <input type="time" title="Time" class="time-size" id="time2" name="time_avail2">
-
                             </div>
 
                             <span class="selected-date-time">
                                 <p><strong>Date and Time:</strong> <span id="start-date">none</span></p>
                             </span>
                         
-                            </div>
-                    <div>
+                        </div>
+                    <div class="ActionBtns">
                         <button type="button" class="done-btn" id="done-btn">Done</button>
                         <button type="button" class="cancel-btn" id="cancel-btn">Cancel</button>
                     </div>
@@ -342,8 +337,8 @@
                         <div class="venue-border">
                             <div class="venue-info"> 
                                 <h4>VENUE INFORMATION</h4>
-                                <input class="input" name="venue_name" placeholder="Venue Name" type="text" required>
-                                    <select title="Availability" class="input" name="venue_availability" required>
+                                <input class="input" id="venue-name" name="venue_name" placeholder="Venue Name" type="text" required>
+                                    <select title="Availability" id="venue_availability" class="input" name="venue_availability" required>
                                             <option value="Everyday">Everyday</option>
 
                                             <option value="M">M</option>
@@ -378,7 +373,7 @@
                                 <div class="map-border">
                                     <div class="map-link"> 
                                         <h4>MAP LINK</h4>
-                                        <input class="input" name="venue_link" placeholder="Venue Link" type="text" required>
+                                        <input class="input" id="venue-link" name="venue_link" placeholder="Venue Link" type="text" required>
                                     </div>
                                     <div class="logoandname">
                                     <header class="head">
@@ -391,7 +386,7 @@
                             </div>
                             <div class="bordervenue" id="bordervenue">
                                 <div class="file-container"> 
-                                    <div class="file-header"> 
+                                    <div class="file-header-venue"> 
                                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
                                         <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg> <p>UPLOAD VENUE IMAGE</p>
                                     </div> 
@@ -405,7 +400,7 @@
                             </div>
                             <div class="seat-plan-generator">
                                 <h4>SEAT PLAN GENERATOR</h4>
-                                <input class="input" name="room" placeholder="Room" type="text" required>
+                                <input class="input" id="room" name="room" placeholder="Room" type="text" required>
                                 
                                 <div class="seat-controls">
                                     <label for="rows">Rows (1-26):</label>

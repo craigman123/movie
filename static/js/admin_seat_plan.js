@@ -1,22 +1,18 @@
+
+// global declaration ni very important
+window.VENUE_STATE = {
+    file: null,
+    imageUrl: null
+};
+
+
+
 let VENUES = [];
 let venueData = null;
+let seatsData = [];
+let selectedSeats = new Set();
 
-document.addEventListener('DOMContentLoaded', () => {
-const seatContainer = document.getElementById('seat-container');
-  const capacityInfo = document.getElementById('capacity-info');
-  const selectedInfo = document.getElementById('selected-info');
-  const generateBtn = document.getElementById('generate');
-  const seatSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"> <path d="M19 13V4c0-1.103-.897-2-2-2H7c-1.103 0-2 .897-2 2v9a1 1 0 0 0-1 1v8h2v-5h12v5h2v-8a1 1 0 0 0-1-1zm-2-9v9h-2V4h2zm-4 0v9h-2V4h2zM7 4h2v9H7V4z"/> </svg>`;
-
-  let seatsData = [];
-  let selectedSeats = new Set();
-
-  function getRowLabel(index) {
-    return String.fromCharCode(65 + index);
-  }
-
-  // Generate seats data with all seats available
-  function generateSeats(rows, cols) {
+function generateSeats(rows, cols) {
     seatsData = [];
     for (let r = 0; r < rows; r++) {
       const rowSeats = [];
@@ -28,11 +24,15 @@ const seatContainer = document.getElementById('seat-container');
     selectedSeats.clear();
   }
 
-  function updateSelectedInfo() {
+  function getRowLabel(index) {
+    return String.fromCharCode(65 + index);
+  }
+
+  function updateSelectedInfo(selectedSeats, selectedInfo) {
     selectedInfo.textContent = `Selected Seats: ${selectedSeats.size}`;
   }
 
-  function renderSeats(colGap, rowGap) {
+  function renderSeats(colGap, rowGap, seatContainer, seatSVG, capacityInfo, selectedInfo) {
     const rows = seatsData.length;
     const cols = seatsData[0]?.length || 0;
     seatContainer.innerHTML = '';
@@ -110,8 +110,15 @@ const seatContainer = document.getElementById('seat-container');
 
     seatContainer.appendChild(table);
     capacityInfo.textContent = `Total Capacity: ${rows * cols} seats`;
-    updateSelectedInfo();
+    updateSelectedInfo(selectedInfo, selectedSeats);
   }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const seatContainer = document.getElementById('seat-container');
+  const capacityInfo = document.getElementById('capacity-info');
+  const selectedInfo = document.getElementById('selected-info');
+  const generateBtn = document.getElementById('generate');
+  const seatSVG = `<svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" transform="scale(-1,1) "><path d="M22 8h-1V4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v4H2c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h2v3h2v-3h12v3h2v-3h2c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1M5 5h14v3h-1c-.55 0-1 .45-1 1v3H7V9c0-.55-.45-1-1-1H5zm16 12H3v-7h2v3c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3h2z"></path></svg>`;
 
   generateBtn.addEventListener('click', () => {
     const rows = parseInt(document.getElementById('rows').value, 10);
@@ -129,7 +136,7 @@ const seatContainer = document.getElementById('seat-container');
     }
 
     generateSeats(rows, cols);
-    renderSeats(colGap, rowGap);
+    renderSeats(colGap, rowGap, seatContainer, seatSVG, capacityInfo, selectedInfo);
   });
 
   // Zoom slider
@@ -153,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const cancelVenueBtn = document.querySelector("#cancel-btn-venue");
     const doneVenueBtn = document.querySelector("#done-btn-venue");
     
+    
     // Venue input selectors for dynamic required
     const venueInputNames = ['venue_name', 'venue_link', 'room'];
     
@@ -165,12 +173,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (fileInput) fileInput.required = required;
     }
 
+    let imageName = null;
+
     function updateVenueImagePreview(fileName) {
-        const fileContainer = document.querySelector('.file-header');
+        const fileContainer = document.querySelector('.file-header-venue');
         if (!fileContainer) return;
 
         const cleanName = fileName.replace("uploads/", "");
         const imgUrl = `/static/uploads/${cleanName}`;
+
+        imageName = imgUrl;
 
         console.log("Preview URL:", imgUrl);
 
@@ -179,16 +191,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 style="
                     width:100%;
                     height:100%;
-                    object-fit:contain;
+                    object-fit:cover;
                     border-radius:12px;
                 ">
         `;
     }
 
+    function ImagePreview() {
+        let input = imageName;
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                updateVenueImagePreview(input.files[0].name);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
 
 
     
-    // Force clickable for all venue buttons
     [openVenueBtn, cancelVenueBtn, doneVenueBtn].forEach(btn => {
         btn.disabled = false;
         btn.style.pointerEvents = 'auto';
@@ -197,8 +219,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     let selectedVenue = null; // store selected venue
-
-    // Hide button if venue data exists
     const checkVenueBtnStatus = () => {
         // DISABLED: Prevents hiding button
         /*const venueDataDiv = document.getElementById('venue-data');
@@ -273,7 +293,6 @@ document.addEventListener("DOMContentLoaded", () => {
             image: venueImageName
         };
 
-        updateVenueImagePreview(venueImageName);
         renderVenueEntry(venueData);
         checkVenueBtnStatus(); // Hide button after adding venue
 
@@ -353,9 +372,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector('[name="venue_link"]').value = venueData.link;
         document.querySelector('[name="room"]').value = venueData.room;
 
-        // Update image preview
-        updateVenueImagePreview(venueData.image);
-
         setVenueRequired(true);
         venueModal.style.display = "flex";
     };
@@ -364,12 +380,15 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("change", function(e) {
         if (e.target.id !== "venue-select") return;
 
+        console.log("SELECT CHANGED");
+
         const venueId = e.target.value;
         const venue = VENUES.find(v => v.id == venueId);
         if (!venue) return;
 
         document.querySelector('[name="venue_name"]').value = venue.venue_name;
         document.querySelector('[name="venue_link"]').value = venue.venue_link;
+        document.querySelector('[name="venue_availability"]').value = venue.venue_availability;
         document.querySelector('[name="room"]').value = venue.room;
 
         // Update preview
@@ -473,3 +492,85 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 }
 
+document.addEventListener("DOMContentLoaded", async () => {
+    const select = document.getElementById("venue-select");
+    console.log("🔥 venue-select selected");
+
+    if (!select) {
+        console.log("venue-select not found");
+        return;
+    }
+
+    select.addEventListener("change", function () {
+
+        console.log("🔥 venue-select fired:", this.value);
+
+        const venue = VENUES.find(v => v.id == this.value);
+
+        if (!venue) {
+            console.log("❌ venue not found in VENUES");
+            return;
+        }
+
+        document.getElementById("venue-name").value = venue.venue_name;
+        document.getElementById("venue-link").value = venue.venue_link;
+        
+        document.getElementById("venue_availability").value = venue.venue_availability;
+        console.log("Availability value:", venue.venue_availability);
+        document.getElementById("room").value = venue.room;
+
+        console.log(venue.image);
+        updateVenueImagePreview(venue.image);
+        window.VENUE_STATE.imageUrl = venue.image;
+
+        document.getElementById("rows").value = venue.row;
+        document.getElementById("cols").value = venue.column;
+        document.getElementById("row-gap").value = venue.row_gap;
+        document.getElementById("col-gap").value = venue.col_gap;
+
+        document.getElementById("generate").click();
+        buildSeatPlan();
+    });
+
+    const seatContainer = document.getElementById('seat-container');
+    const capacityInfo = document.getElementById('capacity-info');
+    const selectedInfo = document.getElementById('selected-info');
+    const seatSVG = `<svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" transform="scale(-1,1) "><path d="M22 8h-1V4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v4H2c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h2v3h2v-3h12v3h2v-3h2c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1M5 5h14v3h-1c-.55 0-1 .45-1 1v3H7V9c0-.55-.45-1-1-1H5zm16 12H3v-7h2v3c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3h2z"></path></svg>`;
+
+
+    function buildSeatPlan() {
+        console.log("🔥 buildSeatPlan fired");
+        const rows = parseInt(document.getElementById("rows").value);
+        const cols = parseInt(document.getElementById("cols").value);
+        const colGap = parseInt(document.getElementById("col-gap").value);
+        const rowGap = parseInt(document.getElementById("row-gap").value);
+
+        goAbove(rows, cols, colGap, rowGap, seatContainer, seatSVG, capacityInfo, selectedInfo);
+    }
+});
+
+    function goAbove (rows, cols, colGap, rowGap, seatContainer, seatSVG, capacityInfo, selectedInfo) {
+        generateSeats(rows, cols);
+        renderSeats(colGap, rowGap, seatContainer, seatSVG, capacityInfo, selectedInfo);
+        updateSelectedInfo(selectedSeats, selectedInfo);
+    }
+
+
+    function updateVenueImagePreview(fileName) {
+        const fileContainer = document.querySelector('.file-header-venue');
+
+        const cleanName = fileName.replace("uploads/", "");
+        const imgUrl = `/static/uploads/${cleanName}`;
+
+        console.log("Preview URL:", imgUrl);
+
+        fileContainer.innerHTML = `
+            <img src="${imgUrl}" 
+                style="
+                    width:100%;
+                    height:100%;
+                    object-fit:cover;
+                    border-radius:12px;
+                ">
+        `;
+    }

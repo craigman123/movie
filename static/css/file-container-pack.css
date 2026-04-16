@@ -1,0 +1,59 @@
+.file-container {
+    height: 42vh;
+    width: 16.5vw;
+    border-radius: 20px;
+    box-shadow: 4px 4px 30px rgba(206, 206, 206, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    margin-bottom: 10px;
+    gap: 5px;
+    background-color: rgb(215, 215, 215);
+}
+
+.file-header, .file-header-venue {
+    font-size: 1vw;
+    flex: 1;
+    height: 180px;
+    width: 100%;
+    border: 2px dashed royalblue;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+img {
+    width: 101%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.file-header svg {
+  height: 12vh;
+  width: 12vw;
+}
+
+.file-header p {
+    font-weight: 700;
+  text-align: center;
+  color: black;
+}
+
+.file-footer {
+  background-color: rgba(0, 110, 255, 0.075);
+  font-size: 1vw;
+  width: 100%;
+  height: 5vh;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: black;
+  border: none;
+}

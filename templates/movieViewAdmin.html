@@ -2,7 +2,14 @@
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/movieViewAdmin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movieViewAdmin2nd.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/file-container-pack.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/seat-plan-generator-pack.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/calendar-pack.css') }}">
     <script src="{{ url_for('static', filename='js/movieViewAdmin.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/file-container-pack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/calendar-pack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin_seat_plan.js') }}"></script>
     <title>Admin Dashboard - Movies</title>
 {% endblock %}
 
@@ -31,7 +38,7 @@
                             </a>
                         </li>
                         <li class="menu-btn">
-                            <a href="{{ url_for('viewUsers') }}">
+                            <a href="{{ url_for('view_users') }}">
                             <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
                                 fill="#ffffff" viewBox="2 2 20 20" >
                                 <path d="M8.5 10.5c0 2 1.5 3.5 3.5 3.5s3.5-1.5 3.5-3.5S14 7 12 7s-3.5 1.5-3.5 3.5m5 0c0 .88-.62 1.5-1.5 1.5s-1.5-.62-1.5-1.5S11.12 9 12 9s1.5.62 1.5 1.5"></path><path d="m20.53 7.15-8-5c-.32-.2-.74-.2-1.06 0l-8 5c-.29.18-.47.5-.47.85v8c0 .34.18.67.47.85l8 5a1.01 1.01 0 0 0 1.06 0l8-5c.29-.18.47-.5.47-.85V8c0-.34-.18-.67-.47-.85M12 19.82l-3.1-1.94c.55-.56 1.29-.88 2.1-.88h2c.8 0 1.55.32 2.1.88zm7-4.38-2.19 1.37A4.97 4.97 0 0 0 13 15h-2c-1.48 0-2.87.68-3.81 1.81L5 15.44V8.55l7-4.38 7 4.38z"></path>
@@ -40,7 +47,7 @@
                             </a>
                         </li>
                         <li class="menu-btn">
-                            <a href="{{ url_for('viewSales') }}">
+                            <a href="{{ url_for('view_sales') }}">
                             <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh" 
                                 fill="#ffffff" viewBox="2 2 20 20" >
                                 <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path><path d="M12 11c-2 0-2-.63-2-1 0-.48.7-1 2-1 1.18 0 1.39.64 1.4 1.02l1-.02h1c0-1.03-.67-2.47-2.4-2.88V6h-2v1.09C9.03 7.42 8 8.72 8 10c0 1.12.52 3 4 3 2 0 2 .68 2 1 0 .42-.62 1-2 1-1.84 0-1.99-.86-2-1H8c0 .92.66 2.55 3 2.92V18h2v-1.09c1.97-.33 3-1.63 3-2.91 0-1.12-.52-3-4-3"></path>
@@ -58,7 +65,7 @@
                             </a>
                         </li>
                         <li class="menu-btn">
-                            <a href="{{ url_for('viewLogs') }}">
+                            <a href="{{ url_for('view_logs') }}">
                             <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
                                 fill="#ffffff" viewBox="2 2 20 20" >
                                 <path d="M4 11h16v2H4zm0-5h16v2H4zm0 10h16v2H4z"></path>
@@ -88,14 +95,39 @@
         </div>
     </aside>
 
-<div class="admin-dashboard">
     <main class="main-content">
         <section class="movies-section">
             <div class="movies-header">
                 <h4>MOVIES</h4>
-                <form method="GET" action="{{ url_for('movieViewAdmin') }}">
+                <div class="cards-container">
+                    <div class="card">
+                        <h3>TOTAL MOVIES</h3>
+                        <p>{{ movies|length }}</p>
+                    </div>
+                    <div class="card">
+                        <h3>SHOWING MOVIES</h3> 
+                        <p>{{ showing_movies|length }}</p>
+                    </div>
+                    <div class="card">
+                        <h3>COMING SOON</h3>
+                        <p>{{ coming_soon_movies|length }}</p>
+                    </div>
+                    <div class="card">
+                        <h3>ENDED MOVIES</h3>
+                        <p>{{ ended_movies|length }}</p>
+                    </div>
+                    <div class="card">
+                        <h3>NO SCHEDULE</h3>
+                        <p>{{ no_schedules_movies|length }}</p>
+                    </div>
+                    <div class="card">
+                        <h3>CANCELLED MOVIES</h3>
+                        <p>{{ cancelled_movies|length }}</p>
+                    </div>
+                </div>
+                <form method="GET" action="{{ url_for('movieViewAdmin') }}" class="search-container">
                     <input type="text" name="search" placeholder="Search movies..." value="{{ request.args.get('search', '') }}">
-                    <button type="submit"><i class="fas fa-search"></i></button>
+                    <button type="submit"><i class="fas fa-search"></i><svg  xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" viewBox="0 0 24 24" ><path d="M18 10c0-4.41-3.59-8-8-8s-8 3.59-8 8 3.59 8 8 8c1.85 0 3.54-.63 4.9-1.69l5.1 5.1L21.41 20l-5.1-5.1A8 8 0 0 0 18 10M4 10c0-3.31 2.69-6 6-6s6 2.69 6 6-2.69 6-6 6-6-2.69-6-6"></path></svg></button>
                 </form>
             </div>
 
@@ -107,14 +139,43 @@
                         <h5>{{ movie.movie_name }}</h5>
                         <p>{{ movie.genre }}</p>
                     </div>
-                    <div class="movie-status">
-                        {% if movie.status == 'Showing' %}
-                        <span class="status showing">SHOWING</span>
-                        {% elif movie.status == 'Coming Soon' %}
-                        <span class="status coming-soon">COMING SOON</span>
-                        {% elif movie.status == 'Ended' %}
-                        <span class="status ended">ENDED</span>
+                        {% if movie in cancelled_movies %}
+                            <span class="status cancelled">CANCELLED</span>
+
+                        {% elif movie in showing_movies %}
+                            <span class="status showing">SHOWING</span>
+
+                        {% elif movie in coming_soon_movies %}
+                            <span class="status coming-soon">COMING SOON</span>
+
+                        {% elif movie in ended_movies %}
+                            <span class="status ended">ENDED</span>
+
+                        {% else %}
+                            <span class="status unknown">NO SCHEDULE</span>
                         {% endif %}
+
+                    <div class="movie-actions">
+                        <button class="edit-btn"
+                            onclick="openEditModal(event)"
+                            data-id="{{ movie.id }}"
+                            data-schedules='{{ movie.schedule_data | tojson }}'
+                            data-genres="{{ movie.genre }}"
+                            data-name="{{ movie.movie_name }}"
+                            data-duration="{{ movie.duration }}"
+                            data-poster="{{ url_for('static', filename='uploads/' + movie.movie_image) }}"
+                            data-trailer="{{ url_for('static', filename='uploads/' + movie.movie_trailer) }}"
+                            data-movie_date="{{ movie.movie_date_created }}"
+                            data-language="{{ movie.language }}"
+                            data-age_restrict="{{ movie.age_restrict }}"
+                            data-description="{{ movie.description }}">
+                        Edit
+                        </button>
+                        <button class="delete-btn"
+                                onclick="deleteMovie(event)"
+                                data-movie-id="{{ movie.id }}">
+                            Delete
+                        </button>
                     </div>
                 </div>
                 {% endfor %}
@@ -124,7 +185,465 @@
             <p class="no-movies">No movies available.</p>
             {% endif %}
         </section>
+
+        <div id="backdrop">
+            <div class="movie-info-modal">
+                <form id="editForm" action="{{ url_for('update_movie', movie_id=movie.id) }}" method="POST" enctype="multipart/form-data" novalidate>
+                <input type="hidden" id="edit_movie_id" name="movie_id">
+                <button class="exit-btn" type="button" onclick="closeModal()" >X</button>
+
+                    <div class="movie-info-modal-content">
+                        <h4>EDIT MOVIE</h4>
+                        <!-- <button class="exit-btn" type="button" onclick="closeModal()" ><svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" ><path d="m7.76 14.83-2.83 2.83 1.41 1.41 2.83-2.83 2.12-2.12.71-.71.71.71 1.41 1.42 3.54 3.53 1.41-1.41-3.53-3.54-1.42-1.41-.71-.71 5.66-5.66-1.41-1.41L12 10.59 6.34 4.93 4.93 6.34 10.59 12l-.71.71z"></path></svg></button> -->
+                        
+                        <div class="image-container">
+                            <div class="borderposter" id="borderposter">    
+                                <div class="file-container"> 
+                                    <div class="file-header"> 
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
+                                        <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg> <p>UPLOAD MOVIE POSTER</p>
+                                    </div> 
+                                    <label for="fileposter" class="file-footer"> 
+                                        <svg fill="#000000" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z"></path></g></svg> 
+                                        <p>Select file</p> 
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="#000000" stroke-width="2"></path> <path d="M19.5 5H4.5" stroke="#000000" stroke-width="2" stroke-linecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="#000000" stroke-width="2"></path> </g></svg>
+                                    </label> 
+                                    <input id="fileposter" name="poster" type="file" accept="image/*">
+                                </div>
+                            </div>
+                            <div class="bordertrial" id="bordertrial">
+                                <div class="file-container"> 
+                                    <div class="file-header"> 
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
+                                        <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg> <p>UPLOAD VIDEO TRAILER</p>
+                                    </div> 
+                                    <label for="filetrailer" class="file-footer"> 
+                                        <svg fill="#000000" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z"></path></g></svg> 
+                                        <p>Select file</p> 
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="#000000" stroke-width="2"></path> <path d="M19.5 5H4.5" stroke="#000000" stroke-width="2" stroke-linecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="#000000" stroke-width="2"></path> </g></svg>
+                                    </label> 
+                                    <input id="filetrailer" name="trailer" type="file" accept="video/*"> 
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="genre-border">
+                            <div class="genre-section"> 
+                                <h2>GENRE</h2>
+                                <label class="custom-checkbox action">
+                                    <input type="checkbox" name="genres[]" value="Action">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Action</span>
+                                </label>
+                                <label class="custom-checkbox adventure">
+                                    <input type="checkbox" name="genres[]" value="Adventure">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Adventure</span>
+                                </label>
+                                <label class="custom-checkbox animation">
+                                    <input type="checkbox" name="genres[]" value="Animation">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Animation</span>
+                                </label>
+                                <label class="custom-checkbox comedy">
+                                    <input type="checkbox" name="genres[]" value="Comedy">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Comedy</span>
+                                </label>
+                                <label class="custom-checkbox drama">
+                                    <input type="checkbox" name="genres[]" value="Drama">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Drama</span>
+                                </label>
+                                <label class="custom-checkbox family">
+                                    <input type="checkbox" name="genres[]" value="Family">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Family</span>
+                                </label>
+                                <label class="custom-checkbox fantasy">
+                                    <input type="checkbox" name="genres[]" value="Fantasy">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Fantasy</span>
+                                </label>
+                                <label class="custom-checkbox horror">
+                                    <input type="checkbox" name="genres[]" value="Horror">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Horror</span>
+                                </label>
+                                <label class="custom-checkbox romance">
+                                    <input type="checkbox" name="genres[]" value="Romance">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Romance</span>
+                                </label>
+                                <label class="custom-checkbox sci-fi">
+                                    <input type="checkbox" name="genres[]" value="Sci-Fi">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Sci-fi</span>
+                                </label>
+                                <label class="custom-checkbox thriller">
+                                    <input type="checkbox" name="genres[]" value="Thriller">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Thriller</span>
+                                </label>
+                                <label class="custom-checkbox musical">
+                                    <input type="checkbox" name="genres[]" value="Musical">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Musical</span>
+                                </label>
+                                <label class="custom-checkbox historical">
+                                    <input type="checkbox" name="genres[]" value="Historical">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Historical</span>
+                                </label>
+                                <label class="custom-checkbox mistery">
+                                    <input type="checkbox" name="genres[]" value="Mistery">
+                                    <div class="checkbox-box"></div>
+                                    <span class="checkbox-text">Mistery</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="availandInfo">
+                            <div class="info-border">
+                                <div class="movie-info"> 
+                                    <h4>MOVIE INFORMATION</h4>
+                                    <input class="input" name="movie_name" id="movie-name" type="text" required>
+                                    <input class="input" name="duration" id="movie-duration" type="text" required>
+                                        <select title="Language" id="movie-language" name="language" class="input" required>
+                                            <option value="english" selected>English</option>
+                                            <option value="filipino">Filipino / Tagalog</option>
+                                            <option value="spanish">Spanish</option>
+                                            <option value="french">French</option>
+                                            <option value="german">German</option>
+                                            <option value="italian">Italian</option>
+                                            <option value="portuguese">Portuguese</option>
+                                            <option value="russian">Russian</option>
+                                            <option value="chinese">Chinese (Mandarin)</option>
+                                            <option value="cantonese">Chinese (Cantonese)</option>
+                                            <option value="japanese">Japanese</option>
+                                            <option value="korean">Korean</option>
+                                            <option value="hindi">Hindi</option>
+                                            <option value="urdu">Urdu</option>
+                                            <option value="arabic">Arabic</option>
+                                            <option value="turkish">Turkish</option>
+                                            <option value="thai">Thai</option>
+                                            <option value="vietnamese">Vietnamese</option>
+                                            <option value="indonesian">Indonesian</option>
+                                            <option value="malay">Malay</option>
+                                            <option value="swahili">Swahili</option>
+                                            <option value="dutch">Dutch</option>
+                                            <option value="polish">Polish</option>
+                                            <option value="swedish">Swedish</option>
+                                            <option value="norwegian">Norwegian</option>
+                                            <option value="danish">Danish</option>
+                                            <option value="finnish">Finnish</option>
+                                            <option value="greek">Greek</option>
+                                            <option value="hebrew">Hebrew</option>
+                                            <option value="persian">Persian / Farsi</option>
+                                            <option value="bengali">Bengali</option>
+                                            <option value="tamil">Tamil</option>
+                                            <option value="telugu">Telugu</option>
+                                            <option value="marathi">Marathi</option>
+                                            <option value="gujarati">Gujarati</option>
+                                            <option value="punjabi">Punjabi</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    <input title = "Release Date" class="input" name="release_date" id="release-date" type="date" required>
+                                </div>
+                            </div>
+
+                                <div class="avail-border">
+                                    <div class="availability">
+                                    <h4>STATUS</h4>
+                                        <select title="Age Restriction" id="age_restrict" name="age_restrict" class="input" required>
+                                            <option value="G">G — General Audiences (All Ages)</option>
+                                            <option value="PG">PG — Parental Guidance Suggested</option>
+                                            <option value="PG-13">PG-13 — Parents Strongly Cautioned (13+)</option>
+                                            <option value="R">R — Restricted (17+)</option>
+                                            <option value="NC-17">NC-17 — Adults Only (18+)</option>
+                                            <option value="18+">18+ — Explicit Content</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="description-border">
+                                <h4>MOVIE DESCRIPTION</h4>
+                                <textarea name="description" id="description" placeholder="Description"></textarea>
+                            </div>
+
+                            <div class="EditMovieActionBtn">
+                                <button type="button" class="action-movie-btn" id="doneMovieButton">Confirm</button>
+                            </div>
+
+                        </form>
+
+                        <div class="vsched-border">
+                        <h4>MOVIE SCHEDULE</h4>
+                        <div class="assign-schedule">
+                            <button type="button" class="Btn" id="add-schedule-btn" onclick="openAddScheduleModal()">
+                                <div class="sign">+</div>
+                                <div class="text">Add Venue</div>
+                            </button>
+                        </div>
+
+                            <div class="addSchedModal" id="addScheduleModal">
+                                <div class="addSchedModal-content">
+                                    <div class="addSchedModal-header">
+                                        <div class="AddActionBtn">
+                                            <span class="addSchedModal-close" id="closeAddSchedModal" onclick="closeAddScheduleModal()">Cancel</span>
+                                            <span class="confirmAddSchedModal" id="doneVenueButton">Confirm</span>
+                                        </div>
+                                        <h4>Add Venue</h4>
+                                        </div>
+                                    <div class="addSchedModal-body">
+                                        <div class="file-container"> 
+                                            <div class="file-header-venue"> 
+                                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
+                                                <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg> <p>UPLOAD VENUE IMAGE</p>
+                                            </div> 
+                                            <label for="filevenue" class="file-footer"> 
+                                                <svg fill="#000000" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z"></path></g></svg> 
+                                                <p>Select file</p> 
+                                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="#000000" stroke-width="2"></path> <path d="M19.5 5H4.5" stroke="#000000" stroke-width="2" stroke-linecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="#000000" stroke-width="2"></path> </g></svg>
+                                            </label> 
+                                            <input id="filevenue" name="venuePoster" type="file" accept="image/*" required> 
+                                        </div>
+
+                                        <div class="schedule-presets">
+                                            <label>Venue Presets</label>
+                                            <select title="Venue" class="input" id="venue-select" name="venue-select">
+                                                <option value="">Select Venue</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="schedule-infos">
+                                            <input class="input" id="venue-link" name="venu_link" placeholder="Venue Link" type="text" required>
+                                            <input class="input" id="venue-name" name="venue_name" placeholder="Venue Name" type="text" required>
+
+                                            <select title="Availability" id="venue_availability" class="input" name="venue_availability" required>
+                                                <option value="Everyday">Everyday</option>
+
+                                                <option value="M">M</option>
+                                                <option value="T">T</option>
+                                                <option value="W">W</option>
+                                                <option value="TH">TH</option>
+                                                <option value="F">F</option>
+                                                <option value="S">S</option>
+                                                <option value="SU">SU</option>
+
+                                                <option value="MW">MW</option>
+                                                <option value="MWF">MWF</option>
+                                                <option value="TTH">TTH</option>
+
+                                                <option value="MTW">MTW</option>
+                                                <option value="MTWF">MTWF</option>
+                                                <option value="TWTH">TWTH</option>
+
+                                                <option value="WF">WF</option>
+                                                <option value="MT">MT</option>
+                                                <option value="MTH">MTH</option>
+
+                                                <option value="FS">FS</option>
+                                                <option value="SSU">SSU</option>
+
+                                                <option value="MTWTHF">Weekdays</option>
+                                                <option value="SSU">Weekends</option>
+                                        </select>
+                                        <input class="input" name="room" id="room" placeholder="Room" type="text" required>
+                                        </div>
+
+                                        <div class="seat-plan-generator">
+                                        <h4>SEAT PLAN GENERATOR</h4>
+                                        
+                                        <div class="seat-controls">
+                                            <label for="rows">Rows (1-26):</label>
+                                            <input name="rows" type="number" id="rows" min="1" max="26" value="10">
+
+                                            <label for="cols">Columns (1-30):</label>
+                                            <input name="cols" type="number" id="cols" min="1" max="30" value="16">
+
+                                            <label for="col-gap">Column Gap every N columns (0 for none):</label>
+                                            <input name="col-gap" type="number" id="col-gap" min="0" max="10" value="4">
+
+                                            <label for="row-gap">Row Gap every N rows (0 for none):</label>
+                                            <input name="row-gap" type="number" id="row-gap" min="0" max="10" value="0">
+
+                                            <button type="button" id="generate">Generate Seat Plan</button>
+                                        </div>
+
+                                            <div id="capacity-info"></div>
+                                            <div id="selected-info"></div>
+
+                                            <div>
+                                            <label for="zoom">Zoom (%): </label>
+                                            <input type="range" id="zoom" min="50" max="200" value="100" /> <span id="zoom-value">100%</span>
+                                            </div>
+
+                                            <div id="seat-wrapper">
+                                            <div class="seat-box">
+                                                <div id="zoom-container">
+                                                <div class="cinema-screen">CINEMA SCREEN</div>
+                                                <div id="seat-container"></div>
+                                                </div>
+                                            </div>
+                                            </div>
+
+                                            <div class="legend">
+                                                <div class="legend-item"><div class="legend-color available-color"></div>Available</div>
+                                                <div class="legend-item"><div class="legend-color selected-color"></div>Selected</div>
+                                            </div>
+
+                                        </div>
+                                        
+                                        <div class="AddScheduleTime">
+                                            <button type="button" class="add-btn venue" onclick="OpenCalendar()">Add Schedule</button>
+                                        </div>
+                                    <div class="venue-schedule">
+                                        <h4>VENUE ASSIGNED SCHEDULES</h4>
+                                        <div id="venue-data"></div>
+                                        <input type="hidden" id="venue-schedules-input" name="venue_schedules">
+                                    </div>
+                                </div>
+                                <div class="ActScheduleBtn">
+                                    <button type="button" class="done-btn venue" id="doneVenueBtn">Done</button>
+                                    <button type="button" class="cancel-btn venue" id="cancel-btn-venue" onclick="closeAddScheduleModal()">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <table class="vsched-table">
+                            <thead>
+                                <tr>
+                                    <th>Venue ID</th>
+                                    <th>Venue</th>
+                                    <th>Schedule</th>
+                                    <th>Status</th>
+                                    <th>Start</th>
+                                    <th>End</th>
+                                    <th>Schedule Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="scheduleTableBody">
+                                {% for movie in movies %}
+                                    {% if movie.schedule_data|length == 0 or movie.schedule_data is none %}
+                                        <tr>
+                                            <td colspan="8">No schedule found.</td>
+                                        </tr>
+                                    {% else %}
+                                        {% for s in movie.schedule_data %}
+                                            <tr>
+                                                <td>{{ s.id }}</td>
+                                                <td>{{ s.venue }}</td>
+                                                <td>{{ s.date }}</td>
+                                                <td>{{ s.time_status }}</td>
+                                                <td>{{ s.start }}</td>
+                                                <td>{{ s.end }}</td>
+                                                <td>{{ s.active_status }}</td>
+                                                <td>
+                                                    <button type="button"
+                                                        class="vsched-btn vsched-edit"
+                                                        onclick="openEditScheduleModal({
+                                                            id: {{ s.id }},
+                                                            date: '{{ s.date }}',
+                                                            start: '{{ s.start }}',
+                                                            end: '{{ s.end }}'
+                                                        })">
+                                                        Edit
+                                                    </button>
+
+                                                    <button type="button" href="/delete_schedule/{{ s.id }}"
+                                                    class="vsched-btn vsched-delete"
+                                                    onclick="return confirm('Are you sure?')">
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+            </div>
     </main>
+
+    <div class="editScheduleModalBackdrop" id="editScheduleModalBackdrop">
+        <div class="selectScheduleModal">
+            <h4>Assign Schedule</h4>
+            <div class="calendar-container">
+                <div class="calendar">
+                    <div class="header">
+                        <div id="prev" class="btn"><svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" ><path d="M14.29 6.29 8.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"></path></svg></i></div>
+                        <svg id="prev-year" class="btn2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12.71 16.29 8.41 12l4.3-4.29-1.42-1.42L5.59 12l5.7 5.71z"></path><path d="M16.29 6.29 10.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"></path></svg>
+                        <div id="month-year"></div>
+                        <svg id="next-year" class="btn2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="m7.71 17.71 5.7-5.71-5.7-5.71-1.42 1.42 4.3 4.29-4.3 4.29z"></path><path d="m11.29 7.71 4.3 4.29-4.3 4.29 1.42 1.42 5.7-5.71-5.7-5.71z"></path></svg>
+                        <div id="next" class="btn"><svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" transform="scale(-1,1) "><path d="M14.29 6.29 8.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"></path></svg></div>
+                    </div>
+                    <div class="weekdays">
+                        <div>S</div><div>M</div><div>T</div><div>W</div><div>Thu</div><div>F</div><div>Sat</div>
+                    </div>
+                    <div class="days" id="days"></div>
+                    <input type="hidden" name="venue_date" id="selected-date-input">
+                </div>
+            </div>
+        <div class="time-container">
+            <label class="time-label">Starting Time</label>
+            <input type="time" title="Time" class="time-size" id="time1" name="time_avail">
+            <label class="time-label">Ending Time</label>
+            <input type="time" title="Time" class="time-size" id="time2" name="time_avail2">
+        </div>
+
+        <span class="selected-date-time">
+            <p><strong>Date and Time:</strong> <span id="start-date">none</span></p>
+        </span>
+
+        <div class="ActScheduleBtn">
+            <button type="button" class="done-btn venue" id="done-edit-btn-schedule">Done</button>
+            <button type="button" class="cancel-btn venue" id="cancel-edit-btn-schedule" onclick="CloseEditCalendar()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+
+    <div class="selectScheduleModalBackdrop" id="selectScheduleModalBackdrop">
+        <div class="selectScheduleModal">
+            <h4>Assign Schedule</h4>
+            <div class="calendar-container">
+                <div class="calendar">
+                    <div class="header">
+                        <div id="prev" class="btn"><svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" ><path d="M14.29 6.29 8.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"></path></svg></i></div>
+                        <svg id="prev-year" class="btn2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12.71 16.29 8.41 12l4.3-4.29-1.42-1.42L5.59 12l5.7 5.71z"></path><path d="M16.29 6.29 10.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"></path></svg>
+                        <div id="month-year"></div>
+                        <svg id="next-year" class="btn2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="m7.71 17.71 5.7-5.71-5.7-5.71-1.42 1.42 4.3 4.29-4.3 4.29z"></path><path d="m11.29 7.71 4.3 4.29-4.3 4.29 1.42 1.42 5.7-5.71-5.7-5.71z"></path></svg>
+                        <div id="next" class="btn"><svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" transform="scale(-1,1) "><path d="M14.29 6.29 8.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"></path></svg></div>
+                    </div>
+                    <div class="weekdays">
+                        <div>S</div><div>M</div><div>T</div><div>W</div><div>Thu</div><div>F</div><div>Sat</div>
+                    </div>
+                    <div class="days" id="days"></div>
+                    <input type="hidden" name="venue_date" id="selected-date-input">
+                </div>
+            </div>
+        <div class="time-container">
+            <label class="time-label">Starting Time</label>
+            <input type="time" title="Time" class="time-size" id="time1" name="time_avail">
+            <label class="time-label">Ending Time</label>
+            <input type="time" title="Time" class="time-size" id="time2" name="time_avail2">
+        </div>
+
+        <span class="selected-date-time">
+            <p><strong>Date and Time:</strong> <span id="start-date">none</span></p>
+        </span>
+
+        <div class="ActScheduleBtn">
+            <button type="button" class="done-btn venue" id="done-btn-schedule">Done</button>
+            <button type="button" class="cancel-btn venue" id="cancel-btn-schedule" onclick="CloseCalendar()">Cancel</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
