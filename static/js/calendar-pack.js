@@ -2,6 +2,8 @@ window.APP_STATE = {
     schedules: []
 };
 
+let idToEdit = null;
+
 function initCalendar(prevBtnId, nextBtnId, prevYearBtnId, nextYearBtnId, monthYearId, daysId, inputId, spanId) {
     const prevButton = document.getElementById(prevBtnId);
     const nextButton = document.getElementById(nextBtnId);
@@ -70,7 +72,7 @@ function initCalendar(prevBtnId, nextBtnId, prevYearBtnId, nextYearBtnId, monthY
                     div.classList.add('selected');
                     
                     selectedDate = new Date(year, month, i);
-                    selectedInput.value = new Date(year, month, i).toISOString().split('T')[0];
+                    selectedInput.value = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                     
                     window.calendar1Date = selectedDate;
                     
@@ -108,34 +110,91 @@ function initCalendar(prevBtnId, nextBtnId, prevYearBtnId, nextYearBtnId, monthY
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Single Calendar initialization
-    initCalendar('prev','next','prev-year','next-year','month-year','days','selected-date-input', 'start-date');
+    // const createMonthYear = document.getElementById("create-month-year");
+    // const createDays = document.getElementById("create-days");
+
+    // const editMonthYear = document.getElementById("edit-month-year");
+    // const editDays = document.getElementById("edit-days");
     
+    initCalendar(
+        'prev',
+        'next',
+        'prev-year',
+        'next-year',
+        'month-year',
+        'days',
+        'selected-date-input',
+        'start-date'
+    );
+
+    initCalendar(
+        'edit-prev',
+        'edit-next',
+        'edit-prev-year',
+        'edit-next-year',
+        'edit-month-year',
+        'edit-days',
+        'edit-selected-date-input',
+        'edit-start-date'
+    );
     // Initialize with current date displayed
     initializeCurrentDate();
     
     // Time validation - prevent time2 from being earlier than time1
     const time1Input = document.getElementById('time1');
     const time2Input = document.getElementById('time2');
+    const time2InputEdit = document.getElementById('edit-time2');
+    const time1InputEdit = document.getElementById('edit-time1');
+
+    if (time1Input === null && time2Input === null) {
+        Increate == true;
+    } else {
+        InEdit == true;
+    }
+
     
-    time2Input.addEventListener('change', function() {
-        if (time1Input.value && time2Input.value) {
-            if (time2Input.value < time1Input.value) {
-                alert('Ending Time cannot be earlier than Starting Time');
-                time2Input.value = '';
+    if(InEdit == true) {
+        time2InputEdit.addEventListener('change', function() {
+            if (time1Input.value && time2InputEdit.value) {
+                if (time2InputEdit.value < time1Input.value) {
+                    alert('Ending Time cannot be earlier than Starting Time');
+                    time2InputEdit.value = '';
+                }
             }
-        }
-    });
-    
-    time1Input.addEventListener('change', function() {
-        // Reset time2 if it's now invalid
-        if (time1Input.value && time2Input.value) {
-            if (time2Input.value < time1Input.value) {
-                time2Input.value = '';
+        });
+        
+        time1InputEdit.addEventListener('change', function() {
+            // Reset time2 if it's now invalid
+            if (time1Input.value && time2InputEdit.value) {
+                if (time2InputEdit.value < time1Input.value) {
+                    time2InputEdit.value = '';
+                }
             }
-        }
-    });
+        });
+    } else if(Increate == true) {
+        time2Input.addEventListener('change', function() {
+            if (time1Input.value && time2Input.value) {
+                if (time2Input.value < time1Input.value) {
+                    alert('Ending Time cannot be earlier than Starting Time');
+                    time2Input.value = '';
+                }
+            }
+        });
+        
+        time1Input.addEventListener('change', function() {
+            // Reset time2 if it's now invalid
+            if (time1Input.value && time2Input.value) {
+                if (time2Input.value < time1Input.value) {
+                    time2Input.value = '';
+                }
+            }
+        });
+    } else {
+        console.log("Increate:", Increate);
+        console.log("InEdit:", InEdit);
+    }
 });
+
 
 // Function to display current date when nothing is selected
 function initializeCurrentDate() {
@@ -149,13 +208,13 @@ function initializeCurrentDate() {
 //  ============================= DISPLAY DATE TIME ==========
 document.addEventListener("DOMContentLoaded", () => {
     const modal = document.getElementById("selectScheduleModalBackdrop");
+    const cancelBtn = document.getElementById("cancel-btn-schedule");
 
     let scheduleCounter = 0;
-    let venueSchedules = [];
 
     function updateSchedulesInput() {
         const hiddenInput = document.getElementById("venue-schedules-input");
-        hiddenInput.value = JSON.stringify(venueSchedules);
+        hiddenInput.value = JSON.stringify(window.APP_STATE.schedules);
     }
 
     function renderVenueSchedule(schedule) {
@@ -171,8 +230,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
             <div class="venue-actions">
-                <button class="venue-edit" onclick="editVenue(${schedule.id})">Edit</button>
-                <button class="venue-delete" onclick="deleteVenue(${schedule.id})">Delete</button>
+                <button type="button" class="venue-edit" onclick="editVenue(${schedule.id})">Edit</button>
+                <button type="button" class="venue-delete" onclick="deleteVenue(${schedule.id})">Delete</button>
             </div>
         `;
 
@@ -190,6 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (!startTime || !endTime) {
+            console.log("startTime:", startTime, "endTime:", endTime);
             alert("Please select both start and end time");
             return;
         }
@@ -204,6 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.APP_STATE.schedules.push(schedule);
         renderVenueSchedule(schedule);
         updateSchedulesInput();
+        deleteVenue(idToEdit);
 
         modal.style.display = "none";
 
@@ -212,19 +273,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     window.deleteVenue = function (id) {
-        venueSchedules = venueSchedules.filter(s => s.id !== id);
+        venueSchedules = window.APP_STATE.schedules = window.APP_STATE.schedules.filter(s => s.id !== id);
         document.getElementById(`venue-${id}`)?.remove();
+        console.log("SCHEDULE SUCCESFULLY DELETED:", id, window.APP_STATE.schedules);
     };
 
     window.editVenue = function (id) {
-        const schedule = venueSchedules.find(s => s.id === id);
+
+        console.log("Editing schedule:", typeof id);
+        const schedule = window.APP_STATE.schedules.find(s => Number(s.id) === Number(id));
+        console.log("Editing schedule:", schedule);
+        console.log("VENUE SCHEDULES:", window.APP_STATE.schedules);
         if (!schedule) return;
 
         document.getElementById("start-date").textContent = schedule.date;
         document.getElementById("time1").value = schedule.startTime;
         document.getElementById("time2").value = schedule.endTime;
 
-        deleteVenue(id);
         modal.style.display = "flex";
+        idToEdit = id;
     };
 });

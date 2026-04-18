@@ -1,0 +1,267 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI, sans-serif;
+}
+
+body{
+    display: grid;
+    grid-template-columns: 15vw 1fr;
+    grid-template-areas: 
+    "aside main"
+    ;   
+    overflow-y: hidden;
+    background: black;
+}
+
+aside {
+    grid-area: aside;
+    overflow-y: auto;
+    width: 15vw;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-x: hidden;
+}
+
+aside::-webkit-scrollbar {
+    width: 14px; 
+}
+
+aside::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+aside::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 10px;
+
+    border: 4px solid #090909;  
+}
+
+main {
+    grid-area: main;
+}
+
+footer {
+    height: 5vh;
+    grid-area: footer;
+}
+
+footer p {
+    color: white;
+    text-align: center;
+    padding-top: 1rem
+}
+
+.sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar{
+    width: 15vw;  
+    height: 100vh;
+    background: linear-gradient(to bottom,#1c1c1c,#000);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    position : fixed;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.logoandname {
+    display: flex;
+    justify-content: center;
+    border-bottom: 2px solid #333;
+}
+
+.menu {
+    padding-left: 0;
+}
+
+.menu-btn{
+    width: 12vw;
+    height: 8vh;
+    margin-top: 10px;
+    border-radius: 10px;
+    display: flex;
+    text-decoration: none;
+    background: #212121;
+    padding: 10px;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease-in-out;
+}
+
+.menu-btn a {
+    text-decoration: none;
+    width: 100%;
+    height: 100%;
+}
+
+.menu-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #333;
+}
+
+.menu-btn:hover{
+    transform: scale(1.05);
+    background: #3a3a3a;
+}
+
+.menu-btn span{
+    font-weight: 500;
+    color: white;
+    font-size: 2vh;
+}
+
+
+/* RESPONSIVE */
+@media (max-width:900px){
+    body{
+        grid-template-columns: 20vw 1fr;
+        grid-template-areas: 
+        "aside main"
+        ;
+    }
+
+    .sidebar{
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        width: 20vw;
+    }
+
+    .AdminName {
+        display: none;
+        content: "";
+    }
+
+    .menu-container {
+        margin: 0;
+    }
+
+    .button-container {
+        margin-bottom: 0;
+        padding: 0;
+    }
+    .at {
+        display: flex;
+    }
+}
+
+.movieicon {
+    width: 4rem;
+    height: 3.5rem;
+    margin-right: 0.5rem;
+    display: block;
+    justify-content: space-around;
+    margin-bottom: 10px;
+    background: #3a3a3a;
+    border: none;
+    color: white;
+    border-radius: 6px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    color: white;
+    border-radius: 6px;
+}
+
+.logo {
+    width: 7rem;
+    height: 6.5rem;
+    display: block;
+    justify-content: space-around;
+    margin-bottom: 10px;
+    border: none;
+    color: white;
+    border-radius: 6px;
+}
+
+.sidebar img{
+    height: 15vh;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.image span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1vw;
+    color: white;
+    font-weight: 700;
+}
+
+main {
+    background: url("../assets/adminbg.jpg") no-repeat center center / cover fixed;
+    width: 100%;
+}
+
+.at {
+    display: flex;
+    gap: 3px;
+    flex-direction: row;
+    align-items: center;
+    text-align: center;
+    margin-top: 15px;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.at span {
+    font-weight: bold;
+    font-size: 1vw;
+}
+
+.at svg {
+    width: 2.4vw;
+    height: 2.4vh;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; 
+    overflow-x: hidden;
+    overflow-y: auto; 
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.main-content::-webkit-scrollbar {
+    width: 1vw;
+}
+
+.main-content::-webkit-scrollbar-track {
+    background: none;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 40px;
+}

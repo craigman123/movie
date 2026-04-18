@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const doneBtn =
         document.getElementById("doneVenueBtn") ||
         document.getElementById("doneVenueButton");
-    console.log("doneBtn clicked:", doneBtn);
+        console.log("doneBtn clicked:", doneBtn);
     const movieSchedules = window.APP_STATE.schedules;
 
     doneBtn.addEventListener("click", async (e) => {
@@ -158,9 +158,10 @@ function openEditModal(event) {
                 <td>${s.end}</td>
                 <td>${s.active_status}</td>
                 <td>
-                    <button type="button" class="vsched-btn vsched-edit" onclick="editSchedule(${s.id})" onclick="openEditScheduleModal()">
-                        Edit
-                    </button>
+                    <button type="button" class="vsched-btn vsched-edit" onclick="openEditScheduleModal(this)"
+                        data-id="${s.id}" data-date="${s.date}" data-start="${s.start}" data-end="${s.end}" 
+                        data-active_status="${s.active_status}">
+                            Edit</button>
 
                     <button type="button" class="vsched-btn vsched-delete" onclick="deleteSchedule(${s.id})">
                         Delete
@@ -328,11 +329,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-window.addEventListener('DOMContentLoaded', () => {
-
-});
-
 function openScheduleModal() {
     const modal = document.getElementById("scheduleModal");
     const content = document.getElementById("scheduleContent");
@@ -462,29 +458,78 @@ async function deleteSchedule(id) {
 
 let editingScheduleId = null;
 
-function openEditScheduleModal(s) {
-    editingScheduleId = s.id;
+function openEditScheduleModal(btn) {
+    const modal = document.getElementById("editScheduleModalBackdrop");
 
-    // open modal
-    document.getElementById("editScheduleModalBackdrop").style.display = "flex";
+    const schedule = {
+        id: btn.dataset.id,
+        date: btn.dataset.date,
+        start: btn.dataset.start,
+        end: btn.dataset.end,
+        status: btn.dataset.active_status
+    };
 
-    // fill values
-    document.getElementById("selected-date-input").value = s.date;
-    document.getElementById("start-date").innerText = s.date;
+    editingScheduleId = schedule.id;
+    console.log("Editing schedule:", schedule);
 
-    document.getElementById("time1").value = s.start;
-    document.getElementById("time2").value = s.end;
+    // ✅ SET DATE (hidden input used by your calendar)
+    document.getElementById("edit-selected-date-input").value = schedule.date;
+
+    // ✅ SET TIME
+    document.getElementById("time1-edit").value = schedule.start;
+    document.getElementById("time2-edit").value = schedule.end;
+    document.getElementById("schedule_status").value = schedule.status;
+
+    const [y, m, d] = schedule.date.split("-");
+
+    const monthNames = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+    ];
+
+    document.getElementById("edit-start-date").textContent =
+    `${monthNames[m - 1]} ${d}, ${y}`;
+
+    highlightSelectedDate(schedule.date);
+    modal.style.display = "flex";
+
+    console.log(schedule);
+}
+
+function highlightSelectedDate(dateStr) {
+    const selectedDate = new Date(dateStr);
+    const selectedDay = selectedDate.getDate();
+
+    const days = document.querySelectorAll("#days div");
+
+    days.forEach(day => {
+        day.classList.remove("active");
+
+        if (parseInt(day.textContent) === selectedDay) {
+            day.classList.add("active");
+        }
+    });
+}
+
+function CloseEditCalendar() {
+    document.getElementById("editScheduleModalBackdrop").style.display = "none";
 }
 
 
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("done-edit-btn-schedule").addEventListener("click", async () => {
+        const rawDate = document.getElementById("edit-selected-date-input").value;
+
+        const correctedDate = rawDate;
 
         const payload = {
-            date: document.getElementById("selected-date-input").value,
-            start: document.getElementById("time1").value,
-            end: document.getElementById("time2").value,
+            date: correctedDate,
+            start: document.getElementById("time1-edit").value,
+            end: document.getElementById("time2-edit").value,
+            status: document.getElementById("schedule_status").value
         };
+
+        console.log("Payload:", payload);
 
         let url = "/create_schedule";
         let method = "POST";
@@ -492,6 +537,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // if editing → switch to update mode
         if (editingScheduleId) {
             url = `/update_schedule/${editingScheduleId}`;
+            method = "PUT";
         }
 
         const res = await fetch(url, {
@@ -506,11 +552,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (data.success) {
             alert("Saved!");
+
+            editingScheduleId = null;
+
             location.reload();
         } else {
             alert("Failed");
         }
-
-        editingScheduleId = null;
     });
 });

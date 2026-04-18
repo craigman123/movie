@@ -3,7 +3,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import time, os, uuid, json, traceback
-from datetime import datetime, time as dt_time
+from datetime import time as dt_time
+import datetime
 from national import nationalities
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
@@ -18,11 +19,29 @@ app.secret_key = "aries_vincent_secret"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///luma.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-UPLOAD_FOLDER = 'static/uploads'
+UPLOAD_FOLDER = os.path.join('static', 'uploads')
+PROFILE_PICTURE_FOLDER = os.path.join(UPLOAD_FOLDER, 'uploadedPictures')
+DEFAULT_PICTURE_FOLDER = os.path.join(UPLOAD_FOLDER, 'defaultPictures')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 db = SQLAlchemy(app)
+
+class Profiles(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer,db.ForeignKey('user.id'), nullable=False)
+    profile_image = db.Column(db.String(1000), nullable=False)
+    bio = db.Column(db.String(1000), nullable=True)
+    nationality = db.Column(db.String(50), nullable=False)
+    gender = db.Column(db.String(50), nullable=False)
+    dob = db.Column(db.Date, nullable=True)
+    preffered_genre = db.Column(db.String(50), nullable=False)
+    profile_date_created = db.Column(db.Date, nullable=False, default=datetime.datetime.today())
+
+class Accounts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer,db.ForeignKey('user.id'), nullable=False)
+    acount_specialty = db.Column(db.String(50), nullable=False, default='User')
 
 class Movies(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -82,6 +101,11 @@ class User(db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     access = db.Column(db.String(50), nullable=False, default='active')
     role = db.Column(db.String(50), default='user')
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.today())
+    
+    accounts = db.relationship('Accounts', backref='user', lazy=True)
+    profile = db.relationship('Profiles', backref='user', uselist=False, lazy='joined')
+    # libraries = db.relationship('Libraries', backref='user', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -108,7 +132,53 @@ def gotologin():
 
 @app.route('/users')
 def view_users():
-    return render_template('viewUsers.html')
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    if session.get('role') != 'admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('user_dashboard'))
+
+    user = User.query.get(session['user_id'])
+    users = User.query.all()
+
+    users_data = []
+
+    for u in User.query.all():
+        users_data.append({
+            "id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "role": u.role,
+            "access": u.access,
+
+            "profile": {
+                "bio": u.profile.bio if u.profile else "",
+                "nationality": u.profile.nationality if u.profile else "",
+                "gender": u.profile.gender if u.profile else "",
+                "dob": u.profile.dob.isoformat() if u.profile and u.profile.dob else "",
+                "preffered_genre": u.profile.preffered_genre if u.profile else "",
+                "profile_image": u.profile.profile_image if u.profile else ""
+            }
+        })
+    
+    admin_users = User.query.filter_by(role='admin').all()
+    regular_users = User.query.filter_by(role='user').all()
+    verified_users = User.query.filter_by(access='verified').all()
+    inactive_users = User.query.filter_by(access='inactive').all()
+    banned_users = User.query.filter_by(access='banned').all()
+    
+    return render_template(
+        'viewUsers.html', 
+        user=user, 
+        users=users_data,
+        admin_users=admin_users,
+        members=regular_users,
+        verified_users=verified_users,
+        inactive_users=inactive_users,
+        banned_users=banned_users
+    )
 
 @app.route('/moviewView')
 def movieViewAdmin():
@@ -121,10 +191,20 @@ def movieViewAdmin():
         return redirect(url_for('user_dashboard'))
 
     user = User.query.get(session['user_id'])
-    movies = Movies.query.all()
-    # movie = Movies.query.all()
+    # movies = Movies.query.all()
+    
+    search = request.args.get("search", "").strip()
 
-    now = datetime.now()
+    now = datetime.datetime.now()
+    today = datetime.date.today()
+
+    if search:
+        movies = Movies.query.filter(
+            Movies.movie_name.ilike(f"%{search}%")
+        ).all()
+    else:
+         movies = Movies.query.all()
+        
 
     showing_movies = []
     coming_soon_movies = []
@@ -140,15 +220,16 @@ def movieViewAdmin():
             continue
         
         upcoming_schedules = []
+
         for s in schedules:
-            date = s.date.date() if isinstance(s.date, datetime) else s.date
-            start = datetime.combine(date, s.start_time)
+            date_val = s.date.date() if isinstance(s.date, datetime.datetime) else s.date
+            start = datetime.datetime.combine(date_val, s.start_time)
 
             if start >= now:
                 upcoming_schedules.append((start, s))
 
-            upcoming_schedules.sort(key=lambda x: x[0])
-            skip_movie = False
+        upcoming_schedules.sort(key=lambda x: x[0])
+        skip_movie = False
 
         if upcoming_schedules:
             next_schedule = upcoming_schedules[0][1]
@@ -167,10 +248,9 @@ def movieViewAdmin():
         is_ended = True
 
         for s in schedules:
-            date = s.date.date() if isinstance(s.date, datetime) else s.date
-
-            start = datetime.combine(date, s.start_time)
-            end = datetime.combine(date, s.end_time)
+            date = s.date.date() if isinstance(s.date, datetime.datetime) else s.date
+            start = datetime.datetime.combine(date, s.start_time)
+            end = datetime.datetime.combine(date, s.end_time)
 
             if start <= now and now <= end:
                 is_showing = True
@@ -185,7 +265,7 @@ def movieViewAdmin():
             showing_movies.append(movie)
 
         elif all(s_end < now for s_end in [
-            datetime.combine(
+            datetime.datetime.combine(
                 s.date.date() if hasattr(s.date, "date") else s.date,
                 s.end_time
             ) for s in movie.schedules
@@ -194,8 +274,6 @@ def movieViewAdmin():
         
         else:
             coming_soon_movies.append(movie)
-    
-    today = date.today()
     
     for movie in movies:
         movie.schedule_data = []
@@ -241,15 +319,42 @@ def movieViewAdmin():
 
 @app.route('/adminAccount')
 def AdminAccount():
-    return render_template('AdminAccount.html')
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    if session.get('role') != 'admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('user_dashboard'))
+
+    user = User.query.get(session['user_id'])
+    return render_template('AdminAccount.html', user=user)
 
 @app.route('/sales')
 def view_sales():
-    return render_template('viewSales.html')
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    if session.get('role') != 'admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('user_dashboard'))
+
+    user = User.query.get(session['user_id'])
+    return render_template('viewSales.html', user=user)
 
 @app.route('/logs')
 def view_logs():
-    return render_template('viewLogs.html')
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    if session.get('role') != 'admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('user_dashboard'))
+
+    user = User.query.get(session['user_id'])
+    return render_template('viewLogs.html', user=user)
 
 @app.route('/')
 def index():
@@ -260,8 +365,6 @@ ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv'}
 
 def allowed_file(filename, allowed_ext):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_ext
-
-from datetime import date
 
 @app.route('/view_movie/<int:movie_id>')
 def view_movie(movie_id):
@@ -298,7 +401,7 @@ def admin_dashboard():
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
 
-    today = datetime.today().strftime('%B %d, %Y')
+    today = datetime.datetime.today().strftime('%B %d, %Y')
 
     user = User.query.get(session['user_id'])
     venues = Venue.query.all()
@@ -400,7 +503,7 @@ def login():
 
     if user.role == "admin":
         return redirect(url_for('admin_dashboard'))
-    elif user.role == "user":
+    elif user.role == "user" or user.role == "verified":
         return redirect(url_for('user_dashboard'))
     else:
         flash("Invalid user role", "danger")
@@ -420,11 +523,31 @@ def register():
         flash("Email already exists. Please choose a different one.", "danger")
         return render_template('login.html')
 
-    new_user = User(username=username, email=email, role='admin', access='active')
+    # ✅ Create user
+    new_user = User(username=username, email=email, role='user', access='active')
     new_user.set_password(password)
     db.session.add(new_user)
+    db.session.commit()  # commit first to get user.id
+
+    # ✅ Generate default profile image (first letter)
+    first_letter = username[0].lower() if username else "default"
+    default_image = f"uploads/defaultPictures/{first_letter}.jpg"
+
+    # ✅ Create empty profile (except image)
+    new_profile = Profiles(
+        user_id=new_user.id,
+        profile_image=default_image,
+        bio="",
+        nationality="",
+        gender="",
+        dob=datetime.date.today(),  # must NOT be None
+        preffered_genre=""
+    )
+
+    db.session.add(new_profile)
     db.session.commit()
 
+    # ✅ Session
     session['user_id'] = new_user.id
     session['email'] = new_user.email
     session['role'] = new_user.role
@@ -432,7 +555,6 @@ def register():
 
     flash("Registration successful!", "success")
     return redirect(url_for('user_dashboard'))
-
 
 
 # ======================= CRUD FOR MOVIE =======================
@@ -514,7 +636,7 @@ def add_movie():
         
         if release_date:
             try:
-                release_date_obj = datetime.strptime(release_date, '%Y-%m-%d').date()
+                release_date_obj = datetime.datetime.strptime(release_date, '%Y-%m-%d').date()
             except ValueError:
                 flash("Invalid release date format. Use YYYY-MM-DD.", "danger")
                 return redirect(url_for('admin_dashboard'))
@@ -669,6 +791,57 @@ def delete_schedule(schedule_id):
     db.session.commit()
 
     return jsonify({"success": True})
+
+@app.route("/create_schedule", methods=["POST"])
+def create_schedule():
+    data = request.get_json()
+
+    date = data["date"]
+    start = data["start"]
+    end = data["end"]
+
+    # TODO: insert into DB
+    # db.insert(...)
+
+    return jsonify({
+        "success": True,
+        "message": "Schedule created"
+    })
+    
+@app.route("/update_schedule/<int:schedule_id>", methods=["PUT"])
+def update_schedule(schedule_id):
+    data = request.get_json(silent=True)
+    print("DATA:", data)
+
+    schedule = Schedule.query.get(schedule_id)
+    
+    print ("🔥 UPDATE HIT")
+    print(schedule)
+    print(request.form)
+    print(request.files)
+
+    if not schedule:
+        return jsonify({
+            "success": False,
+            "message": "Schedule not found"
+        }), 404
+
+    schedule.date = datetime.datetime.strptime(data["date"], "%Y-%m-%d").date()
+    schedule.start_time = datetime.datetime.strptime(data["start"], "%H:%M").time()
+    schedule.end_time = datetime.datetime.strptime(data["end"], "%H:%M").time()
+    stat = data["status"]
+    
+    if stat == "Active":
+        schedule.active = "True"
+    else:
+        schedule.active = "False"
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": "Schedule updated"
+    })
 @app.route('/update_movie/<int:movie_id>', methods=['POST'])
 def update_movie(movie_id):
 
@@ -685,7 +858,7 @@ def update_movie(movie_id):
     movie.age_restrict = request.form.get('age_restrict')
     movie.genre = ", ".join(request.form.getlist('genres[]'))
     
-    movie.release_date = datetime.strptime(request.form['release_date'],"%Y-%m-%d").date()
+    movie.movie_date_created = datetime.datetime.strptime(request.form['release_date'],"%Y-%m-%d").date()
 
     poster = request.files.get('poster')
     if poster and poster.filename:
@@ -726,9 +899,9 @@ def create_venue():
         venue_id = insert_venue(venue)
 
         for s in schedules:
-            date_obj = datetime.strptime(s.get("date"), "%b %d, %Y").date()
-            start_time_obj = datetime.strptime(s.get("startTime"), "%H:%M").time()
-            end_time_obj = datetime.strptime(s.get("endTime"), "%H:%M").time()
+            date_obj = datetime.datetime.strptime(s.get("date"), "%b %d, %Y").date()
+            start_time_obj = datetime.datetime.strptime(s.get("startTime"), "%H:%M").time()
+            end_time_obj = datetime.datetime.strptime(s.get("endTime"), "%H:%M").time()
             
             insert_schedule(
                 venue_id=venue_id,
@@ -800,6 +973,55 @@ def insert_venue(venue):
 
     return new_venue.id
 
+
+# ===================================== CRUD FOR USERS ======================================
+@app.route('/edit_user/<int:user_id>', methods=['POST'])
+def edit_user(user_id):
+    user = User.query.get_or_404(user_id)
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+
+    file = request.files.get('profile_picture')
+
+    if file and file.filename:
+        filename = secure_filename(file.filename)
+
+        upload_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(upload_path)
+
+        profile.profile_image = filename
+
+    # user fields
+    user.username = request.form['name']
+    user.email = request.form['email']
+    user.access = request.form['status']
+    user.role = request.form['role']
+    
+    new_password = request.form.get('password')
+
+    if new_password and new_password.strip():
+        user.password_hash = generate_password_hash(new_password)
+
+    # profile fields
+    profile.bio = request.form.get('bio')
+    profile.nationality = request.form.get('nationality')
+    profile.gender = request.form.get('gender')
+    dob_raw = request.form.get('dob') 
+    if dob_raw:
+        profile.dob = datetime.datetime.strptime(dob_raw, "%Y-%m-%d").date()
+    else:
+        profile.dob = datetime.datetime.today()
+    profile.preffered_genre = request.form.get('genre') or "Not set"
+
+    db.session.commit()
+
+    return redirect(url_for('view_users'))
+
+@app.route('/delete_user/<int:user_id>')
+def delete_user(user_id):
+    
+    return url_for('viewUsers.html', user_id=user_id)
+    
+    
 if __name__ == '__main__':
 
     with app.app_context():
