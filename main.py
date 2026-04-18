@@ -1,3 +1,5 @@
+import profile
+
 from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory, flash, jsonify, after_this_request
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
@@ -22,8 +24,14 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 PROFILE_PICTURE_FOLDER = os.path.join(UPLOAD_FOLDER, 'uploadedPictures')
 DEFAULT_PICTURE_FOLDER = os.path.join(UPLOAD_FOLDER, 'defaultPictures')
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(PROFILE_PICTURE_FOLDER, exist_ok=True)
+os.makedirs(DEFAULT_PICTURE_FOLDER, exist_ok=True)
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['PROFILE_PICTURE_FOLDER'] = PROFILE_PICTURE_FOLDER
+app.config['DEFAULT_PICTURE_FOLDER'] = DEFAULT_PICTURE_FOLDER
 
 db = SQLAlchemy(app)
 
@@ -37,11 +45,6 @@ class Profiles(db.Model):
     dob = db.Column(db.Date, nullable=True)
     preffered_genre = db.Column(db.String(50), nullable=False)
     profile_date_created = db.Column(db.Date, nullable=False, default=datetime.datetime.today())
-
-class Accounts(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer,db.ForeignKey('user.id'), nullable=False)
-    acount_specialty = db.Column(db.String(50), nullable=False, default='User')
 
 class Movies(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -102,8 +105,7 @@ class User(db.Model):
     access = db.Column(db.String(50), nullable=False, default='active')
     role = db.Column(db.String(50), default='user')
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.today())
-    
-    accounts = db.relationship('Accounts', backref='user', lazy=True)
+
     profile = db.relationship('Profiles', backref='user', uselist=False, lazy='joined')
     # libraries = db.relationship('Libraries', backref='user', lazy=True)
 
@@ -141,11 +143,22 @@ def view_users():
         return redirect(url_for('user_dashboard'))
 
     user = User.query.get(session['user_id'])
-    users = User.query.all()
+    search_query = request.args.get('search', '').strip()
+    count_users = User.query.count()
+
+    query = User.query
+
+    if search_query:
+        query = query.filter(
+            (User.username.ilike(f"%{search_query}%")) |
+            (User.email.ilike(f"%{search_query}%"))
+        )
+
+    users = query.all()
 
     users_data = []
 
-    for u in User.query.all():
+    for u in users:
         users_data.append({
             "id": u.id,
             "username": u.username,
@@ -171,10 +184,12 @@ def view_users():
     
     return render_template(
         'viewUsers.html', 
+        search_query=search_query,
         user=user, 
+        count_users=count_users,
         users=users_data,
         admin_users=admin_users,
-        members=regular_users,
+        regular_users=regular_users,
         verified_users=verified_users,
         inactive_users=inactive_users,
         banned_users=banned_users
@@ -531,7 +546,7 @@ def register():
 
     # ✅ Generate default profile image (first letter)
     first_letter = username[0].lower() if username else "default"
-    default_image = f"uploads/defaultPictures/{first_letter}.jpg"
+    default_image = f"{first_letter}.jpg"
 
     # ✅ Create empty profile (except image)
     new_profile = Profiles(
@@ -980,15 +995,21 @@ def edit_user(user_id):
     user = User.query.get_or_404(user_id)
     profile = Profiles.query.filter_by(user_id=user.id).first()
 
+    if not profile:
+        profile = Profiles(user_id=user.id)
+        db.session.add(profile)
+
     file = request.files.get('profile_picture')
 
     if file and file.filename:
         filename = secure_filename(file.filename)
 
-        upload_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        upload_path = os.path.join(app.config['PROFILE_PICTURE_FOLDER'], filename)
         file.save(upload_path)
 
         profile.profile_image = filename
+
+        print(f"✅ Uploaded new profile picture for user {user.username}: {filename}")
 
     # user fields
     user.username = request.form['name']
@@ -1016,10 +1037,30 @@ def edit_user(user_id):
 
     return redirect(url_for('view_users'))
 
-@app.route('/delete_user/<int:user_id>')
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
 def delete_user(user_id):
-    
-    return url_for('viewUsers.html', user_id=user_id)
+    if 'user_id' not in session:
+        flash("You must be logged in.", "danger")
+        return redirect(url_for('login'))
+
+    userSession = User.query.get(session['user_id'])
+
+    if userSession and user_id == userSession.id:
+        flash("You cannot delete your own account.", "error")
+        return redirect(url_for('view_users'))
+
+    user = User.query.get_or_404(user_id)
+
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+
+    if profile:
+        db.session.delete(profile)
+
+    db.session.delete(user)
+    db.session.commit()
+
+    flash("User deleted successfully.", "success")
+    return redirect(url_for('view_users'))
     
     
 if __name__ == '__main__':

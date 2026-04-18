@@ -176,6 +176,12 @@ main.main-content {
     font-weight: 600;
 }
 
+.users-table td:nth-child(7) {
+    width: 8vw;
+    display: flex;
+    justify-content: space-around;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .users-table table {
@@ -377,4 +383,37 @@ main.main-content {
   border-radius: 50%;   /* makes it a circle */
   object-fit: cover;    /* prevents distortion */
   border: 3px solid #ccc;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 20vw;
+    display: inline-block;
+    position: relative;
+}
+
+.status-dot.online {
+    background: #28c76f;
+}
+
+.status-dot.offline {
+    background: #ea5455;
+}
+
+.status-dot.online::after,
+.status-dot.offline::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    opacity: 0.3;
+}
+
+.status-dot.online::after {
+    background: #28c76f;
+}
+
+.status-dot.offline::after {
+    background: #ea5455;
 }

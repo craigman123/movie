@@ -20,10 +20,16 @@ function openEditUserModal(btn) {
 
     const preview = document.getElementById("profilePreview");
 
-    if (user.profile_image) {
-        preview.src = `/static/${profile.profile_image}`;
+    const defaultImage = `/static/uploads/defaultPictures/${user.name[0].toLowerCase()}.jpg`;
+
+    if (user.image) {
+        preview.src = `/static/uploads/uploadedPictures/${user.image}?t=${Date.now()}`;
+
+        preview.onerror = () => {
+            preview.src = defaultImage;
+        };
     } else {
-        preview.src = `/static/uploads/defaultPictures/${user.name[0].toLowerCase()}.jpg`;
+        preview.src = defaultImage;
     }
 
     document.getElementById("editUserModal").style.display = "flex";
@@ -50,4 +56,19 @@ document.addEventListener("DOMContentLoaded", function () {
             preview.src = URL.createObjectURL(file);
         }
     });
+});
+
+document.addEventListener("submit", function (e) {
+    const form = e.target;
+
+    if (!form.classList.contains("delete-form")) return;
+
+    const currentUserId = document.body.dataset.currentUserId;
+    const button = form.querySelector("button");
+    const targetUserId = button.dataset.userId;
+
+    if (currentUserId === targetUserId) {
+        e.preventDefault();
+        alert("You cannot delete your own account.");
+    }
 });
