@@ -2,10 +2,12 @@
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/view_movie.css') }}">
+    <script src="{{ url_for('static', filename='js/view_movie.js') }}"></script>
     <title>{{ movie.movie_name }} - LUMA</title>
 {% endblock %}
 
 {% block body %}
+
 <header class="navbar">
     <div class="logo">LUMA</div>
     <nav class="nav-links">

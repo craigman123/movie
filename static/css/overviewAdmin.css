@@ -1,0 +1,207 @@
+body {
+    overflow: hidden;
+}
+
+.cards-container {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.cards-container {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.card {
+    background: #1e3b20; /* same dark color as movie cards */
+    border-radius: 16px;
+    padding: 30px 40px;
+    min-width: 180px;
+    flex: 1 1 180px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    color: #e0e7ff;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: default;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+.card h3 {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #94a3b8; /* lighter text for heading */
+}
+
+.card p {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #63f163; /* accent color (same as buttons) */
+    margin: 0;
+    line-height: 1;
+}
+
+.cards-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.cards-header h4 {
+    font-size: 2.5vw;
+    letter-spacing: 2px;
+    color: #e0e7ff;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+main {
+    padding: 20px;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #0f0f0f, #1a1a1a);
+    color: rgb(255, 255, 255);
+    height: 100vh;
+}
+
+.tab-section {
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    position: absolute;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.tab-section.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    position: relative;
+}
+
+/* ===== TABLE WRAPPER ===== */
+.tab-section {
+    padding: 20px;
+}
+
+/* ===== TABLE BASE ===== */
+table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+    background: #333333;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ===== SCROLL CONTAINER ===== */
+.table-wrapper {
+    max-height: 60vh;        /* fixed height */
+    overflow-y: auto; 
+    overflow-x: hidden;        /* vertical scroll */
+    border-radius: 10px;
+}
+
+.table-wrapper::-webkit-scrollbar {
+    width: 1vw;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+    background: none;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 40px;
+    cursor: pointer;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ===== TABLE ===== */
+.table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* ===== STICKY HEADER ===== */
+.table-wrapper th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #515151;
+    color: #fff;
+}
+
+/* optional: smooth scrolling */
+.table-wrapper {
+    scroll-behavior: smooth;
+}
+
+/* ===== HEADER ===== */
+table th {
+    background: #515151;
+    color: #ffffff;
+    text-align: left;
+    padding: 12px 15px;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+/* ===== CELLS ===== */
+table td {
+    padding: 12px 15px;
+    font-size: 14px;
+    color: #ffffff;
+}
+
+table tr:nth-child(even) {
+    background: #2d2d2d;
+}
+
+/* ===== ROW HOVER EFFECT ===== */
+table tr:hover {
+    transform: scaleX(1.01);
+    transition: 0.2s ease;
+}
+
+/* ===== STATUS BADGES (optional upgrade) ===== */
+.status-active {
+    color: #00ff6a;
+    background: #005806;
+    font-weight: 600;
+}
+
+.status-inactive {
+    color: #e74c3c;
+    background: #740000;
+    font-weight: 600;
+}
+
+.status-banned {
+    color: #c0000086;
+    background: #210000;
+    font-weight: 600;
+}
+
+.stat {
+    padding: 5px;
+    border-radius: 10px;
+}

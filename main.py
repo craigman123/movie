@@ -466,13 +466,35 @@ def get_venues():
 
     return jsonify(venue_data)
 
+@app.route('/overview')
+def overview():
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+    
+    if session.get('role') == 'user':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('user_dashboard'))
+    
+    user = User.query.get(session['user_id'])
+    
+    return render_template(
+        'overviewAdmin.html', 
+        user=user,
+        users=User.query.all(),
+        movies=Movies.query.all(),
+        count_users=User.query.count(),
+        count_movies=Movies.query.count()
+        )
+
+
 @app.route('/user_dashboard')
 def user_dashboard():
     if 'user_id' not in session:
         flash("Please log in first", "danger")
         return redirect(url_for('gotologin'))
     
-    if session.get('role') != 'user':
+    if session.get('role') == 'admin':
         flash("Unauthorized access", "danger")
         return redirect(url_for('admin_dashboard'))
     
@@ -516,10 +538,16 @@ def login():
     session['role'] = user.role
     session['username'] = user.username
 
-    if user.role == "admin":
-        return redirect(url_for('admin_dashboard'))
-    elif user.role == "user" or user.role == "verified":
+    if user.role == "admin" and user.access == "active":
+        flash(f"Welcome back {user.username}, you have been logged in successfully!", "success")
+        return redirect(url_for('overview'))
+    elif user.role == "user" or user.role == "verified" and user.access == "active":
+        flash(f"Welcome back {user.username}, you have been logged in successfully!", "success")
         return redirect(url_for('user_dashboard'))
+    elif user.role == "user" or user.role == "verified" and user.access == "inactive":
+        return redirect(url_for('gotologin'))
+    elif user.role == "user" or user.role == "verified" and user.access == "banned":
+        return redirect(url_for('gotologin'))
     else:
         flash("Invalid user role", "danger")
         return redirect(url_for('gotologin'))
@@ -535,7 +563,7 @@ def register():
     existing_user = User.query.filter_by(email=email).first()
     
     if existing_user:
-        flash("Email already exists. Please choose a different one.", "danger")
+        flash("Email already exists. Please choose a different one.", "error")
         return render_template('login.html')
 
     # ✅ Create user
