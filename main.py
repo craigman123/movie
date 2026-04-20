@@ -131,7 +131,45 @@ def gotologin():
             return redirect(url_for('user_dashboard'))
 
     return render_template('login.html')
+@app.route('/api/movies')
+def api_movies():
+    movies = Movies.query.all()
 
+    data = []
+    for m in movies:
+        data.append({
+            "id": m.id,
+            "movie_name": m.movie_name,
+            "description": m.description,
+            "movie_image": m.movie_image,
+            "genre": m.genre,
+            "duration": m.duration,
+            "age_restrict": m.age_restrict
+        })
+
+    return jsonify(data)
+
+
+@app.route('/api/schedules')
+def api_schedules():
+    schedules = Schedule.query.all()
+
+    data = []
+    for s in schedules:
+        data.append({
+            "id": s.id,
+            "movie_id": s.movie_id,
+            "venue_id": s.venue_id,
+            "date": s.date.strftime("%Y-%m-%d"),
+            "start_time": s.start_time.strftime("%H:%M"),
+            "end_time": s.end_time.strftime("%H:%M"),
+            "active": s.active
+        })
+
+    return jsonify(data)
+@app.route('/dashboard')
+def dashboard():
+    return render_template('luma_dashboard.html')
 @app.route('/users')
 def view_users():
     if 'user_id' not in session:
