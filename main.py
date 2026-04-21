@@ -538,7 +538,97 @@ def user_dashboard():
     
     user = User.query.get(session['user_id'])
     movies = Movies.query.all()
-    return render_template('user_dashboard.html', user=user, movies=movies)
+    profile =Profiles.query.filter_by(user_id=user.id).first()
+    
+    now = datetime.datetime.now()
+
+    showing_movies = []
+    coming_soon_movies = []
+    ended_movies = []
+    no_schedules_movies = []
+    cancelled_movies = []
+
+    for movie in movies:
+        schedules = movie.schedules
+
+        if not schedules:
+            no_schedules_movies.append(movie)
+            continue
+        
+        upcoming_schedules = []
+
+        for s in schedules:
+            date_val = s.date.date() if isinstance(s.date, datetime.datetime) else s.date
+            start = datetime.datetime.combine(date_val, s.start_time)
+
+            if start >= now:
+                upcoming_schedules.append((start, s))
+
+        upcoming_schedules.sort(key=lambda x: x[0])
+        skip_movie = False
+
+        if upcoming_schedules:
+            next_schedule = upcoming_schedules[0][1]
+            
+            print(f"{movie.movie_name} -> Next Active:", next_schedule.active, type(next_schedule.active))
+            
+            if str(next_schedule.active) != "True":
+                cancelled_movies.append(movie)
+                print("CANCELLED MOVIE ADDED:", movie.movie_name)
+        
+        if skip_movie:
+            continue
+
+        is_showing = False
+        is_coming = True
+        is_ended = True
+
+        for s in schedules:
+            date = s.date.date() if isinstance(s.date, datetime.datetime) else s.date
+            start = datetime.datetime.combine(date, s.start_time)
+            end = datetime.datetime.combine(date, s.end_time)
+
+            if start <= now and now <= end:
+                is_showing = True
+                
+            if now >= start:
+                is_coming = False
+
+            if now <= end:
+                is_ended = False
+
+        if is_showing:
+            showing_movies.append(movie)
+
+        elif all(s_end < now for s_end in [
+            datetime.datetime.combine(
+                s.date.date() if hasattr(s.date, "date") else s.date,
+                s.end_time
+            ) for s in movie.schedules
+        ]):
+            ended_movies.append(movie)
+        
+        else:
+            coming_soon_movies.append(movie)
+            
+    first_letter = user.username[0].lower() if user.username else "a"
+
+    profimage = (
+        f"/static/uploads/uploadedPictures/{profile.profile_image}"
+        if profile and profile.profile_image
+        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
+    )
+    
+    return render_template(
+        'luma_dashboard.html', 
+        user=user, 
+        profile=profile,
+        profimage=profimage,
+        movies=movies,
+        showing_movies=showing_movies,
+        coming_soon_movies=coming_soon_movies,
+        ended_movies=ended_movies
+    )
 
 @app.route('/settings')
 def settings():
@@ -1127,6 +1217,34 @@ def delete_user(user_id):
 
     flash("User deleted successfully.", "success")
     return redirect(url_for('view_users'))
+
+@app.route('/get_profile/<int:user_id>')
+def get_profile(user_id):
+    user = User.query.get(user_id)
+    profile = Profile.query.filter_by(user_id=user_id).first()
+
+    if not user:
+        return {"error": "User not found"}, 404
+
+    # get first letter of username (lowercase)
+    first_letter = user.username[0].lower() if user.username else "a"
+
+    # profile image logic
+    if profile and profile.profile_image:
+        image_path = f"/static/uploads/uploadedPictures/{profile.profile_image}"
+    else:
+        image_path = f"/static/uploads/defaultPictures/{first_letter}.jpg"
+
+    return {
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "status": user.access,
+        "bio": profile.bio if profile else "",
+        "gender": profile.gender if profile else "",
+        "nationality": profile.nationality if profile else "",
+        "image": image_path
+    }
     
     
 if __name__ == '__main__':
