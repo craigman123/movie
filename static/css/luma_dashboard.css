@@ -47,7 +47,18 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 /* APP */
 .layout{display:flex;min-height:100vh}
-.side{width:230px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:26px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side{
+    width: 12vw;
+    flex-shrink:0;
+    background:var(--bg2);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    justify-content: center;
+    position:sticky;
+    top:0;
+    height:100vh;
+}
 .slogo{
     font-family:'Bebas Neue',sans-serif;
     font-size:6vw;
@@ -120,7 +131,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     width:100%;
 }
 .si:focus{border-color:var(--gold)}
-.sico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.sico{
+    position:absolute;
+    left:11px;
+    top:18%;
+    transform:translateY(-50%);
+    color:var(--text3);
+    font-size:13px;
+    pointer-events:none
+}
 
 /* HERO */
 .hero{margin:24px 32px 0;background:var(--surf);border:1px solid var(--border2);border-radius:16px;padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative;overflow:hidden}
@@ -517,4 +536,49 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         filter: drop-shadow(0 0 8px #858585);
         transform: scale(1);
     }
+}
+
+.genre-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.genre {
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: #000000;
+    cursor: pointer;
+    font-size: 12px;
+    transition: 0.2s;
+}
+
+.genre:hover {
+    background: #3f3f3f;
+}
+
+.genre.active {
+    background: #2bff00;
+    color: black;
+}
+
+.status-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.status {
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: #000000;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.status.active {
+    background: #4caf50;
+    color: white;
 }

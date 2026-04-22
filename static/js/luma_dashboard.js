@@ -444,3 +444,60 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 });
+
+let selectedGenres = [];
+let selectedStatus = "";
+
+document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll(".genre").forEach(tag => {
+      tag.addEventListener("click", () => {
+          let value = tag.dataset.genre;
+
+          // "All" resets everything
+          if (value === "") {
+              selectedGenres = [];
+              document.querySelectorAll(".genre").forEach(t => t.classList.remove("active"));
+              tag.classList.add("active");
+          } else {
+              tag.classList.toggle("active");
+
+              if (selectedGenres.includes(value)) {
+                  selectedGenres = selectedGenres.filter(g => g !== value);
+              } else {
+                  selectedGenres.push(value);
+              }
+
+              // remove "All" active if others selected
+              document.querySelector('.genre[data-genre=""]').classList.remove("active");
+          }
+
+          rmov();
+      });
+  });
+
+  document.querySelectorAll(".status").forEach(tag => {
+      tag.addEventListener("click", function () {
+          // remove active from all
+          document.querySelectorAll(".status").forEach(t => t.classList.remove("active"));
+
+          // set active
+          this.classList.add("active");
+
+          selectedStatus = this.dataset.status;
+
+          console.log("Status:", selectedStatus);
+
+          rmov();
+      });
+  });
+});
+
+function rmov() {
+    let search = document.getElementById("sq").value.toLowerCase();
+
+    // existing genre logic
+    console.log("Search:", search);
+    console.log("Status:", selectedStatus);
+
+    // combine filters here
+}

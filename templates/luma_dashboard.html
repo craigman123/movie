@@ -9,7 +9,7 @@
 
 {% block body %}
 
-<div id="profileModal" class="modal">
+<!-- <div id="profileModal" class="modal">
     <div class="modal-box">
         <span class="close-btn" onclick="closeProfileModal()">&times;</span>
 
@@ -28,7 +28,7 @@
             <div id="modalBio" class="bio-box">No bio</div>
         </div>
     </div>
-</div>
+</div> -->
 
 <div id="app">
   <div class="layout">
@@ -112,7 +112,33 @@
           <div class="srch">
             <span class="sico">🔍</span>
             <input class="si" type="text" placeholder="Search movies..." id="sq" oninput="rmov()">
+
+            <!-- Genre Tags -->
+            <div class="genre-tags">
+              <span class="genre active" data-genre="">All</span>
+              <span class="genre" data-genre="action">Action</span>
+              <span class="genre" data-genre="adventure">Adventure</span>
+              <span class="genre" data-genre="animation">Animation</span>
+              <span class="genre" data-genre="comedy">Comedy</span>
+              <span class="genre" data-genre="drama">Drama</span>
+              <span class="genre" data-genre="family">Family</span>
+              <span class="genre" data-genre="fantasy">Fantasy</span>
+              <span class="genre" data-genre="horror">Horror</span>
+              <span class="genre" data-genre="romance">Romance</span>
+              <span class="genre" data-genre="sci-fi">Sci-Fi</span>
+              <span class="genre" data-genre="thriller">Thriller</span>
+              <span class="genre" data-genre="musical">Musical</span>
+              <span class="genre" data-genre="historical">Historical</span>
+              <span class="genre" data-genre="mystery">Mystery</span>
           </div>
+          <div class="status-tags">
+            <span class="status active" data-status="">All</span>
+            <span class="status" data-status="showing">Showing</span>
+            <span class="status" data-status="coming-soon">Coming Soon</span>
+            <span class="status" data-status="ended">Ended</span>
+            <span class="status" data-status="no-schedule">No Schedule</span>
+        </div>
+        </div>
 
           <div class="movies-grid">
                 {% for movie in movies %}
