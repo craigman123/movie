@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/luma_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/book_seat.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-user-pack.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>Book Seat — {{ movie.movie_name }}</title>
+{% endblock %}
+
+{% block body %}
+<div id="app">
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="side">
+      <div class="slogo">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height:1.2em;margin-right:10px;">
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Discover</div>
+        <a class="ni" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Account</div>
+        <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+      </div>
+      <div class="sbot">
+        <div class="uchip" onclick="openProfileModal({{ user.id }})">
+          <div class="av"><img src="{{ profimage }}" alt="Profile"></div>
+          <div class="uinf">
+            <div class="uname">{{ user.username }}</div>
+            <div class="urole">
+              {% if user.role == "user" %}<span style="color:var(--gold)">User - Open Profile</span>
+              {% elif user.role == "verified" %}<span style="color:var(--green)">Verified</span>
+              {% else %}<span style="color:var(--text2)">{{ user.role }}</span>{% endif %}
+              <span class="ulgo">↩</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="pg on">
+
+        <!-- Header -->
+        <div class="phead">
+          <div>
+            <div class="ptitle">Book a Seat</div>
+            <div class="psub">{{ movie.movie_name }} &bull; {{ schedule.date }} &bull; {{ schedule.start_time.strftime('%H:%M') }} – {{ schedule.end_time.strftime('%H:%M') }}</div>
+          </div>
+          <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="pbtn" style="text-decoration:none;">← Back</a>
+        </div>
+
+        <div class="csec bk-grid">
+
+          <!-- LEFT: seat map -->
+          <div class="bk-left">
+            <!-- Step 1: ticket type -->
+            <div class="bk-card">
+              <div class="steplbl">Step 1 — Ticket Type</div>
+              <div class="ttypes">
+                <div class="ttype on" id="tt-std" onclick="selType('standard')">
+                  <div class="ttn">Standard</div>
+                  <div class="ttp">₱350</div>
+                  <div class="ttperks">Full movie experience<br>Any available seat</div>
+                </div>
+                <div class="ttype" id="tt-prm" onclick="selType('premium')">
+                  <div class="ttn">Premium ✦</div>
+                  <div class="ttp">₱500</div>
+                  <div class="ttperks">Massage chair · Free popcorn<br>Free drinks · Front rows (A–B)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: seat map -->
+            <div class="bk-card">
+              <div class="steplbl">Step 2 — Pick Your Seat</div>
+              <div class="smap">
+                <div class="sbar"></div>
+                <div class="scrlbl">◆ S C R E E N ◆</div>
+                <div class="srows" id="srows"></div>
+                <div class="sleg">
+                  <div class="sli"><div class="sld" style="background:var(--bg3);border:1px solid var(--border)"></div> Available</div>
+                  <div class="sli"><div class="sld" style="background:var(--gold)"></div> Selected</div>
+                  <div class="sli"><div class="sld" style="background:var(--bg3);opacity:.25;border:1px solid var(--border)"></div> Taken</div>
+                  <div class="sli"><div class="sld" style="background:var(--bg3);border:1px solid rgba(91,141,238,.4)"></div> Other Type</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: summary -->
+          <div class="bk-right">
+            <div class="bk-card bk-summary">
+              <div class="steplbl">Step 3 — Confirm Booking</div>
+              <div class="bsum">
+                <div class="brow"><span>Movie</span><span id="sm">{{ movie.movie_name }}</span></div>
+                <div class="brow"><span>Date</span><span id="sd">{{ schedule.date }}</span></div>
+                <div class="brow"><span>Time</span><span id="sti">{{ schedule.start_time.strftime('%H:%M') }} – {{ schedule.end_time.strftime('%H:%M') }}</span></div>
+                <div class="brow"><span>Venue</span><span id="svn">{{ venue.venue_name }}</span></div>
+                <div class="brow"><span>Room</span><span id="svr">{{ venue.venue_room }}</span></div>
+                <div class="brow"><span>Seat</span><span id="ss">—</span></div>
+                <div class="brow"><span>Type</span><span id="sty">Standard</span></div>
+                <div class="btot">
+                  <span class="l">Total</span>
+                  <span class="v" id="stot">₱350</span>
+                </div>
+              </div>
+              <button class="bbtn" id="bbtn" onclick="confirmBooking()" disabled>
+                Select a Seat to Continue
+              </button>
+            </div>
+
+            <!-- Venue info card -->
+            <div class="bk-card bk-venue-info">
+              <div class="steplbl">Venue</div>
+              {% if venue.venue_image %}
+              <img src="{{ url_for('static', filename='uploads/' + venue.venue_image) }}"
+                   class="bk-venue-img" alt="{{ venue.venue_name }}">
+              {% endif %}
+              <div class="vm-venue-name" style="margin-top:12px;">{{ venue.venue_name }}</div>
+              <div class="vm-venue-room">Room: {{ venue.venue_room }}</div>
+              {% if venue.venue_linkMap %}
+              <a class="vm-map-link" href="{{ venue.venue_linkMap }}" target="_blank" rel="noopener">📍 View on Map</a>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="paymentModal" class="pay-modal-overlay" style="display: none;">
+    <div class="pay-modal-container">
+        <button class="pay-modal-close" onclick="closePaymentModal()">&times;</button>
+        
+        <div class="payment-page" id="paymentPage">
+            <div class="pay-page-header">
+                <span class="pay-page-title">Complete Payment</span>
+            </div>
+
+            <div class="pay-layout">
+                <div class="pay-method-col">
+                    <div class="pay-card">
+                        <div class="pay-card-title">Select Payment Method</div>
+                        <div class="pay-options">
+                            <label class="pay-opt">
+                                <input type="radio" name="payMethod" value="GCash" checked>
+                                <span class="pay-opt-box">GCash</span>
+                            </label>
+                            <label class="pay-opt">
+                                <input type="radio" name="payMethod" value="PayMaya">
+                                <span class="pay-opt-box">Maya</span>
+                            </label>
+                        </div>
+
+                        <div class="pay-pin-sec">
+                            <div class="pay-card-title">Enter Transaction PIN</div>
+                            <input type="password" id="confirmPin" class="pay-pin-input" maxlength="4" placeholder="••••">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pay-summary-col">
+                    <div class="pay-card">
+                        <div class="pay-card-title">Order Summary</div>
+                        <div class="pay-sum-row">
+                            <span>Seats Selected</span>
+                            <span id="modalSeats">—</span>
+                        </div>
+                        <div class="pay-sum-row pay-sum-total">
+                            <span>Total Amount</span>
+                            <span id="modalTotal">₱0</span>
+                        </div>
+                        <button class="pay-confirm-btn" onclick="processFinalBooking()">Confirm & Pay</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const SCHEDULE_ID = {{ schedule.id }};
+  const VENUE_ROWS  = {{ venue.venue_row }};
+  const VENUE_COLS  = {{ venue.venue_col }};
+  const ROW_GAP     = {{ venue.venue_row_gap }};
+  const COL_GAP     = {{ venue.venue_col_gap }};
+</script>
+<script src="{{ url_for('static', filename='js/book_seat.js') }}"></script>
+{% endblock %}

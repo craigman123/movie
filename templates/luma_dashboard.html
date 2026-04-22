@@ -9,27 +9,6 @@
 
 {% block body %}
 
-<!-- <div id="profileModal" class="modal">
-    <div class="modal-box">
-        <span class="close-btn" onclick="closeProfileModal()">&times;</span>
-
-        <div class="profile-top">
-            <img id="modalProfileImage" src="/static/uploads/default.png" alt="Profile">
-            <h2 id="modalUsername">Username</h2>
-            <p id="modalEmail">email@example.com</p>
-        </div>
-
-        <div class="profile-info">
-            <p><strong>Role:</strong> <span id="modalRole"></span></p>
-            <p><strong>Status:</strong> <span id="modalStatus"></span></p>
-            <p><strong>Gender:</strong> <span id="modalGender"></span></p>
-            <p><strong>Nationality:</strong> <span id="modalNationality"></span></p>
-            <p><strong>Bio:</strong></p>
-            <div id="modalBio" class="bio-box">No bio</div>
-        </div>
-    </div>
-</div> -->
-
 <div id="app">
   <div class="layout">
     <aside class="side">
@@ -38,12 +17,13 @@
       </div>
       <div class="nsec">
         <div class="nlbl">Discover</div>
-        <div class="ni on" onclick="nav('home')"><span class="nico">🎬</span> Movies</div>
-        <div class="ni" onclick="nav('sched')"><span class="nico">📅</span> Schedule</div>
+        <a class="ni on" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
       </div>
       <div class="nsec">
         <div class="nlbl">Account</div>
-        <div class="ni" onclick="nav('tix')"><span class="nico">🎟️</span> My Tickets</div>
+        <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
       </div>
       <div class="sbot">
         <div class="uchip" onclick="openProfileModal({{ user.id }})">
@@ -141,31 +121,35 @@
         </div>
 
           <div class="movies-grid">
-                {% for movie in movies %}
+            {% for movie in movies %}
+            <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="movie-link">
                 <div class="movie-card">
                     <img src="{{ url_for('static', filename='uploads/' + movie.movie_image) }}" alt="{{ movie.movie_name }}">
+                    
                     <div class="movie-info">
                         <h5>{{ movie.movie_name }}</h5>
                         <p>{{ movie.genre }}</p>
                     </div>
-                        {% if movie in cancelled_movies %}
-                            <span class="status cancelled">CANCELLED</span>
 
-                        {% elif movie in showing_movies %}
-                            <span class="status showing">SHOWING</span>
+                    {% if movie in cancelled_movies %}
+                        <span class="status cancelled">CANCELLED</span>
 
-                        {% elif movie in coming_soon_movies %}
-                            <span class="status coming-soon">COMING SOON</span>
+                    {% elif movie in showing_movies %}
+                        <span class="status showing">SHOWING</span>
 
-                        {% elif movie in ended_movies %}
-                            <span class="status ended">ENDED</span>
+                    {% elif movie in coming_soon_movies %}
+                        <span class="status coming-soon">COMING SOON</span>
 
-                        {% else %}
-                            <span class="status unknown">NO SCHEDULE</span>
-                        {% endif %}
-                  </div>
-                  {% endfor %}
-              </div>
+                    {% elif movie in ended_movies %}
+                        <span class="status ended">ENDED</span>
+
+                    {% else %}
+                        <span class="status unknown">NO SCHEDULE</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
 
             {% if movies|length == 0 %}
             <p class="no-movies">No movies available.</p>
@@ -173,10 +157,14 @@
         </div>
       </div>
       <!-- SCHEDULE -->
-      <div class="pg" id="pg-sched">
-        <div class="phead"><div><div class="ptitle">Schedule</div><div class="psub">All upcoming showtimes — click any to book</div></div></div>
-        <div class="spg" id="schedlist"></div>
+      
+
+      <!-- VENUES -->
+      <div class="pg" id="pg-venues">
+        <div class="phead"><div><div class="ptitle">Venues</div><div class="psub">Where to watch your favorite movies</div></div></div>
+        <div class="vlist" id="vlist"></div>
       </div>
+
       <!-- TICKETS -->
       <div class="pg" id="pg-tix">
         <div class="phead"><div><div class="ptitle">My Tickets</div><div class="psub">Your booking history and QR codes</div></div></div>
@@ -185,68 +173,5 @@
     </main>
   </div>
 </div>
-
-<!-- MOVIE MODAL -->
-<div class="ovl" id="ovl" onclick="cmClose(event)">
-  <div class="modal">
-    <div class="min">
-      <button class="mclose" onclick="closeM()">✕</button>
-      <div class="mhdr">
-        <div id="mpostw"></div>
-        <div class="mmeta">
-          <h2 id="mtitle">—</h2>
-          <div class="chips" id="mchips"></div>
-          <div class="mdesc" id="mdesc"></div>
-        </div>
-      </div>
-      <div class="sep"></div>
-      <div class="steplbl">Step 1 — Choose a Schedule</div>
-      <div class="sgrid" id="sgrid"></div>
-      <div class="sep"></div>
-      <div class="steplbl">Step 2 — Ticket Type</div>
-      <div class="ttypes">
-        <div class="ttype on" id="tt-std" onclick="selType('std')">
-          <div class="ttn">Standard</div>
-          <div class="ttp">₱350</div>
-          <div class="ttperks">Full movie experience<br>Any available seat</div>
-        </div>
-        <div class="ttype" id="tt-prm" onclick="selType('prm')">
-          <div class="ttn">Premium ✦</div>
-          <div class="ttp">₱500</div>
-          <div class="ttperks">Massage chair · Free popcorn<br>Free drinks · Front rows (A–B)</div>
-        </div>
-      </div>
-      <div class="sep"></div>
-      <div class="steplbl">Step 3 — Select Your Seat</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px" id="seat-hint">Select a schedule first to view the seat map.</div>
-      <div class="smap">
-        <div class="sbar"></div>
-        <div class="scrlbl">◆ S C R E E N ◆</div>
-        <div class="srows" id="srows"></div>
-        <div class="sleg">
-          <div class="sli"><div class="sld" style="background:var(--bg3);border:1px solid var(--border)"></div> Available</div>
-          <div class="sli"><div class="sld" style="background:var(--gold)"></div> Selected</div>
-          <div class="sli"><div class="sld" style="background:var(--bg3);opacity:.25;border:1px solid var(--border)"></div> Taken</div>
-          <div class="sli"><div class="sld" style="background:var(--bg3);border:1px solid rgba(91,141,238,.4)"></div> Other Type</div>
-        </div>
-      </div>
-      <div class="sep"></div>
-      <div class="steplbl">Step 4 — Confirm Booking</div>
-      <div class="bsum">
-        <div class="brow"><span>Movie</span><span id="sm">—</span></div>
-        <div class="brow"><span>Date</span><span id="sd">—</span></div>
-        <div class="brow"><span>Time</span><span id="sti">—</span></div>
-        <div class="brow"><span>Venue</span><span id="svn">—</span></div>
-        <div class="brow"><span>Room</span><span id="svr">—</span></div>
-        <div class="brow"><span>Seat</span><span id="ss">—</span></div>
-        <div class="brow"><span>Type</span><span id="sty">—</span></div>
-        <div class="btot"><span class="l">Total</span><span class="v" id="stot">₱0</span></div>
-      </div>
-      <button class="bbtn" id="bbtn" onclick="book()" disabled>Select a Schedule &amp; Seat to Continue</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
 
 {% endblock %}

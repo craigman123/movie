@@ -1,93 +1,367 @@
-
-body {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    grid-area:
-    "";
-    background: black;
+/* ─── view_movie.css ──────────────────────────────────────────────────── */
+ 
+/* Row 1: media grid */
+.media-grid {
+  display: grid;
+  grid-template-columns: 0.3fr 1fr;
+  height: 55vh;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 20px;
 }
-
-.container.view-movie {
-    max-width: 1000px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #333;
+ 
+/* Poster */
+.poster-wrap {
+  border-radius: var(--radius);
+  overflow: hidden;
+  width: 23vw;
+  height: 55vh;
+  border: 1px solid var(--border2);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  background: var(--bg3);
 }
-
-.movie-title {
-    font-size: 2.2rem;
-    margin-bottom: 1rem;
-    text-align: center;
-    color: #222;
+.movie-poster-view {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
-
-.poster {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    margin: 0 auto 1.5rem auto;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+ 
+/* Trailer column */
+.trailer-wrap {
+  height: 55vh;
+  display: flex;
+  flex-direction: column;
 }
-
-.movie-details {
-    background-color: #f9f9f9;
-    padding: 1.5rem;
-    border-radius: 10px;
-    margin-bottom: 2rem;
+.trailer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
-
-.movie-details p {
-    margin: 0.5rem 0;
-    line-height: 1.5;
+ 
+/* View Venues button */
+.venues-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(24,162,0,0.35);
+  color: var(--gold);
+  border-radius: var(--rsm);
+  padding: 7px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .4px;
+  cursor: pointer;
+  transition: all .18s;
 }
-
-.venue-image {
-    max-width: 100%;
-    border-radius: 10px;
-    margin: 0.5rem 0 1rem 0;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+.venues-btn:hover {
+  background: rgba(24,162,0,0.2);
+  border-color: var(--gold);
+  transform: translateY(-1px);
 }
-
-h2 {
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    color: #444;
-    font-size: 1.5rem;
+ 
+/* Video */
+.video-container {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100px;
 }
-
-.movie-details p strong,
-.venue p strong {
-    color: #555;
+.video-container video {
+  width: 100%;
+  flex: 1;
+  border-radius: var(--rsm);
+  display: block;
+  object-fit: cover;
+  min-height: 0;
 }
-
-video {
-    display: block;
-    margin: 1rem auto;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+ 
+/* Row 2: description */
+.details-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 26px;
+  margin-bottom: 16px;
 }
-
-a {
-    color: #1976d2;
-    text-decoration: none;
+.desc-text {
+  color: var(--text2);
+  font-size: 14px;
+  line-height: 1.75;
+  margin-top: 8px;
 }
-
-a:hover {
-    text-decoration: underline;
+ 
+/* Row 3: meta pills */
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
-
-@media screen and (max-width: 768px) {
-    .container.view-movie {
-        padding: 0 0.5rem;
-    }
-
-    .movie-title {
-        font-size: 1.8rem;
-    }
-
-    h2 {
-        font-size: 1.3rem;
-    }
+.meta-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--rsm);
+  padding: 10px 18px;
+  min-width: 110px;
 }
+.meta-label {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: var(--gold);
+}
+.meta-value {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+}
+ 
+/* ── Venue Modal overlay ── */
+.vm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.78);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+}
+.vm-overlay.open { display: flex; }
+ 
+.vm-modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  width: 92%;
+  max-width: 780px;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: vmUp .28s ease;
+}
+@keyframes vmUp {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+ 
+.vm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24px 26px 16px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg2);
+  z-index: 1;
+}
+.vm-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 1.5px;
+  color: var(--text);
+}
+.vm-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.vm-close {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.vm-close:hover { background: var(--bg4); color: var(--text); }
+ 
+.vm-body { padding: 20px 26px 26px; }
+ 
+/* Loading spinner */
+.vm-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text3);
+  font-size: 13px;
+  padding: 20px 0;
+}
+.vm-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+ 
+/* ── Venue card ── */
+.vm-venue-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+}
+.vm-venue-card:last-child { margin-bottom: 0; }
+ 
+/* Venue image — left column */
+.vm-venue-img {
+  width: 200px;
+  min-width: 200px;
+  min-height: 160px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+}
+.vm-venue-img-placeholder {
+  width: 200px;
+  min-width: 200px;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  background: var(--bg4);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  color: var(--text3);
+}
+ 
+/* Venue info — right column */
+.vm-venue-info {
+  flex: 1;
+  padding: 18px 20px;
+  min-width: 0;
+}
+.vm-venue-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 1px;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.vm-venue-room {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 11px;
+}
+.vm-venue-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 11px;
+}
+.vm-tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--bg4);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.vm-tag.available   { background: rgba(78,203,122,.1);  border-color: rgba(78,203,122,.22); color: var(--green); }
+.vm-tag.unavailable { background: rgba(224,85,85,.1);   border-color: rgba(224,85,85,.22);  color: var(--red); }
+ 
+.vm-map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--blue);
+  text-decoration: none;
+  margin-bottom: 13px;
+  transition: opacity .15s;
+}
+.vm-map-link:hover { opacity: .75; }
+ 
+/* Showtimes */
+.vm-sched-label {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--gold);
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.vm-sched-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.vm-sched-pill {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--rsm);
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.4;
+}
+.vm-sched-pill .sdate { font-weight: 500; color: var(--text); display: block; }
+.vm-sched-pill .stime { font-size: 11px; color: var(--text3); }
+.vm-sched-pill.cancelled { opacity: .4; text-decoration: line-through; }
+ 
+.vm-no-sched  { font-size: 12px; color: var(--text3); font-style: italic; }
+.vm-no-results { text-align: center; color: var(--text3); font-size: 13px; padding: 30px 0; }
+ 
+/* Responsive */
+@media (max-width: 860px) {
+  .media-grid { grid-template-columns: 1fr; height: auto; }
+  .poster-wrap { width: 100%; height: 260px; max-width: 240px; margin: 0 auto; }
+  .trailer-wrap { height: auto; }
+  .video-container { min-height: 200px; }
+  .vm-venue-card { flex-direction: column; }
+  .vm-venue-img, .vm-venue-img-placeholder { width: 100%; min-width: unset; height: 160px; border-right: none; border-bottom: 1px solid var(--border); }
+}
+ 
+/* ── Clickable schedule pill ── */
+a.vm-sched-pill.clickable {
+  text-decoration: none;
+  cursor: pointer;
+  border-color: rgba(24,162,0,0.25);
+  transition: all .18s;
+  position: relative;
+}
+a.vm-sched-pill.clickable:hover {
+  background: rgba(51, 51, 51, 0.1);
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+a.vm-sched-pill.clickable:hover .sdate { color: var(--gold); }
+.sbook {
+  display: block;
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: .8px;
+  margin-top: 3px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+a.vm-sched-pill.clickable:hover .sbook { opacity: 1; }

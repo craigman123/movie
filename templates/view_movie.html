@@ -1,64 +1,144 @@
 {% extends "base.html" %}
 
 {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/luma_dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/view_movie.css') }}">
-    <script src="{{ url_for('static', filename='js/view_movie.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-user-pack.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <title>{{ movie.movie_name }} - LUMA</title>
 {% endblock %}
 
 {% block body %}
+<div id="app">
+  <div class="layout">
+    <aside class="side">
+      <div class="slogo">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height: 1.2em; margin-right: 10px;">
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Discover</div>
+        <a class="ni on" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Account</div>
+        <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+      </div>
+      <div class="sbot">
+        <div class="uchip" onclick="openProfileModal({{ user.id }})">
+          <div class="av" id="sav">
+            <img src="{{ profimage }}" alt="Profile Image">
+          </div>
+          <div class="uinf">
+            <div class="uname" id="snm">{{ user.username }}</div>
+            <div class="urole" id="sumprof">
+              {% if user.role == "user" %}
+                  <span style="color:var(--gold)">User - Open Profile</span>
+              {% elif user.role == "verified" %}
+                  <span style="color:var(--green)">Verified - Open Profile</span>
+              {% else %}
+                  <span style="color:var(--text2)">{{ user.role }}</span>
+              {% endif %}
+              <span class="ulgo">↩</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
 
-<header class="navbar">
-    <div class="logo">LUMA</div>
-    <nav class="nav-links">
-        <a href="{{ url_for('user_dashboard') }}">HOME</a>
-        <a href="#">ORDER</a>
-        <a href="about">ABOUT</a>
-        <a href="#">LIBRARIES</a>
-        <a href="settings">SETTINGS</a>
-    </nav>
-    <div class="profile">L</div>
-</header>
+    <main class="main">
+      <div class="pg on" id="pg-movie">
 
-<main class="container view-movie">
-    <h1 class="movie-title">{{ movie.movie_name }}</h1>
+        <!-- Page Header -->
+        <div class="phead">
+          <div>
+            <div class="ptitle">{{ movie.movie_name }}</div>
+            <div class="psub">{{ movie.genre }} &bull; {{ movie.duration }} min</div>
+          </div>
+          <a href="{{ url_for('user_dashboard') }}" class="pbtn" style="text-decoration:none;">&#8592; Back to Movies</a>
+        </div>
 
-    {% if movie.movie_image %}
-        <img src="{{ url_for('static', filename='uploads/' + movie.movie_image) }}" class="poster" alt="{{ movie.movie_name }}">
-    {% endif %}
+        <div class="csec">
 
-    <div class="movie-details">
-        <p><strong>Description:</strong> {{ movie.description }}</p>
-        <p><strong>Genre:</strong> {{ movie.genre }}</p>
-        <p><strong>Language:</strong> {{ movie.language }}</p>
-        <p><strong>Duration:</strong> {{ movie.duration }}</p>
-        <p><strong>Release Date:</strong> {{ movie.movie_date }}</p>
+          <!-- Row 1: Poster + Trailer grid -->
+          <div class="media-grid">
+            {% if movie.movie_image %}
+            <div class="poster-wrap">
+              <img src="{{ url_for('static', filename='uploads/' + movie.movie_image) }}"
+                   class="movie-poster-view" alt="{{ movie.movie_name }}">
+            </div>
+            {% endif %}
+
+            {% if movie.movie_trailer %}
+            <div class="trailer-wrap">
+              <div class="trailer-header">
+                <div class="steplbl">Official Trailer</div>
+                <!-- View Venues button — bottom-right of trailer column -->
+                <button class="venues-btn" onclick="openVenueModal({{ movie.id }})">
+                  🏨 View Venues &amp; Schedules
+                </button>
+              </div>
+              <div class="video-container">
+                <video autoplay muted loop playsinline class="movie-trailer" controlsList="nofullscreen" width="100%" id="vid">
+                    <source src="{{ url_for('static', filename='uploads/' + movie.movie_trailer) }}" type="video/mp4">
+                </video>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Row 2: Description -->
+          <div class="details-card">
+            <div class="steplbl">Synopsis</div>
+            <p class="desc-text">{{ movie.description }}</p>
+          </div>
+
+          <!-- Row 3: Meta pills -->
+          <div class="meta-row">
+            <div class="meta-pill">
+              <span class="meta-label">Language</span>
+              <span class="meta-value">{{ movie.language }}</span>
+            </div>
+            <div class="meta-pill">
+              <span class="meta-label">Genre</span>
+              <span class="meta-value">{{ movie.genre }}</span>
+            </div>
+            <div class="meta-pill">
+              <span class="meta-label">Duration</span>
+              <span class="meta-value">{{ movie.duration }} min</span>
+            </div>
+            <div class="meta-pill">
+              <span class="meta-label">Release Date</span>
+              <span class="meta-value">{{ movie.movie_date_created }}</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ── Venue / Schedule Modal ── -->
+<div class="vm-overlay" id="vmOverlay" onclick="closeVenueModal(event)">
+  <div class="vm-modal" id="vmModal">
+    <div class="vm-header">
+      <div>
+        <div class="vm-title" id="vmTitle">Venues &amp; Schedules</div>
+        <div class="vm-sub" id="vmSub">Loading...</div>
+      </div>
+      <button class="vm-close" onclick="closeVenueModal(null, true)">✕</button>
     </div>
 
-    {% if venue %}
-        <h2>Venue</h2>
-        <p><strong>Name:</strong> {{ venue.venue_name }}</p>
-        <p><strong>Room:</strong> {{ venue.venue_room }}</p>
-        {% if venue.venue_image %}
-            <img src="{{ url_for('static', filename='uploads/' + venue.venue_image) }}" class="venue-image" alt="{{ venue.venue_name }}">
-        {% endif %}
-        <p><a href="{{ venue.venue_linkMap }}" target="_blank">View Map</a></p>
-        <p><strong>Schedule:</strong> {{ venue.schedule_open }}</p>
-    {% endif %}
+    <div class="vm-body" id="vmBody">
+      <div class="vm-loading" id="vmLoading">
+        <div class="vm-spinner"></div>
+        <span>Fetching venues...</span>
+      </div>
+    </div>
+  </div>
+</div>
 
-    {% if tickets %}
-        <h2>Tickets</h2>
-        <p><strong>Standard:</strong> {{ tickets.standard_tickets }}</p>
-        <p><strong>Premium:</strong> {{ tickets.premium_tickets }}</p>
-    {% endif %}
-
-    {% if movie.movie_trailer %}
-        <h2>Trailer</h2>
-        <video controls autoplay muted loop style="width:100%; max-width:720px;">
-            <source src="{{ url_for('static', filename='uploads/' + movie.movie_trailer) }}" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    {% endif %}
-</main>
-
+<script src="{{ url_for('static', filename='js/view_movie.js') }}"></script>
 {% endblock %}

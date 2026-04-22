@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Payment</title>
+<!-- Your global stylesheet (defines CSS tokens, Bebas Neue, DM Sans) -->
+<link rel="stylesheet" href="global.css"/>
+<!-- Payment page styles -->
+<link rel="stylesheet" href="payment.css"/>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     PAYMENT PAGE
+════════════════════════════════════════════════════════ -->
+<div class="payment-page" id="paymentPage">
+
+  <!-- Header -->
+  <div class="pay-page-header">
+    <button class="pay-back-btn" onclick="history.back()" aria-label="Go back">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M19 12H5M12 5l-7 7 7 7"/>
+      </svg>
+    </button>
+    <span class="pay-page-title">Complete Payment</span>
+    <span class="pay-step-badge">Step 2 of 2</span>
+  </div>
+
+  <!-- Two-column layout -->
+  <div class="pay-layout">
+
+    <!-- ── Left: payment method ── -->
+    <div class="pay-method-col">
+      <div class="pay-card">
+        <div class="pay-card-title">Payment Method</div>
+
+        <!-- Method tabs -->
+        <div class="pay-method-tabs">
+          <div class="pay-method-tab active" data-m="gcash" onclick="selectMethod('gcash')">
+            <span class="pay-method-icon">💙</span>
+            <span class="pay-method-label">GCash</span>
+          </div>
+          <div class="pay-method-tab" data-m="maya" onclick="selectMethod('maya')">
+            <span class="pay-method-icon">💚</span>
+            <span class="pay-method-label">Maya</span>
+          </div>
+          <div class="pay-method-tab" data-m="card" onclick="selectMethod('card')">
+            <span class="pay-method-icon">💳</span>
+            <span class="pay-method-label">Card</span>
+          </div>
+        </div>
+
+        <!-- GCash panel -->
+        <div class="pay-panel active" id="panel-gcash">
+          <div class="pay-ewallet-box">
+            <div class="pay-qr" id="qrGcash"></div>
+            <div class="pay-ewallet-number">0917 123 4567</div>
+            <div class="pay-ewallet-hint">
+              Scan the QR or send to this GCash number.<br/>
+              Use your Booking ID as the reference note.
+            </div>
+            <button class="pay-copy-btn" onclick="copyNumber('0917 123 4567')">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              Copy Number
+            </button>
+          </div>
+        </div>
+
+        <!-- Maya panel -->
+        <div class="pay-panel" id="panel-maya">
+          <div class="pay-ewallet-box">
+            <div class="pay-qr" id="qrMaya"></div>
+            <div class="pay-ewallet-number">0998 765 4321</div>
+            <div class="pay-ewallet-hint">
+              Scan the QR or send to this Maya number.<br/>
+              Use your Booking ID as the reference note.
+            </div>
+            <button class="pay-copy-btn" onclick="copyNumber('0998 765 4321')">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              Copy Number
+            </button>
+          </div>
+        </div>
+
+        <!-- Card panel -->
+        <div class="pay-panel" id="panel-card">
+          <div class="pay-card-preview">
+            <div class="pay-preview-number" id="previewNumber">•••• •••• •••• ••••</div>
+            <div class="pay-preview-row">
+              <div class="pay-preview-item">
+                <span class="pay-preview-lbl">Cardholder</span>
+                <span class="pay-preview-val" id="previewName">FULL NAME</span>
+              </div>
+              <div class="pay-preview-item">
+                <span class="pay-preview-lbl">Expires</span>
+                <span class="pay-preview-val" id="previewExpiry">MM / YY</span>
+              </div>
+            </div>
+          </div>
+          <div class="pay-field-group">
+            <div class="pay-field">
+              <label for="cardNumber">Card Number</label>
+              <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456"
+                maxlength="19" oninput="fmtCard(this)" autocomplete="cc-number"/>
+            </div>
+            <div class="pay-field">
+              <label for="cardName">Cardholder Name</label>
+              <input type="text" id="cardName" placeholder="Juan dela Cruz"
+                oninput="document.getElementById('previewName').textContent = this.value.toUpperCase() || 'FULL NAME'"
+                autocomplete="cc-name"/>
+            </div>
+            <div class="pay-field-row">
+              <div class="pay-field">
+                <label for="cardExpiry">Expiry</label>
+                <input type="text" id="cardExpiry" placeholder="MM / YY"
+                  maxlength="7" oninput="fmtExpiry(this)" autocomplete="cc-exp"/>
+              </div>
+              <div class="pay-field">
+                <label for="cardCvv">CVV</label>
+                <input type="password" id="cardCvv" placeholder="•••"
+                  maxlength="4" autocomplete="cc-csc"/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pay button -->
+        <button class="pay-btn" id="payBtn" onclick="processPayment()">
+          <div class="pay-spinner"></div>
+          <span class="pay-btn-text" id="payBtnText">Pay ₱0</span>
+        </button>
+        <div class="pay-secure-note">
+          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          256-bit SSL encrypted · Secured payment
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Right: order summary ── -->
+    <div class="pay-order-col">
+      <div class="pay-card">
+        <div class="pay-card-title">Order Summary</div>
+
+        <div class="pay-event-banner">
+          <div class="pay-event-icon">🎭</div>
+          <div>
+            <div class="pay-event-name" id="sumEventName">—</div>
+            <div class="pay-event-meta" id="sumEventMeta">—</div>
+          </div>
+        </div>
+
+        <div class="pay-seat-chips" id="sumSeats"></div>
+
+        <div class="pay-price-rows">
+          <div class="pay-price-row">
+            <span class="p-label">Ticket type</span>
+            <span class="p-value" id="sumType">—</span>
+          </div>
+          <div class="pay-price-row">
+            <span class="p-label">Seats</span>
+            <span class="p-value" id="sumCount">—</span>
+          </div>
+          <div class="pay-price-row">
+            <span class="p-label">Price per seat</span>
+            <span class="p-value" id="sumUnitPrice">—</span>
+          </div>
+          <div class="pay-price-row">
+            <span class="p-label">Convenience fee</span>
+            <span class="p-value" id="sumFee">₱0</span>
+          </div>
+          <hr class="pay-price-divider"/>
+          <div class="pay-price-row p-total">
+            <span class="p-label">Total</span>
+            <span class="p-value" id="sumTotal">₱0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.pay-layout -->
+</div><!-- /#paymentPage -->
+
+
+<!-- ════════════════════════════════════════════════════════
+     RECEIPT MODAL  (same overlay pattern as .vm-overlay)
+════════════════════════════════════════════════════════ -->
+<div class="pay-receipt-overlay" id="receiptOverlay">
+  <div class="pay-receipt-modal">
+
+    <div class="pay-receipt-header">
+      <div class="pay-receipt-checkmark">🎟️</div>
+      <div class="pay-receipt-title">Payment Confirmed!</div>
+      <div class="pay-receipt-sub">Your tickets have been booked successfully.</div>
+    </div>
+
+    <div class="pay-receipt-body">
+      <div class="pay-receipt-event-row">
+        <div class="pay-receipt-event-icon">🎭</div>
+        <div>
+          <div class="pay-receipt-event-name" id="rcEventName">—</div>
+          <div class="pay-receipt-event-meta" id="rcEventMeta">—</div>
+        </div>
+      </div>
+      <div class="pay-rc-row">
+        <span class="rc-label">Seats</span>
+        <span class="rc-value rc-seats" id="rcSeats"></span>
+      </div>
+      <div class="pay-rc-row">
+        <span class="rc-label">Ticket Type</span>
+        <span class="rc-value" id="rcType">—</span>
+      </div>
+      <div class="pay-rc-row">
+        <span class="rc-label">Payment Method</span>
+        <span class="rc-value" id="rcMethod">—</span>
+      </div>
+      <div class="pay-rc-row">
+        <span class="rc-label">Date &amp; Time</span>
+        <span class="rc-value" id="rcDate">—</span>
+      </div>
+      <hr class="pay-rc-divider"/>
+      <div class="pay-rc-total-row">
+        <span class="pay-rc-total-label">Amount Paid</span>
+        <span class="pay-rc-total-amount" id="rcTotal">₱0</span>
+      </div>
+    </div>
+
+    <div class="pay-receipt-footer">
+      <span class="pay-receipt-id" id="rcId">Booking ID: —</span>
+      <span class="pay-receipt-status">✓ Confirmed</span>
+    </div>
+
+    <div class="pay-receipt-actions">
+      <button class="pay-rc-btn" onclick="window.print()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M6 9V2h12v7"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Print Receipt
+      </button>
+      <button class="pay-rc-btn primary" onclick="goHome()">
+        Back to Home
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script src="payment.js"></script>
+</body>
+</html>

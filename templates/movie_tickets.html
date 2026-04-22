@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-user-pack.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>Movie Tickets - LUMA</title>
+{% endblock %}
+
+{% block body %}
+<div id="app">
+  <div class="layout">
+    <aside class="side">
+      <div class="slogo">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height: 1.2em; margin-right: 10px;">
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Discover</div>
+        <a class="ni" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Account</div>
+        <a class="ni on" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+      </div>
+      <div class="sbot">
+        <div class="uchip" onclick="openProfileModal({{ user.id }})">
+          <div class="av" id="sav">
+            <img src="{{ profimage }}" alt="Profile Image">
+          </div>
+            <div class="uinf">
+              <div class="uname" id="snm">{{ user.username }}</div>
+              <div class="urole" id="sumprof">
+                {% if user.role == "user" %}
+                    <span style="color:var(--gold)">User - Open Profile</span>
+                {% elif user.role == "verified" %}
+                    <span style="color:var(--green)">Verified - Open Profile</span>
+                {% else %}
+                    <span style="color:var(--text2)">{{ user.role }}</span>
+                {% endif %}
+                <span class="ulgo">↩</span>
+            </div>
+            </div>
+        </div>
+      </div>
+    </aside>
+{% endblock %}

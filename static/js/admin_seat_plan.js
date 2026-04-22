@@ -118,7 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const capacityInfo = document.getElementById('capacity-info');
   const selectedInfo = document.getElementById('selected-info');
   const generateBtn = document.getElementById('generate');
-  const seatSVG = `<svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" transform="scale(-1,1) "><path d="M22 8h-1V4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v4H2c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h2v3h2v-3h12v3h2v-3h2c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1M5 5h14v3h-1c-.55 0-1 .45-1 1v3H7V9c0-.55-.45-1-1-1H5zm16 12H3v-7h2v3c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3h2z"></path></svg>`;
+  const seatSVG = `<svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+   viewBox="0 0 24 24" transform="scale(-1,1) ">
+   <path d="M22 8h-1V4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v4H2c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h2v3h2v-3h12v3h2v-3h2c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1M5 5h14v3h-1c-.55 0-1 .45-1 1v3H7V9c0-.55-.45-1-1-1H5zm16 12H3v-7h2v3c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3h2z"></path></svg>`;
 
   generateBtn.addEventListener('click', () => {
     const rows = parseInt(document.getElementById('rows').value, 10);

@@ -35,6 +35,15 @@ app.config['DEFAULT_PICTURE_FOLDER'] = DEFAULT_PICTURE_FOLDER
 
 db = SQLAlchemy(app)
 
+class UserTickets(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'), nullable=False)
+    seat_row = db.Column(db.Integer, nullable=False)
+    seat_col = db.Column(db.Integer, nullable=False)
+    booking_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    
+
 class Profiles(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer,db.ForeignKey('user.id'), nullable=False)
@@ -86,6 +95,7 @@ class Schedule(db.Model):
     end_time = db.Column(db.Time, nullable=False)
     
     active = db.Column(db.String(50), nullable=False, default="True")
+    user_tickets = db.relationship('UserTickets', backref='schedule', lazy=True)
 
 
 class Libraries(db.Model):
@@ -107,6 +117,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.today())
 
     profile = db.relationship('Profiles', backref='user', uselist=False, lazy='joined')
+    user_tickets = db.relationship('UserTickets', backref='user', lazy=True)
     # libraries = db.relationship('Libraries', backref='user', lazy=True)
 
     def set_password(self, password):
@@ -1246,7 +1257,173 @@ def get_profile(user_id):
         "image": image_path
     }
     
+@app.route('/movie_detail/<int:movie_id>')
+def movie_detail(movie_id):
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    movie = Movies.query.get_or_404(movie_id)
+    user = User.query.get(session['user_id'])
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+
+    first_letter = user.username[0].lower() if user.username else "a"
+    profimage = (
+        f"/static/uploads/uploadedPictures/{profile.profile_image}"
+        if profile and profile.profile_image
+        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
+    )
+
+    return render_template('view_movie.html', movie=movie, user=user, profimage=profimage)
+
+@app.route('/movie_schedule')
+def view_schedule():
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    user = User.query.get(session['user_id'])
     
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+    first_letter = user.username[0].lower() if user.username else "a"
+    profimage = (
+        f"/static/uploads/uploadedPictures/{profile.profile_image}"
+        if profile and profile.profile_image
+        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
+    )
+    # movies = Movies.query.all()
+
+    #  # categorize movies
+    # showing_movies = []
+    # coming_soon_movies = []
+    # ended_movies = []
+    # no_schedules_movies = []
+    # cancelled_movies = []
+
+    # for movie in movies:
+    #     schedules = movie.schedules
+
+    #     if not schedules:
+    #         no_schedules_movies.append(movie)
+    #         continue  
+
+    return render_template('movie_schedule.html', user=user, profimage=profimage)
+
+@app.route('/view_venues')
+def view_venues():
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    venues = Venue.query.all()
+    user = User.query.get(session['user_id'])
+    
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+    first_letter = user.username[0].lower() if user.username else "a"
+    profimage = (
+        f"/static/uploads/uploadedPictures/{profile.profile_image}"
+        if profile and profile.profile_image
+        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
+    )
+
+    return render_template('movie_venues.html', venues=venues, user=user, profimage=profimage)
+
+@app.route('/view_tickets')
+def view_tickets():
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    user = User.query.get(session['user_id'])
+    
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+    first_letter = user.username[0].lower() if user.username else "a"
+    profimage = (
+        f"/static/uploads/uploadedPictures/{profile.profile_image}"
+        if profile and profile.profile_image
+        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
+    )
+    
+    return render_template('movie_tickets.html', user=user, profimage=profimage)
+
+
+
+@app.route('/book/<int:schedule_id>')
+def book_seat(schedule_id):
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+ 
+    schedule = Schedule.query.get_or_404(schedule_id)
+    movie    = Movies.query.get_or_404(schedule.movie_id)
+    venue    = Venue.query.get_or_404(schedule.venue_id)
+    user     = User.query.get(session['user_id'])
+    profile  = Profiles.query.filter_by(user_id=user.id).first()
+ 
+    first_letter = user.username[0].lower() if user.username else "a"
+    profimage = (
+        f"/static/uploads/uploadedPictures/{profile.profile_image}"
+        if profile and profile.profile_image
+        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
+    )
+ 
+    return render_template(
+        'book_seat.html',
+        schedule=schedule,
+        movie=movie,
+        venue=venue,
+        user=user,
+        profimage=profimage,
+    )
+ 
+ 
+@app.route('/api/booked_seats/<int:schedule_id>')
+def api_booked_seats(schedule_id):
+    bookings = Booking.query.filter_by(schedule_id=schedule_id, status='confirmed').all()
+    return jsonify([
+        {"seat": b.seat_label, "type": b.ticket_type}
+        for b in bookings
+    ])
+ 
+ 
+@app.route('/api/book', methods=['POST'])
+def api_book():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "error": "Not logged in"}), 401
+ 
+    data        = request.get_json()
+    schedule_id = data.get('schedule_id')
+    seat_label  = data.get('seat')
+    ticket_type = data.get('type', 'standard')
+ 
+    if not schedule_id or not seat_label:
+        return jsonify({"success": False, "error": "Missing fields"}), 400
+ 
+    # Check seat not already taken
+    existing = Booking.query.filter_by(
+        schedule_id=schedule_id,
+        seat_label=seat_label,
+        status='confirmed'
+    ).first()
+    if existing:
+        return jsonify({"success": False, "error": "Seat already taken"}), 409
+ 
+    price = 500 if ticket_type == 'premium' else 350
+ 
+    booking = Booking(
+        user_id     = session['user_id'],
+        schedule_id = schedule_id,
+        seat_label  = seat_label,
+        ticket_type = ticket_type,
+        price       = price,
+    )
+    db.session.add(booking)
+    db.session.commit()
+ 
+    return jsonify({"success": True, "booking_id": booking.id})
+
+
+
 if __name__ == '__main__':
 
     with app.app_context():
