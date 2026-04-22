@@ -602,3 +602,38 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .movie-card:hover {
     transform: scale(1.03);
 }
+
+/* Ensure the card is the anchor for positioning */
+.movie-card {
+    position: relative;
+    overflow: hidden; /* Keeps the badge corner clean */
+}
+
+.age-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    z-index: 10;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+}
+
+/* Optional: Color coding for higher restrictions */
+.age-badge.r, 
+.age-badge.nc17, 
+.age-badge.r18+ {
+    border-color: #ff4d4d;
+    color: #ff4d4d;
+}
+
+.age-badge.g, 
+.age-badge.pg {
+    border-color: #4dff88;
+    color: #4dff88;
+}

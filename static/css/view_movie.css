@@ -365,3 +365,27 @@ a.vm-sched-pill.clickable:hover .sdate { color: var(--gold); }
   transition: opacity .15s;
 }
 a.vm-sched-pill.clickable:hover .sbook { opacity: 1; }
+
+/* Styling for the Ended state */
+.vm-sched-pill.end {
+    border: 1.5px solid #440000; /* Red border */
+    background: rgba(255, 157, 157, 0.05); /* Very faint red tint */
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.vm-sched-pill.end .sdate,
+.vm-sched-pill.end .stime {
+    text-decoration: line-through;
+    color: #ff4d4d; /* Make text red to match border */
+}
+
+/* Ensure common pill styles remain consistent */
+.vm-sched-pill {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+}

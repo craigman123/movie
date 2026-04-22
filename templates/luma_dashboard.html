@@ -124,6 +124,10 @@
             {% for movie in movies %}
             <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="movie-link">
                 <div class="movie-card">
+                    <span class="age-badge {{ movie.age_restrict | lower | replace('-', '') }}">
+                        {{ movie.age_restrict }}
+                    </span>
+
                     <img src="{{ url_for('static', filename='uploads/' + movie.movie_image) }}" alt="{{ movie.movie_name }}">
                     
                     <div class="movie-info">
@@ -133,16 +137,12 @@
 
                     {% if movie in cancelled_movies %}
                         <span class="status cancelled">CANCELLED</span>
-
                     {% elif movie in showing_movies %}
                         <span class="status showing">SHOWING</span>
-
                     {% elif movie in coming_soon_movies %}
                         <span class="status coming-soon">COMING SOON</span>
-
                     {% elif movie in ended_movies %}
                         <span class="status ended">ENDED</span>
-
                     {% else %}
                         <span class="status unknown">NO SCHEDULE</span>
                     {% endif %}

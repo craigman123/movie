@@ -76,24 +76,62 @@ async function openVenueModal(movieId) {
         : `<div class="vm-venue-img-placeholder">🏨</div>`;
  
       // schedule pills
-      const schedHtml = scheds.length
-        ? scheds.map(s => {
-            const cancelled = s.active !== 'True' && s.active !== true;
-            if (cancelled) {
+      const now = new Date();
+
+// 1. Split schedules into two groups
+      const activeScheds = [];
+      const endedScheds = [];
+
+      scheds.forEach(s => {
+          const schedDateTime = new Date(`${s.date} ${s.end_time}`);
+          const cancelled = s.active !== 'True' && s.active !== true;
+          
+          if (cancelled || schedDateTime >= now) {
+              activeScheds.push(s);
+          } else {
+              endedScheds.push(s);
+          }
+      });
+
+      // 2. Get only the most recent ended schedule (the one closest to "now")
+      // We sort by date/time descending and take the first one
+      const lastEnded = endedScheds
+          .sort((a, b) => new Date(`${b.date} ${b.end_time}`) - new Date(`${a.date} ${a.end_time}`))
+          .slice(0, 1);
+
+      // 3. Combine them: The one last ended + all active/upcoming ones
+      const filteredScheds = [...lastEnded, ...activeScheds];
+
+      const schedHtml = filteredScheds.length
+          ? filteredScheds.map(s => {
+              const cancelled = s.active !== 'True' && s.active !== true;
+              const schedDateTime = new Date(`${s.date} ${s.end_time}`);
+              const hasEnded = schedDateTime < now;
+
+              if (cancelled) {
+                  return `
+                      <div class="vm-sched-pill cancelled">
+                          <span class="sdate">${formatDate(s.date)}</span>
+                          <span class="stime">${s.start_time} – ${s.end_time} · Cancelled</span>
+                      </div>`;
+              }
+
+              if (hasEnded) {
+                  return `
+                      <div class="vm-sched-pill end">
+                          <span class="sdate">${formatDate(s.date)}</span>
+                          <span class="stime">${s.start_time} – ${s.end_time} · Ended</span>
+                      </div>`;
+              }
+
               return `
-                <div class="vm-sched-pill cancelled">
-                  <span class="sdate">${formatDate(s.date)}</span>
-                  <span class="stime">${s.start_time} – ${s.end_time} · Cancelled</span>
-                </div>`;
-            }
-            return `
-              <a class="vm-sched-pill clickable" href="/book/${s.id}">
-                <span class="sdate">${formatDate(s.date)}</span>
-                <span class="stime">${s.start_time} – ${s.end_time}</span>
-                <span class="sbook">Book Seat →</span>
-              </a>`;
+                  <a class="vm-sched-pill clickable" href="/book/${s.id}">
+                      <span class="sdate">${formatDate(s.date)}</span>
+                      <span class="stime">${s.start_time} – ${s.end_time}</span>
+                      <span class="sbook">Book Seat →</span>
+                  </a>`;
           }).join('')
-        : '<span class="vm-no-sched">No schedules listed.</span>';
+          : '<span class="vm-no-sched">No schedules listed.</span>';
  
       const mapLink = v.venue_link
         ? `<a class="vm-map-link" href="${v.venue_link}" target="_blank" rel="noopener">📍 View on Map</a>`

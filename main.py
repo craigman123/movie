@@ -443,7 +443,7 @@ def view_movie(movie_id):
     status = None
 
     if schedule and schedule.date:  # make sure schedule exists
-        today = date.today()
+        today = datetime.date.today()
 
         if schedule.date == today:
             status = 'onscreen'
@@ -1232,7 +1232,7 @@ def delete_user(user_id):
 @app.route('/get_profile/<int:user_id>')
 def get_profile(user_id):
     user = User.query.get(user_id)
-    profile = Profile.query.filter_by(user_id=user_id).first()
+    profile = Profiles.query.filter_by(user_id=user_id).first()
 
     if not user:
         return {"error": "User not found"}, 404
