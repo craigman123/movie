@@ -216,3 +216,139 @@
     border-radius: 8px;
     margin-top: 10px;
 }
+.pay-modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.82);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.pay-modal-container {
+  position: relative;
+  width: 90%;
+  max-width: 680px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 28px;
+}
+
+.pay-modal-close {
+  position: absolute;
+  right: 18px; top: 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-size: 18px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.pay-modal-close:hover { border-color: var(--border2); color: var(--text); }
+
+.pay-page-header {
+  margin-bottom: 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.pay-page-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 1.5px;
+  color: var(--text);
+}
+
+.pay-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.pay-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--rsm);
+  padding: 18px;
+}
+
+.pay-card-title {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 14px;
+}
+
+.pay-options { display: flex; gap: 10px; margin-bottom: 20px; }
+.pay-opt { flex: 1; }
+.pay-opt input[type="radio"] { display: none; }
+.pay-opt-box {
+  display: flex; align-items: center; justify-content: center;
+  height: 42px;
+  border-radius: var(--rsm);
+  background: var(--bg4);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+}
+.pay-opt input:checked + .pay-opt-box {
+  background: var(--gold-dim);
+  border-color: rgba(201,168,76,0.4);
+  color: var(--gold);
+}
+
+.pay-pin-input {
+  width: 100%;
+  background: var(--bg4);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px;
+  text-align: center;
+  font-size: 1.4rem;
+  letter-spacing: 0.6rem;
+  border-radius: var(--rsm);
+  outline: none;
+  transition: border-color .15s;
+}
+.pay-pin-input:focus { border-color: rgba(201,168,76,0.45); }
+
+.pay-sum-row {
+  display: flex; justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px; color: var(--text2);
+}
+.pay-sum-row span:last-child { color: var(--text); font-weight: 500; }
+
+.pay-sum-total {
+  border-bottom: none;
+  padding-top: 14px;
+}
+.pay-sum-total span:last-child {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px; letter-spacing: 1px;
+  color: var(--gold);
+}
+
+.pay-confirm-btn {
+  width: 100%; margin-top: 16px; padding: 13px;
+  background: var(--gold);
+  border: none; border-radius: var(--rsm);
+  color: #09090e;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all .18s;
+}
+.pay-confirm-btn:hover { background: var(--gold-lt); transform: translateY(-1px); }
+
+@media (max-width: 620px) {
+  .pay-layout { grid-template-columns: 1fr; }
+}

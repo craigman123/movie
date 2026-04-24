@@ -28,7 +28,7 @@
       <div class="sbot">
         <div class="uchip" onclick="openProfileModal({{ user.id }})">
           <div class="av" id="sav">
-            <img src="{{ profimage }}" alt="Profile Image">
+            <img src="{{ profile_image }}" alt="Profile Image">
           </div>
             <div class="uinf">
               <div class="uname" id="snm">{{ user.username }}</div>
@@ -156,20 +156,7 @@
             {% endif %}
         </div>
       </div>
-      <!-- SCHEDULE -->
-      
 
-      <!-- VENUES -->
-      <div class="pg" id="pg-venues">
-        <div class="phead"><div><div class="ptitle">Venues</div><div class="psub">Where to watch your favorite movies</div></div></div>
-        <div class="vlist" id="vlist"></div>
-      </div>
-
-      <!-- TICKETS -->
-      <div class="pg" id="pg-tix">
-        <div class="phead"><div><div class="ptitle">My Tickets</div><div class="psub">Your booking history and QR codes</div></div></div>
-        <div class="tlist" id="tlist"></div>
-      </div>
     </main>
   </div>
 </div>

@@ -113,7 +113,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .urole{font-size:10px;color:var(--text3)}
 .ulgo{font-size:14px;color:var(--text3)}
 .main{flex:1;overflow-y:auto}
-.pg{display:none;animation:fin .25s ease}.pg.on{display:block}
 @keyframes fin{from{opacity:0}to{opacity:1}}
 .phead{padding:28px 32px 0;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .ptitle{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;line-height:1}

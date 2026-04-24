@@ -177,6 +177,13 @@ async function confirmBooking() {
     document.getElementById('modalTotal').textContent = `₱${total}`;
 }
 
+window.onclick = function(event) {
+    const modal = document.getElementById('paymentModal');
+    if (event.target === modal) {
+        closePaymentModal();
+    }
+};
+
 function closePaymentModal() {
     document.getElementById('paymentModal').style.display = 'none';
     document.getElementById('confirmPin').value = ''; // Clear pin on close

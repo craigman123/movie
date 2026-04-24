@@ -1,6 +1,6 @@
 import profile
 
-from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory, flash, jsonify, after_this_request
+from flask import Flask, current_app, render_template, request, redirect, session, url_for, send_from_directory, flash, jsonify, after_this_request
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
@@ -624,17 +624,29 @@ def user_dashboard():
             
     first_letter = user.username[0].lower() if user.username else "a"
 
-    profimage = (
-        f"/static/uploads/uploadedPictures/{profile.profile_image}"
-        if profile and profile.profile_image
-        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
-    )
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path,
+            "static",
+            "uploads",
+            "uploadedPictures",
+            profile.profile_image
+        )
+
+        if os.path.exists(uploaded_path):
+            profile_image = url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+        else:
+            profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    
+    print("DEBUG: Profile Image Path:", profile_image)
     
     return render_template(
         'luma_dashboard.html', 
         user=user, 
         profile=profile,
-        profimage=profimage,
+        profile_image=profile_image,
         movies=movies,
         showing_movies=showing_movies,
         coming_soon_movies=coming_soon_movies,
@@ -759,12 +771,16 @@ def add_movie():
 
         # --- Trailer OPTIONAL ---
         trailer_filename = None
+
         if trailer_file and trailer_file.filename != "":
             if not allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS):
                 flash("Trailer must be an MP4 video.", "danger")
                 return redirect(url_for('admin_dashboard'))
+
             trailer_filename = secure_filename(trailer_file.filename)
-            trailer_file.save(os.path.join(app.config['UPLOAD_FOLDER'], trailer_filename))
+
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], trailer_filename)
+            trailer_file.save(save_path)
 
         # --- Venue Image OPTIONAL ---
         venue_filename = None
@@ -805,10 +821,6 @@ def add_movie():
         if allowed_file(poster_file.filename, ALLOWED_IMAGE_EXTENSIONS):
             poster_filename = secure_filename(poster_file.filename)
             poster_file.save(os.path.join(app.config['UPLOAD_FOLDER'], poster_filename))
-
-        if allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS):
-            trailer_filename = secure_filename(trailer_file.filename)
-            trailer_file.save(os.path.join(app.config['UPLOAD_FOLDER'], trailer_filename))
 
         if allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
             venue_filename = secure_filename(venue_image_file.filename)
@@ -886,40 +898,41 @@ def add_movie():
 
         if scheduled_date:
             try:
-                print(f"DEBUG: Split into {len([s for s in scheduled_date.split('|||') if s.strip()])} schedules")
-                schedules = scheduled_date.split("|||")
-                schedule_count = 0
+                schedules = [s for s in scheduled_date.split('|||') if s.strip()]
+                print(f"DEBUG: Split into {len(schedules)} schedules")
 
-                try:
-                    duration_minutes = int(duration or 120)
-                except (ValueError, TypeError):
-                    duration_minutes = 120
-                    print(f"DEBUG: Invalid duration '{duration}', default 120min")
-                duration_hours = duration_minutes // 60
+                schedule_count = 0
 
                 for sched in schedules:
                     parts = [p.strip() for p in sched.split("|")]
 
-                    if len(parts) < 3:
+                    if len(parts) != 3:
                         print(f"Skipping invalid schedule: {sched}")
                         continue
 
-                    date_str = parts[0]
-                    start_time_str = parts[2]
+                    date_str, start_time_str, end_time_str = parts
 
-                    schedule_date_obj = datetime.strptime(date_str, "%b %d, %Y").date()
+                    try:
+                        schedule_date_obj = datetime.datetime.strptime(date_str, "%b %d, %Y").date()
 
-                    # Parse hour from HH:MM
-                    if ':' in start_time_str:
-                        start_hour = int(start_time_str.split(':')[0])
-                    else:
-                        start_hour = int(start_time_str)
+                        # Parse start time
+                        if ':' in start_time_str:
+                            start_hour = int(start_time_str.split(':')[0])
+                        else:
+                            start_hour = int(start_time_str)
 
-                    start_time_input = dt_time(start_hour, 0)
+                        # Parse end time
+                        if ':' in end_time_str:
+                            end_hour = int(end_time_str.split(':')[0])
+                        else:
+                            end_hour = int(end_time_str)
 
-                    # Calculate end time using duration
-                    end_hour = (start_hour + duration_hours) % 24
-                    end_time_input = dt_time(end_hour, 0)
+                        start_time_input = dt_time(start_hour, 0)
+                        end_time_input = dt_time(end_hour, 0)
+
+                    except Exception as e:
+                        print(f"Error parsing schedule '{sched}': {e}")
+                        continue
 
                     new_schedule = Schedule(
                         movie_id=new_movie.id,
@@ -931,9 +944,13 @@ def add_movie():
 
                     db.session.add(new_schedule)
                     schedule_count += 1
+
                     print(f"Added schedule: {schedule_date_obj} {start_time_input}-{end_time_input}")
 
                 flash(f'Movie added with {schedule_count} schedules!', 'success')
+
+            except Exception as e:
+                print(f"Error processing schedules: {e}")
 
             except ValueError as e:
                 flash(f'Schedule date/time parse error: {str(e)}', 'danger')
@@ -1268,13 +1285,31 @@ def movie_detail(movie_id):
     profile = Profiles.query.filter_by(user_id=user.id).first()
 
     first_letter = user.username[0].lower() if user.username else "a"
-    profimage = (
-        f"/static/uploads/uploadedPictures/{profile.profile_image}"
-        if profile and profile.profile_image
-        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
-    )
 
-    return render_template('view_movie.html', movie=movie, user=user, profimage=profimage)
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path,
+            "static",
+            "uploads",
+            "uploadedPictures",
+            profile.profile_image
+        )
+
+        if os.path.exists(uploaded_path):
+            profile_image = url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+        else:
+            profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    
+    print("DEBUG: Profile Image Path:", profile_image)
+
+    return render_template(
+        'view_movie.html', 
+        movie=movie, 
+        user=user, 
+        profile_image=profile_image
+        )
 
 @app.route('/movie_schedule')
 def view_schedule():
@@ -1286,11 +1321,24 @@ def view_schedule():
     
     profile = Profiles.query.filter_by(user_id=user.id).first()
     first_letter = user.username[0].lower() if user.username else "a"
-    profimage = (
-        f"/static/uploads/uploadedPictures/{profile.profile_image}"
-        if profile and profile.profile_image
-        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
-    )
+
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path,
+            "static",
+            "uploads",
+            "uploadedPictures",
+            profile.profile_image
+        )
+
+        if os.path.exists(uploaded_path):
+            profile_image = url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+        else:
+            profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    
+    print("DEBUG: Profile Image Path:", profile_image)
     # movies = Movies.query.all()
 
     #  # categorize movies
@@ -1307,7 +1355,11 @@ def view_schedule():
     #         no_schedules_movies.append(movie)
     #         continue  
 
-    return render_template('movie_schedule.html', user=user, profimage=profimage)
+    return render_template(
+        'movie_schedule.html', 
+        user=user, 
+        profile_image=profile_image
+        )
 
 @app.route('/view_venues')
 def view_venues():
@@ -1320,13 +1372,31 @@ def view_venues():
     
     profile = Profiles.query.filter_by(user_id=user.id).first()
     first_letter = user.username[0].lower() if user.username else "a"
-    profimage = (
-        f"/static/uploads/uploadedPictures/{profile.profile_image}"
-        if profile and profile.profile_image
-        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
-    )
 
-    return render_template('movie_venues.html', venues=venues, user=user, profimage=profimage)
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path,
+            "static",
+            "uploads",
+            "uploadedPictures",
+            profile.profile_image
+        )
+
+        if os.path.exists(uploaded_path):
+            profile_image = url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+        else:
+            profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    
+    print("DEBUG: Profile Image Path:", profile_image)
+
+    return render_template(
+        'movie_venues.html', 
+        venues=venues, 
+        user=user, 
+        profile_image=profile_image
+        )
 
 @app.route('/view_tickets')
 def view_tickets():
@@ -1338,13 +1408,30 @@ def view_tickets():
     
     profile = Profiles.query.filter_by(user_id=user.id).first()
     first_letter = user.username[0].lower() if user.username else "a"
-    profimage = (
-        f"/static/uploads/uploadedPictures/{profile.profile_image}"
-        if profile and profile.profile_image
-        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
-    )
+
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path,
+            "static",
+            "uploads",
+            "uploadedPictures",
+            profile.profile_image
+        )
+
+        if os.path.exists(uploaded_path):
+            profile_image = url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+        else:
+            profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
     
-    return render_template('movie_tickets.html', user=user, profimage=profimage)
+    print("DEBUG: Profile Image Path:", profile_image)
+    
+    return render_template(
+        'movie_tickets.html', 
+        user=user, 
+        profile_image=profile_image
+    )
 
 
 
@@ -1361,11 +1448,24 @@ def book_seat(schedule_id):
     profile  = Profiles.query.filter_by(user_id=user.id).first()
  
     first_letter = user.username[0].lower() if user.username else "a"
-    profimage = (
-        f"/static/uploads/uploadedPictures/{profile.profile_image}"
-        if profile and profile.profile_image
-        else f"/static/uploads/defaultPictures/{first_letter}.jpg"
-    )
+
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path,
+            "static",
+            "uploads",
+            "uploadedPictures",
+            profile.profile_image
+        )
+
+        if os.path.exists(uploaded_path):
+            profile_image = url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+        else:
+            profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    
+    print("DEBUG: Profile Image Path:", profile_image)
  
     return render_template(
         'book_seat.html',
@@ -1373,7 +1473,7 @@ def book_seat(schedule_id):
         movie=movie,
         venue=venue,
         user=user,
-        profimage=profimage,
+        profile_image=profile_image,
     )
  
  

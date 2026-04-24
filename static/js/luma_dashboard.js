@@ -1,39 +1,4 @@
 
-// const DB_MOVIES = [
-//   {id:3,movie_name:"awdawd",description:"awdawd",movie_image:"Gemini_Generated_Image_hhh6mhhhh6mhhhh6-removebg-preview.png",movie_date_created:"2026-03-17",language:"english",duration:"",genre:"Drama, Family",age_restrict:"PG"},
-//   {id:4,movie_name:"dawd",description:"awdaw",movie_image:"Gemini_Generated_Image_hhh6mhhhh6mhhhh6-removebg-preview.png",movie_date_created:"2026-03-18",language:"english",duration:"",genre:"Fantasy, Romance, Sci-Fi, Thriller, Musical",age_restrict:"R"},
-//   {id:6,movie_name:"dawd",description:"awdaw",movie_image:"grad.jpg",movie_date_created:"2026-03-17",language:"english",duration:"",genre:"Fantasy, Horror",age_restrict:"G"},
-//   {id:7,movie_name:"awd",description:"awdawd",movie_image:"Gemini_Generated_Image_hhh6mhhhh6mhhhh6-removebg-preview.png",movie_date_created:"2026-03-10",language:"english",duration:"",genre:"Comedy, Drama",age_restrict:"PG"},
-//   {id:8,movie_name:"awdaw",description:"awdawd",movie_image:"grad6.jpg",movie_date_created:"2026-03-25",language:"english",duration:"",genre:"Horror, Romance",age_restrict:"G"},
-//   {id:9,movie_name:"BOXx",description:"awdawd",movie_image:"cart-removebg-preview_1.png",movie_date_created:"2026-04-16",language:"english",duration:"125mins",genre:"Animation",age_restrict:"G"},
-//   {id:10,movie_name:"BOXLAP",description:"awdawd",movie_image:"cut.jpg",movie_date_created:"2026-04-23",language:"english",duration:"12",genre:"Fantasy, Horror",age_restrict:"G"},
-//   {id:11,movie_name:"APAK",description:"Blah",movie_image:"Gemini_Generated_Image_hhh6mhhhh6mhhhh6.png",movie_date_created:"2026-04-07",language:"english",duration:"23mins",genre:"Horror, Romance",age_restrict:"G"},
-//   {id:12,movie_name:"awdawd",description:"awdawd",movie_image:"5fd6a30b-5204-4612-b634-5ce88a98eee0_8578b18e-12e0-4915-9a9a-2249f422ba99.jfif",movie_date_created:"2026-04-14",language:"english",duration:"",genre:"Drama, Family",age_restrict:"PG"},
-//   {id:13,movie_name:"asd",description:"asdasd",movie_image:"i.jpg",movie_date_created:"2026-05-06",language:"english",duration:"",genre:"Romance",age_restrict:"G"},
-//   {id:14,movie_name:"awdawd",description:"awdawd",movie_image:"5fd6a30b-5204-4612-b634-5ce88a98eee0_8578b18e-12e0-4915-9a9a-2249f422ba99.jfif",movie_date_created:"2026-04-14",language:"english",duration:"",genre:"Drama, Family",age_restrict:"PG"}
-// ];
-
-// const DB_SCHEDULES = [
-//   {id:1,movie_id:8,venue_id:2,date:"2026-03-17",start_time:"00:00:00.000000",end_time:"02:00:00.000000",active:"True",movie_name:"awdaw",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:2,movie_id:8,venue_id:2,date:"2026-03-22",start_time:"09:00:00.000000",end_time:"11:00:00.000000",active:"True",movie_name:"awdaw",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:4,movie_id:9,venue_id:2,date:"2026-04-15",start_time:"15:00:00.000000",end_time:"17:00:00.000000",active:"True",movie_name:"BOXx",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:6,movie_id:10,venue_id:2,date:"2026-04-16",start_time:"10:00:00.000000",end_time:"12:00:00.000000",active:"True",movie_name:"BOXLAP",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:12,movie_id:4,venue_id:2,date:"2026-04-17",start_time:"07:50:00.000000",end_time:"08:50:00.000000",active:"True",movie_name:"dawd",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:14,movie_id:11,venue_id:2,date:"2026-04-18",start_time:"00:00:00.000000",end_time:"13:15:00.000000",active:"False",movie_name:"APAK",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:11,movie_id:3,venue_id:2,date:"2026-04-18",start_time:"15:15:00.000000",end_time:"19:07:00.000000",active:"True",movie_name:"awdawd",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:13,movie_id:7,venue_id:2,date:"2026-04-18",start_time:"20:02:00.000000",end_time:"21:02:00.000000",active:"True",movie_name:"awd",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:15,movie_id:13,venue_id:2,date:"2026-04-19",start_time:"01:19:00.000000",end_time:"02:19:00.000000",active:"False",movie_name:"asd",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:3,movie_id:9,venue_id:2,date:"2026-04-20",start_time:"12:00:00.000000",end_time:"14:00:00.000000",active:"True",movie_name:"BOXx",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:10,movie_id:9,venue_id:2,date:"2026-04-24",start_time:"15:00:00.000000",end_time:"16:00:00.000000",active:"True",movie_name:"BOXx",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4},
-//   {id:9,movie_id:6,venue_id:1,date:"2026-04-24",start_time:"15:43:00.000000",end_time:"17:43:00.000000",active:"True",movie_name:"dawd",venue_name:"Gaisano Grand Main",venue_room:"R3E4",venue_cap:160,venue_row:10,venue_col:10,venue_row_gap:0,venue_col_gap:4},
-//   {id:8,movie_id:12,venue_id:2,date:"2026-04-27",start_time:"15:42:00.000000",end_time:"16:43:00.000000",active:"True",movie_name:"awdawd",venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4}
-// ];
-
-// const DB_VENUES = [
-//   {id:1,venue_name:"Gaisano Grand Main",venue_room:"R3E4",venue_cap:160,venue_row:10,venue_col:10,venue_row_gap:0,venue_col_gap:4,venue_availability:"Everyday"},
-//   {id:2,venue_name:"Gaisano Grand Minglanilla",venue_room:"R3E5",venue_cap:160,venue_row:10,venue_col:16,venue_row_gap:1,venue_col_gap:4,venue_availability:"MTH"}
-// ];
-
 // ════════════════════════════════
 // HELPERS
 // ════════════════════════════════
@@ -100,19 +65,6 @@ function launch(){
   document.getElementById('sav').textContent=ini;
   document.getElementById('snm').textContent=CU.name;
   buildFilters();rmov();nav('home');
-}
-
-// ════════════════════════════════
-// NAV
-// ════════════════════════════════
-function nav(id){
-  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
-  document.getElementById('pg-'+id).classList.add('on');
-  const m={home:0,sched:1,tix:2};
-  document.querySelectorAll('.ni')[m[id]].classList.add('on');
-  if(id==='sched')renderSched();
-  if(id==='tix')renderTix();
 }
 
 // ════════════════════════════════
@@ -449,55 +401,103 @@ let selectedGenres = [];
 let selectedStatus = "";
 
 document.addEventListener("DOMContentLoaded", function() {
+  // Genre tag click handler
   document.querySelectorAll(".genre").forEach(tag => {
-      tag.addEventListener("click", () => {
-          let value = tag.dataset.genre;
+    tag.addEventListener("click", () => {
+      const value = tag.dataset.genre;
 
-          // "All" resets everything
-          if (value === "") {
-              selectedGenres = [];
-              document.querySelectorAll(".genre").forEach(t => t.classList.remove("active"));
-              tag.classList.add("active");
-          } else {
-              tag.classList.toggle("active");
+      if (value === "") {
+        // "All" — reset genre selection
+        selectedGenres = [];
+        document.querySelectorAll(".genre").forEach(t => t.classList.remove("active"));
+        tag.classList.add("active");
+      } else {
+        tag.classList.toggle("active");
 
-              if (selectedGenres.includes(value)) {
-                  selectedGenres = selectedGenres.filter(g => g !== value);
-              } else {
-                  selectedGenres.push(value);
-              }
+        if (selectedGenres.includes(value)) {
+          selectedGenres = selectedGenres.filter(g => g !== value);
+        } else {
+          selectedGenres.push(value);
+        }
 
-              // remove "All" active if others selected
-              document.querySelector('.genre[data-genre=""]').classList.remove("active");
-          }
+        // Deactivate "All" when specific genres are selected
+        document.querySelector('.genre[data-genre=""]').classList.remove("active");
 
-          rmov();
-      });
+        // If nothing selected, re-activate "All"
+        if (selectedGenres.length === 0) {
+          document.querySelector('.genre[data-genre=""]').classList.add("active");
+        }
+      }
+
+      rmov();
+    });
   });
 
+  // Status tag click handler
   document.querySelectorAll(".status").forEach(tag => {
-      tag.addEventListener("click", function () {
-          // remove active from all
-          document.querySelectorAll(".status").forEach(t => t.classList.remove("active"));
-
-          // set active
-          this.classList.add("active");
-
-          selectedStatus = this.dataset.status;
-
-          console.log("Status:", selectedStatus);
-
-          rmov();
-      });
+    tag.addEventListener("click", function() {
+      document.querySelectorAll(".status").forEach(t => t.classList.remove("active"));
+      this.classList.add("active");
+      selectedStatus = this.dataset.status;
+      rmov();
+    });
   });
+
+  // Search input
+  const sq = document.getElementById("sq");
+  if (sq) sq.addEventListener("input", rmov);
+
+  // Run once on load to set initial state
+  rmov();
 });
 
 function rmov() {
-    let search = document.getElementById("sq").value.toLowerCase();
+  const q = (document.getElementById("sq")?.value || "").toLowerCase().trim();
+  const cards = document.querySelectorAll(".movies-grid .movie-link");
 
-    // existing genre logic
-    console.log("Search:", search);
-    console.log("Status:", selectedStatus);
+  cards.forEach(link => {
+    const card = link.querySelector(".movie-card");
+    if (!card) return;
 
-    // combine filters here
+    const nameEl  = card.querySelector(".movie-info h5");
+    const genreEl = card.querySelector(".movie-info p");
+    const statusEl = card.querySelector(".status");
+
+    const name   = nameEl  ? nameEl.textContent.toLowerCase()  : "";
+    const genre  = genreEl ? genreEl.textContent.toLowerCase() : "";
+    const rawStatus = statusEl ? statusEl.textContent.trim().toLowerCase().replace(/\s+/g, "-") : "";
+
+    // Search match: name or genre contains query
+    const matchSearch = !q || name.includes(q) || genre.includes(q);
+
+    // Genre match: every selected genre must appear in the genre text
+    const matchGenre = selectedGenres.length === 0 ||
+      selectedGenres.every(g => genre.includes(g.toLowerCase()));
+
+    // Status match
+    let matchStatus = true;
+    if (selectedStatus) {
+      matchStatus = rawStatus === selectedStatus;
+    }
+
+    link.style.display = (matchSearch && matchGenre && matchStatus) ? "" : "none";
+  });
+
+  // Show "no movies" message if everything is hidden
+  const grid = document.querySelector(".movies-grid");
+  if (grid) {
+    const visible = [...grid.querySelectorAll(".movie-link")].filter(l => l.style.display !== "none");
+    let noMsg = grid.querySelector(".no-movies-filter");
+    if (visible.length === 0) {
+      if (!noMsg) {
+        noMsg = document.createElement("p");
+        noMsg.className = "no-movies no-movies-filter";
+        noMsg.textContent = "No movies match your filters.";
+        grid.appendChild(noMsg);
+      }
+      noMsg.style.display = "";
+    } else if (noMsg) {
+      noMsg.style.display = "none";
+    }
+  }
 }

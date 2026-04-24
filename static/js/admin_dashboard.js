@@ -337,7 +337,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const hiddenInput = document.getElementById('venue_date_input');
         // Format: startDate | endDate | time
         const formattedSchedules = movieSchedules.map(s => {
-            return `${s.startDate} | ${s.endDate} | ${s.time1}`;
+            return `${s.startDate} | ${s.time1} | ${s.time2}`;
         }).join('|||');
         hiddenInput.value = formattedSchedules;
     }
