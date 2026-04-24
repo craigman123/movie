@@ -1,14 +1,17 @@
 {% extends "base.html" %}
-
+ 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-user-pack.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movie_schedule.css') }}">
+    <script src="{{ url_for('static', filename='js/movie_schedule.js') }}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    <title>Movie Schedule - LUMA</title>
+    <title>Schedule — LUMA</title>
 {% endblock %}
-
+ 
 {% block body %}
 <div id="app">
   <div class="layout">
+ 
     <aside class="side">
       <div class="slogo">
         <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height: 1.2em; margin-right: 10px;">
@@ -24,31 +27,66 @@
         <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
       </div>
       <div class="sbot">
-        <div class="uchip" onclick="openProfileModal({{ user.id }})">
+        <a href="{{ url_for('view_profile') }}" class="uchip">
           <div class="av" id="sav">
             <img src="{{ profile_image }}" alt="Profile Image">
           </div>
-            <div class="uinf">
-              <div class="uname" id="snm">{{ user.username }}</div>
-              <div class="urole" id="sumprof">
-                {% if user.role == "user" %}
-                    <span style="color:var(--gold)">User - Open Profile</span>
-                {% elif user.role == "verified" %}
-                    <span style="color:var(--green)">Verified - Open Profile</span>
-                {% else %}
-                    <span style="color:var(--text2)">{{ user.role }}</span>
-                {% endif %}
-                <span class="ulgo">↩</span>
+          <div class="uinf">
+            <div class="uname" id="snm">{{ user.username }}</div>
+            <div class="urole" id="sumprof">
+              {% if user.role == "user" %}
+                  <span style="color:var(--gold)">User - Open Profile</span>
+              {% elif user.role == "verified" %}
+                  <span style="color:var(--green)">Verified - Open Profile</span>
+              {% else %}
+                  <span style="color:var(--text2)">{{ user.role }}</span>
+              {% endif %}
+              <span class="ulgo">↩</span>
             </div>
-            </div>
-        </div>
+          </div>
+        </a>
       </div>
     </aside>
-
-    <main>
-        <div class="pg" id="pg-sched">
-            <div class="phead"><div><div class="ptitle">Schedule</div><div class="psub">All upcoming showtimes — click any to book</div></div></div>
-            <div class="spg" id="schedlist"></div>
+ 
+    <!-- Main -->
+    <main class="main">
+      <div class="pg on">
+ 
+        <!-- Header -->
+        <div class="phead">
+          <div>
+            <div class="ptitle">Schedule</div>
+            <div class="psub">Browse showtimes and book your seat</div>
+          </div>
         </div>
+ 
+        <!-- Date Picker Strip -->
+        <div class="sched-datebar">
+          <button class="date-nav" id="prevWeek" onclick="shiftWeek(-1)">‹</button>
+          <div class="date-strip" id="dateStrip"></div>
+          <button class="date-nav" id="nextWeek" onclick="shiftWeek(1)">›</button>
+        </div>
+ 
+        <!-- Selected date label -->
+        <div class="sched-datelabel" id="schedDateLabel"></div>
+ 
+        <!-- Schedule Content -->
+        <div class="csec">
+          <div class="slbl">Showtimes</div>
+          <div class="stit" id="schedTitle">Loading...</div>
+ 
+          <div id="schedContent">
+            <div class="sched-loading">
+              <div class="sched-spinner"></div>
+              <p>Fetching showtimes...</p>
+            </div>
+          </div>
+        </div>
+ 
+      </div>
     </main>
+  </div>
+</div>
+ 
+
 {% endblock %}

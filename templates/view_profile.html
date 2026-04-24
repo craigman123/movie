@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block head %}
+  <title>LUMA — My Profile</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/luma_dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/view_profile.css') }}">
+  <script src="{{ url_for('static', filename='js/view_profile.js') }}"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block body %}
+
+<div id="app">
+  <div class="layout">
+
+    <!-- SIDEBAR (same as dashboard) -->
+    <aside class="side">
+      <div class="slogo">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height: 1.2em; margin-right: 10px;">
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Discover</div>
+        <a class="ni" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Account</div>
+        <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+      </div>
+      <div class="sbot">
+        <a href="{{ url_for('view_profile') }}" class="uchip">
+          <div class="av" id="sav">
+            <img src="{{ profile_image }}" alt="Profile Image">
+          </div>
+          <div class="uinf">
+            <div class="uname" id="snm">{{ user.username }}</div>
+            <div class="urole" id="sumprof">
+              {% if user.role == "user" %}
+                  <span style="color:var(--gold)">User - Open Profile</span>
+              {% elif user.role == "verified" %}
+                  <span style="color:var(--green)">Verified - Open Profile</span>
+              {% else %}
+                  <span style="color:var(--text2)">{{ user.role }}</span>
+              {% endif %}
+              <span class="ulgo">↩</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="pg on" id="pg-profile">
+
+        <div class="phead">
+          <div>
+            <div class="ptitle">My Profile</div>
+            <div class="psub">Manage your account details and preferences</div>
+          </div>
+          <button class="pbtn" onclick="openEditModal()">✏️ Edit Profile</button>
+        </div>
+
+        <!-- PROFILE HERO BANNER -->
+        <div class="prof-hero">
+          <div class="prof-banner-glow"></div>
+          <div class="prof-avatar-wrap">
+            <div class="prof-avatar">
+              <img src="{{ profile_image }}" alt="{{ user.username }}" id="profAvatarImg">
+            </div>
+            <div class="prof-avatar-ring"></div>
+          </div>
+          <div class="prof-hero-info">
+            <div class="prof-name">{{ user.username }}</div>
+            <div class="prof-meta-row">
+              <span class="prof-badge {% if user.role == 'verified' %}badge-verified{% else %}badge-user{% endif %}">
+                {% if user.role == "verified" %}✓ Verified{% else %}User{% endif %}
+              </span>
+              <span class="prof-dot">·</span>
+              <span class="prof-email">{{ user.email }}</span>
+              <span class="prof-dot">·</span>
+              <span class="prof-since">Member since {{ user.created_at.strftime('%B %Y') if user.created_at else 'N/A' }}</span>
+            </div>
+            {% if profile and profile.bio %}
+              <div class="prof-bio">"{{ profile.bio }}"</div>
+            {% else %}
+              <div class="prof-bio prof-bio-empty">No bio yet — <a onclick="openEditModal()">add one</a></div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- STATS ROW -->
+        <div class="prof-stats-row">
+          <div class="prof-stat-card">
+            <div class="prof-stat-num">{{ ticket_count }}</div>
+            <div class="prof-stat-lbl">Tickets Booked</div>
+          </div>
+          <div class="prof-stat-card">
+            <div class="prof-stat-num">{{ movies_watched }}</div>
+            <div class="prof-stat-lbl">Movies Watched</div>
+          </div>
+          <div class="prof-stat-card">
+            <div class="prof-stat-num">{{ upcoming_count }}</div>
+            <div class="prof-stat-lbl">Upcoming</div>
+          </div>
+        </div>
+
+        <!-- INFO GRID -->
+        <div class="prof-grid">
+
+          <!-- Personal Details -->
+          <div class="prof-card">
+            <div class="prof-card-head">
+              <span class="prof-card-ico">👤</span>
+              <span class="prof-card-title">Personal Details</span>
+            </div>
+            <div class="prof-fields">
+              <div class="prof-field">
+                <div class="prof-field-lbl">Gender</div>
+                <div class="prof-field-val">{{ profile.gender if profile and profile.gender else '—' }}</div>
+              </div>
+              <div class="prof-field">
+                <div class="prof-field-lbl">Date of Birth</div>
+                <div class="prof-field-val">
+                  {% if profile and profile.dob %}
+                    {{ profile.dob.strftime('%B %d, %Y') }}
+                  {% else %}—{% endif %}
+                </div>
+              </div>
+              <div class="prof-field">
+                <div class="prof-field-lbl">Nationality</div>
+                <div class="prof-field-val">{{ profile.nationality if profile and profile.nationality else '—' }}</div>
+              </div>
+              <div class="prof-field">
+                <div class="prof-field-lbl">Preferred Genre</div>
+                <div class="prof-field-val prof-genre-val">
+                  {% if profile and profile.preffered_genre %}
+                    <span class="genre-chip">{{ profile.preffered_genre }}</span>
+                  {% else %}—{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Account Details -->
+          <div class="prof-card">
+            <div class="prof-card-head">
+              <span class="prof-card-ico">🔐</span>
+              <span class="prof-card-title">Account Details</span>
+            </div>
+            <div class="prof-fields">
+              <div class="prof-field">
+                <div class="prof-field-lbl">Username</div>
+                <div class="prof-field-val">{{ user.username }}</div>
+              </div>
+              <div class="prof-field">
+                <div class="prof-field-lbl">Email</div>
+                <div class="prof-field-val">{{ user.email }}</div>
+              </div>
+              <div class="prof-field">
+                <div class="prof-field-lbl">Role</div>
+                <div class="prof-field-val">
+                  {% if user.role == 'verified' %}
+                    <span style="color:var(--green)">✓ Verified</span>
+                  {% else %}
+                    <span style="color:var(--gold)">User</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="prof-field">
+                <div class="prof-field-lbl">Account Status</div>
+                <div class="prof-field-val">
+                  {% if user.access == 'active' %}
+                    <span class="status-pill active-pill">● Active</span>
+                  {% elif user.access == 'inactive' %}
+                    <span class="status-pill inactive-pill">● Inactive</span>
+                  {% else %}
+                    <span class="status-pill banned-pill">● {{ user.access }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RECENT TICKETS -->
+        <div class="csec">
+          <div class="slbl">Activity</div>
+          <div class="stit">Recent Tickets</div>
+          <div class="prof-tickets" id="profTickets">
+            {% if recent_tickets %}
+              {% for ticket in recent_tickets %}
+              <div class="ptix-card">
+                <div class="ptix-poster">
+                  <img src="{{ url_for('static', filename='uploads/' + ticket.schedule.movie.movie_image) }}" alt="{{ ticket.schedule.movie.movie_name }}">
+                </div>
+                <div class="ptix-info">
+                  <div class="ptix-title">{{ ticket.schedule.movie.movie_name }}</div>
+                  <div class="ptix-meta">
+                    <span>📅 {{ ticket.schedule.date.strftime('%b %d, %Y') }}</span>
+                    <span>🕐 {{ ticket.schedule.start_time.strftime('%I:%M %p') }}</span>
+                    <span>🏨 {{ ticket.schedule.venue.venue_name }}</span>
+                    <span>💺 Row {{ ticket.seat_row }}, Seat {{ ticket.seat_col }}</span>
+                  </div>
+                  <div class="ptix-booked">Booked on {{ ticket.booking_time.strftime('%b %d, %Y') }}</div>
+                </div>
+                <div class="ptix-qr">
+                  <div class="ptix-qr-placeholder">🎟️</div>
+                  <div class="ptix-qr-lbl">Ticket #{{ ticket.id }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="prof-no-tickets">
+                <span style="font-size:2rem">🎬</span>
+                <p>No tickets booked yet.</p>
+                <a href="{{ url_for('user_dashboard') }}" class="pbtn" style="text-decoration:none;margin-top:10px;display:inline-flex">Browse Movies</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ===== EDIT PROFILE MODAL ===== -->
+<div class="ovl" id="editModal">
+  <div class="modal">
+    <div class="min">
+      <button class="mclose" onclick="closeEditModal()">✕</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1.5px;margin-bottom:20px;">Edit Profile</div>
+
+      <form method="POST" action="{{ url_for('update_profile') }}" enctype="multipart/form-data" id="editForm">
+
+        <!-- Avatar Upload -->
+        <div class="edit-avatar-row">
+          <div class="edit-avatar-preview">
+            <img src="{{ profile_image }}" id="avatarPreview" alt="Avatar">
+          </div>
+          <div>
+            <div class="fl">Profile Picture</div>
+            <label class="upload-btn">
+              📷 Choose Photo
+              <input type="file" name="profile_image" accept="image/*" onchange="previewAvatar(this)" style="display:none">
+            </label>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px">JPG, PNG or GIF · Max 5MB</div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <!-- Bio -->
+        <div class="fg">
+          <label class="fl">Bio</label>
+          <textarea class="fi" name="bio" rows="3" placeholder="Tell people about yourself..." style="resize:vertical;">{{ profile.bio if profile and profile.bio else '' }}</textarea>
+        </div>
+
+        <!-- Two column grid -->
+        <div class="edit-grid">
+          <div class="fg">
+            <label class="fl">Gender</label>
+            <select class="fi" name="gender">
+              <option value="">Select gender</option>
+              {% for g in ['Male','Female','Non-binary','Prefer not to say'] %}
+                <option value="{{ g }}" {% if profile and profile.gender == g %}selected{% endif %}>{{ g }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="fg">
+            <label class="fl">Date of Birth</label>
+            <input class="fi" type="date" name="dob" value="{{ profile.dob.strftime('%Y-%m-%d') if profile and profile.dob else '' }}">
+          </div>
+          <div class="fg">
+            <label class="fl">Nationality</label>
+            <select class="fi" name="nationality">
+              <option value="">Select nationality</option>
+              {% for n in nationalities %}
+                <option value="{{ n }}" {% if profile and profile.nationality == n %}selected{% endif %}>{{ n }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="fg">
+            <label class="fl">Preferred Genre</label>
+            <select class="fi" name="preffered_genre">
+              <option value="">Select genre</option>
+              {% for genre in ['Action','Adventure','Animation','Comedy','Drama','Family','Fantasy','Horror','Romance','Sci-Fi','Thriller','Musical','Historical','Mystery'] %}
+                <option value="{{ genre }}" {% if profile and profile.preffered_genre == genre %}selected{% endif %}>{{ genre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button type="button" class="pbtn" style="background:var(--bg4);color:var(--text2);border:1px solid var(--border2)" onclick="closeEditModal()">Cancel</button>
+          <button type="submit" class="pbtn">Save Changes</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

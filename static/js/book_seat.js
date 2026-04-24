@@ -191,53 +191,66 @@ function closePaymentModal() {
 
 // 2. New: The actual API call happens only after PIN is entered in the modal
 async function processFinalBooking() {
-    const pin = document.getElementById('confirmPin').value;
-    const method = document.querySelector('input[name="payMethod"]:checked').value;
+    const pin = document.getElementById('confirmPin').value.trim();
 
+    // ── PIN validation ──────────────────────────────────────────
+    if (!pin) {
+        showModalError('Please enter your transaction PIN.');
+        return;
+    }
     if (pin.length < 4) {
-        showToast("Please enter your 4-digit PIN", "error");
+        showModalError('PIN must be 4 digits.');
         return;
     }
 
+    const method = document.querySelector('input[name="payMethod"]:checked').value;
     const seatsArray = [...selectedSeats];
     const btn = document.querySelector('.pay-confirm-btn');
+
     btn.disabled = true;
-    btn.textContent = 'Verifying...';
+    btn.textContent = 'Redirecting to payment...';
 
     try {
-        const res = await fetch('/api/book', {
+        const res = await fetch('/api/create-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                schedule_id: SCHEDULE_ID,
-                seats: seatsArray,
-                type: selectedType,
-                payment_method: method,
-                payment_pin: pin // Holding value until this moment
+                schedule_id:    SCHEDULE_ID,
+                seats:          seatsArray,
+                type:           selectedType,
+                payment_method: method
             }),
         });
 
         const data = await res.json();
 
-        if (data.success) {
-            showToast(`Success! ${seatsArray.join(', ')} booked via ${method}`, 'success');
-            
-            // Update local UI state
-            for (const s of seatsArray) bookedSeats[s] = selectedType;
-            selectedSeats = new Set();
-            
-            closePaymentModal();
-            renderSeatMap();
-            updateSummary();
+        if (data.checkout_url) {
+            window.location.href = data.checkout_url;
         } else {
-            showToast(data.error || 'Payment failed.', 'error');
+            showModalError(data.error || 'Payment initialization failed.');
             btn.disabled = false;
             btn.textContent = 'Confirm & Pay';
         }
     } catch (e) {
-        showToast('Network error.', 'error');
+        showModalError('Network error. Please try again.');
         btn.disabled = false;
+        btn.textContent = 'Confirm & Pay';
     }
+}
+
+// ── Helper: show error inside the modal ──────────────────────────────────
+function showModalError(msg) {
+    let el = document.getElementById('modalError');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'modalError';
+        el.style.cssText = 'color:#e05555;font-size:12px;margin-top:8px;text-align:center;';
+        document.querySelector('.pay-pin-sec').appendChild(el);
+    }
+    el.textContent = msg;
+    // Clear after 3s
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.textContent = '', 3000);
 }
  
 // ── Toast ─────────────────────────────────────────────────────────────────

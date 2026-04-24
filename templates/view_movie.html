@@ -26,7 +26,7 @@
         <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
       </div>
       <div class="sbot">
-        <div class="uchip" onclick="openProfileModal({{ user.id }})">
+        <a href="{{ url_for('view_profile') }}" class="uchip">
           <div class="av" id="sav">
             <img src="{{ profile_image }}" alt="Profile Image">
           </div>
@@ -43,7 +43,7 @@
               <span class="ulgo">↩</span>
             </div>
           </div>
-        </div>
+        </a>
       </div>
     </aside>
 

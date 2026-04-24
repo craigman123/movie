@@ -83,6 +83,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     display: flex;
     flex-direction: column;
     gap:9px;
+    text-decoration: none;
     justify-content: center;
     align-items: center;
     background:var(--bg3);
@@ -111,7 +112,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 }
 
 .uinf{flex:1;min-width:0}
-.uname{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uname{
+    font-size:13px;
+    font-weight:500;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    color: white;
+}
 .urole{font-size:10px;color:var(--text3)}
 .ulgo{font-size:14px;color:var(--text3)}
 .main{flex:1;overflow-y:auto}

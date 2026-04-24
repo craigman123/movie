@@ -7,6 +7,8 @@ from werkzeug.utils import secure_filename
 import time, os, uuid, json, traceback
 from datetime import time as dt_time
 import datetime
+import requests
+import base64
 from national import nationalities
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
@@ -17,6 +19,7 @@ app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['LAST_UPDATE'] = int(time.time())
 app.secret_key = "aries_vincent_secret"
+PAYMONGO_SECRET = "sk_test_your_key"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///luma.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -41,6 +44,7 @@ class UserTickets(db.Model):
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'), nullable=False)
     seat_row = db.Column(db.Integer, nullable=False)
     seat_col = db.Column(db.Integer, nullable=False)
+    ticket_type = db.Column(db.String(50), nullable=False, default='standard')
     booking_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     
 
@@ -1479,11 +1483,18 @@ def book_seat(schedule_id):
  
 @app.route('/api/booked_seats/<int:schedule_id>')
 def api_booked_seats(schedule_id):
-    bookings = Booking.query.filter_by(schedule_id=schedule_id, status='confirmed').all()
-    return jsonify([
-        {"seat": b.seat_label, "type": b.ticket_type}
-        for b in bookings
-    ])
+    try:
+        bookings = UserTickets.query.filter_by(schedule_id=schedule_id).all()
+        result = []
+        for b in bookings:
+            if b.seat_row and b.seat_col:
+                result.append({
+                    "seat": f"{chr(64 + b.seat_row)}{b.seat_col}",
+                    "type": "standard"
+                })
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
  
  
 @app.route('/api/book', methods=['POST'])
@@ -1522,6 +1533,177 @@ def api_book():
  
     return jsonify({"success": True, "booking_id": booking.id})
 
+@app.route('/profile')
+def view_profile():
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+ 
+    if session.get('role') == 'admin':
+        return redirect(url_for('admin_dashboard'))
+ 
+    user    = User.query.get(session['user_id'])
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+ 
+    first_letter = user.username[0].lower() if user.username else "a"
+
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path,
+            "static",
+            "uploads",
+            "uploadedPictures",
+            profile.profile_image
+        )
+
+        if os.path.exists(uploaded_path):
+            profile_image = url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+        else:
+            profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    
+    print("DEBUG: Profile Image Path:", profile_image)
+ 
+    # Ticket stats
+    all_tickets      = UserTickets.query.filter_by(user_id=user.id).all()
+    ticket_count     = len(all_tickets)
+    now              = datetime.datetime.now()
+ 
+    movies_watched = sum(
+        1 for t in all_tickets
+        if datetime.datetime.combine(
+            t.schedule.date.date() if isinstance(t.schedule.date, datetime.datetime) else t.schedule.date,
+            t.schedule.end_time
+        ) < now
+    )
+ 
+    upcoming_count = sum(
+        1 for t in all_tickets
+        if datetime.datetime.combine(
+            t.schedule.date.date() if isinstance(t.schedule.date, datetime.datetime) else t.schedule.date,
+            t.schedule.start_time
+        ) >= now
+    )
+ 
+    # Most recent 5 tickets
+    recent_tickets = (
+        UserTickets.query
+        .filter_by(user_id=user.id)
+        .order_by(UserTickets.booking_time.desc())
+        .limit(5)
+        .all()
+    )
+ 
+    from national import nationalities as all_nationalities
+ 
+    return render_template(
+        'view_profile.html',
+        user=user,
+        profile=profile,
+        profile_image=profile_image,
+        ticket_count=ticket_count,
+        movies_watched=movies_watched,
+        upcoming_count=upcoming_count,
+        recent_tickets=recent_tickets,
+        nationalities=all_nationalities
+    )
+ 
+ 
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+ 
+    user    = User.query.get(session['user_id'])
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+ 
+    if not profile:
+        profile = Profiles(user_id=user.id, profile_image="", nationality="", gender="", preffered_genre="")
+        db.session.add(profile)
+ 
+    # Bio
+    profile.bio              = request.form.get('bio', '').strip()
+    profile.gender           = request.form.get('gender', '')
+    profile.nationality      = request.form.get('nationality', '')
+    profile.preffered_genre  = request.form.get('preffered_genre', '')
+ 
+    # Date of birth
+    dob_str = request.form.get('dob', '')
+    if dob_str:
+        try:
+            profile.dob = datetime.datetime.strptime(dob_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+ 
+    # Profile image upload
+    pic = request.files.get('profile_image')
+    if pic and pic.filename:
+        if allowed_file(pic.filename, ALLOWED_IMAGE_EXTENSIONS):
+            filename = f"user_{user.id}_{secure_filename(pic.filename)}"
+            pic.save(os.path.join(app.config['PROFILE_PICTURE_FOLDER'], filename))
+            profile.profile_image = filename
+        else:
+            flash("Invalid image type.", "danger")
+            return redirect(url_for('view_profile'))
+ 
+    db.session.commit()
+    flash("Profile updated successfully!", "success")
+    return redirect(url_for('view_profile'))
+
+@app.route('/api/create-payment', methods=['POST'])
+def create_payment():
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+
+    data            = request.get_json()
+    schedule_id     = data.get('schedule_id')
+    seats           = data.get('seats', [])        # list of seat labels e.g. ["A1","A2"]
+    ticket_type     = data.get('type', 'standard')
+    payment_method  = data.get('payment_method', 'GCash')
+
+    if not seats or not schedule_id:
+        return jsonify({"error": "Missing fields"}), 400
+
+    price_per_seat  = 500 if ticket_type == 'premium' else 350
+    total_cents     = len(seats) * price_per_seat * 100  # PayMongo uses centavos
+
+    method_map      = {"GCash": "gcash", "PayMaya": "paymaya"}
+    pm_method       = method_map.get(payment_method, "gcash")
+
+    auth    = base64.b64encode(f"{PAYMONGO_SECRET}:".encode()).decode()
+    headers = {"Authorization": f"Basic {auth}", "Content-Type": "application/json"}
+
+    payload = {
+        "data": {
+            "attributes": {
+                "amount": total_cents,
+                "currency": "PHP",
+                "description": f"LUMA - {len(seats)} seat(s) - Schedule #{schedule_id}",
+                "redirect": {
+                    "success": "http://127.0.0.1:5000/payment/success",
+                    "failed":  "http://127.0.0.1:5000/payment/failed"
+                },
+                "payment_method_types": [pm_method],
+                "metadata": {
+                    "user_id":     session['user_id'],
+                    "schedule_id": schedule_id,
+                    "seats":       ",".join(seats),
+                    "type":        ticket_type
+                }
+            }
+        }
+    }
+
+    res  = requests.post("https://api.paymongo.com/v1/checkout_sessions", json=payload, headers=headers)
+    resp = res.json()
+
+    checkout_url = resp.get("data", {}).get("attributes", {}).get("checkout_url")
+    if checkout_url:
+        return jsonify({"checkout_url": checkout_url})
+    else:
+        return jsonify({"error": resp.get("errors", [{}])[0].get("detail", "Payment failed")}), 400
 
 
 if __name__ == '__main__':

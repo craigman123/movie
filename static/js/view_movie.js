@@ -71,8 +71,8 @@ async function openVenueModal(movieId) {
       const availLabel = avail.includes('unavail') ? '✕ Unavailable' : '✓ Available';
  
       // venue image
-      const imgHtml = v.image
-        ? `<img class="vm-venue-img" src="/static/uploads/${v.image}" alt="${v.venue_name}" onerror="this.style.display='none'">`
+      const imgHtml = v.venue_image
+        ? `<img class="vm-venue-img" src="/static/uploads/${v.venue_image}" alt="${v.venue_name}" onerror="this.style.display='none'">`
         : `<div class="vm-venue-img-placeholder">🏨</div>`;
  
       // schedule pills
