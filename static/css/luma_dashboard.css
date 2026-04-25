@@ -159,8 +159,38 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .hh{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:2px;line-height:1;margin-bottom:10px}
 .hh span{color:var(--gold)}
 .hdesc{color:var(--text2);font-size:12px;max-width:340px;line-height:1.65;margin-bottom:18px}
-.pbtn{display:inline-flex;align-items:center;gap:7px;background:var(--gold);color:#09090e;border:none;border-radius:var(--rsm);padding:9px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .18s}
+.pbtn{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    background:var(--gold);
+    color:#09090e;
+    border:none;
+    border-radius:var(--rsm);
+    padding:9px 20px;
+    font-family:'DM Sans',sans-serif;
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+    transition:all .18s
+}
 .pbtn:hover{background:var(--gold-lt);transform:translateY(-1px)}
+.pbtnout {
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    background: var(--red);
+    color:#09090e;
+    border:none;
+    border-radius:var(--rsm);
+    padding:9px 20px;
+    font-family:'DM Sans',sans-serif;
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+    transition:all .18s
+}
+.pbtnout:hover{background: #ef4444;transform:translateY(-1px)}
 
 .hstats{
     display:flex;

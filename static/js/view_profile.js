@@ -26,3 +26,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.target === this) closeEditModal();
   });
 });
+
+function logout() {
+  fetch('/logout', { method: 'POST' })
+    .then(response => {
+      if (response.ok) {
+        window.location.href = '/gotologin';
+      } else {
+        alert('Logout failed. Please try again.');
+      }
+    })
+    .catch(error => {
+      console.error('Error during logout:', error);
+      alert('An error occurred. Please try again.');
+    });
+}

@@ -273,6 +273,21 @@
   color: var(--text3);
   letter-spacing: .5px;
 }
+
+.slot-time-ended {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 1.5px;
+  color: rgb(255, 48, 48);
+  line-height: 1;
+  text-decoration: line-through;
+}
+.slot-end-ended {
+  font-size: 10px;
+  letter-spacing: .5px;
+  color: rgb(255, 48, 48);
+  text-decoration: line-through;
+}
 .slot-venue {
   font-size: 11px;
   color: var(--text2);

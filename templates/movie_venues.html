@@ -2,13 +2,16 @@
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-user-pack.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movie_venues.css') }}">
+    <script src="{{ url_for('static', filename='js/movie_venues.js') }}" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    <title>Movie Venues - LUMA</title>
+    <title>Venues — LUMA</title>
 {% endblock %}
 
 {% block body %}
 <div id="app">
   <div class="layout">
+
     <aside class="side">
       <div class="slogo">
         <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height: 1.2em; margin-right: 10px;">
@@ -45,8 +48,36 @@
       </div>
     </aside>
 
-    <div class="pg" id="pg-venues">
-        <div class="phead"><div><div class="ptitle">Venues</div><div class="psub">Where to watch your favorite movies</div></div></div>
-        <div class="vlist" id="vlist"></div>
+    <!-- Main -->
+    <main class="main">
+      <div class="pg on">
+
+        <!-- Header -->
+        <div class="phead">
+          <div>
+            <div class="ptitle">Venues</div>
+            <div class="psub">Where to watch your favorite movies</div>
+          </div>
+        </div>
+
+        <!-- Venue Selector Strip -->
+        <div class="venue-selector">
+          <button class="venue-nav" id="venuePrev" onclick="shiftVenues(-1)">‹</button>
+          <div class="venue-strip" id="venueStrip"></div>
+          <button class="venue-nav" id="venueNext" onclick="shiftVenues(1)">›</button>
+        </div>
+
+        <!-- Venue Detail -->
+        <div id="venueDetail">
+          <div class="venue-loading">
+            <div class="venue-spinner"></div>
+            <p>Loading venues...</p>
+          </div>
+        </div>
+
       </div>
+    </main>
+
+  </div>
+</div>
 {% endblock %}

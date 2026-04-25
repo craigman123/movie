@@ -669,6 +669,12 @@ def settings():
 def about():
     return render_template('about.html')
 
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    flash("You have been logged out.", "success")
+    return '', 200 
+
 @app.route('/login', methods=['POST'])
 def login():
     password = request.form['password']
