@@ -220,6 +220,35 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.style.cursor = 'pointer';
     });
 
+    const venueModalRepuires = document.querySelector(".venue-modal");
+    const venueInputs = [
+        document.getElementById("venue-name"),
+        document.getElementById("venue-link"),
+        document.getElementById("filevenue"),
+        document.getElementById("room")
+    ];
+
+    function openVenueModal() {
+        venueModalRepuires.style.display = "flex";
+
+        venueInputs.forEach(input => {
+            input.required = true;
+        });
+    }
+
+    // CLOSE MODAL
+    function closeVenueModal() {
+        venueModalRepuires.style.display = "none";
+
+        venueInputs.forEach(input => {
+            input.required = false;
+            input.value = "";
+        });
+
+        // reset file input manually
+        document.getElementById("filevenue").value = "";
+    }
+
     let selectedVenue = null; // store selected venue
     const checkVenueBtnStatus = () => {
         // DISABLED: Prevents hiding button

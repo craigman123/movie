@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LUMA Ticket – {{ movie.movie_name }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: #0f1a14;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 2rem 1rem;
+    }
+    .ticket {
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    /* ── HEADER ── */
+    .ticket-header {
+      background: #1a2e2a;
+      padding: 1.5rem 1.5rem 1.25rem;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #7fb5a3;
+      text-transform: uppercase;
+    }
+    .ticket-header h1 {
+      font-size: 22px;
+      font-weight: 500;
+      color: #ffffff;
+      margin: 4px 0 0;
+    }
+    .badges {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: flex-end;
+    }
+    .badge {
+      background: #2a4e41;
+      border-radius: 8px;
+      padding: 5px 10px;
+      text-align: center;
+      min-width: 90px;
+    }
+    .badge .badge-label { font-size: 10px; color: #7f8ab5; letter-spacing: 1px; }
+    .badge .badge-price { font-size: 13px; font-weight: 600; color: #a78bfa; margin-top: 2px; }
+    .badge.premium .badge-price { color: #f59e0b; }
+    .badge.standard .badge-price { color: #a78bfa; }
+    .movie-name { margin-top: 1.25rem; }
+    .movie-name h2 { font-size: 20px; font-weight: 500; color: #ffffff; margin-top: 4px; }
+
+    /* ── TEAR LINE ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      background: #f3f4f6;
+    }
+    .divider .notch {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #0f0f1a; flex-shrink: 0;
+    }
+    .divider .line {
+      flex: 1;
+      border-top: 2px dashed #d1d5db;
+      margin: 0 4px;
+    }
+
+    /* ── BODY ── */
+    .ticket-body { padding: 1.25rem 1.5rem; background: #ffffff; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .field .field-label { font-size: 11px; color: #6b7280; letter-spacing: 1px; text-transform: uppercase; }
+    .field .field-value { font-size: 15px; font-weight: 500; color: #111827; margin-top: 4px; }
+    .info-box {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 1rem;
+    }
+    .info-box .field-label { font-size: 11px; color: #6b7280; letter-spacing: 1px; text-transform: uppercase; }
+    .info-box .field-value { font-size: 14px; font-weight: 500; color: #111827; margin-top: 4px; }
+    .info-box .field-sub { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+    /* ── SEATS TABLE ── */
+    .seats-section { margin-bottom: 1rem; }
+    .seats-section .field-label {
+      font-size: 11px; color: #6b7280;
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .seats-table { width: 100%; border-collapse: collapse; }
+    .seats-table th {
+      font-size: 10px; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 4px 8px; text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .seats-table td {
+      padding: 7px 8px;
+      font-size: 14px; color: #111827;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .seats-table tr:last-child td { border-bottom: none; }
+    .type-pill {
+      display: inline-block;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 20px;
+    }
+    .type-pill.premium  { background: #fef3c7; color: #b45309; }
+    .type-pill.standard { background: #ede9fe; color: #6d28d9; }
+    .seat-label { font-size: 16px; font-weight: 700; color: #111827; }
+    .seat-price { font-size: 13px; color: #6b7280; text-align: right; }
+
+    /* ── TOTAL ── */
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: #1a1a2e;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    .total-row .total-label { font-size: 12px; color: #7f8ab5; letter-spacing: 1px; text-transform: uppercase; }
+    .total-row .total-amount { font-size: 18px; font-weight: 700; color: #a78bfa; }
+
+    /* ── QR ── */
+    .qr-section { padding: 0 1.5rem 1.5rem; background: #ffffff; text-align: center; }
+    .qr-section .qr-label { font-size: 11px; color: #6b7280; letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase; }
+    .qr-section img { width: 140px; height: 140px; border-radius: 8px; }
+
+    /* ── FOOTER ── */
+    .ticket-footer {
+      background: #1a1a2e;
+      padding: 12px 1.5rem;
+      text-align: center;
+    }
+    .ticket-footer p { font-size: 12px; color: #7f8ab5; }
+  </style>
+</head>
+<body>
+  <div class="ticket">
+
+    <!-- HEADER -->
+    <div class="ticket-header">
+      <div class="header-top">
+        <div>
+          <p class="label">LUMA Cinema</p>
+          <h1>Movie Ticket</h1>
+        </div>
+        <div class="badges">
+          {% if premium_seats %}
+          <div class="badge premium">
+            <p class="badge-label">PREMIUM ×{{ premium_seats | length }}</p>
+            <p class="badge-price">PHP {{ 500 * (premium_seats | length) }}</p>
+          </div>
+          {% endif %}
+          {% if standard_seats %}
+          <div class="badge standard">
+            <p class="badge-label">STANDARD ×{{ standard_seats | length }}</p>
+            <p class="badge-price">PHP {{ 350 * (standard_seats | length) }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="movie-name">
+        <p class="label">MOVIE</p>
+        <h2>{{ movie.movie_name }}</h2>
+      </div>
+    </div>
+
+    <!-- TEAR LINE -->
+    <div class="divider">
+      <div class="notch"></div>
+      <div class="line"></div>
+      <div class="notch"></div>
+    </div>
+
+    <!-- BODY -->
+    <div class="ticket-body">
+
+      <!-- Date / Time / Guest -->
+      <div class="grid">
+        <div class="field">
+          <p class="field-label">DATE</p>
+          <p class="field-value">{{ schedule.date.strftime('%b %d, %Y') }}</p>
+        </div>
+        <div class="field">
+          <p class="field-label">TIME</p>
+          <p class="field-value">{{ schedule.start_time.strftime('%H:%M') }} – {{ schedule.end_time.strftime('%H:%M') }}</p>
+        </div>
+        <div class="field">
+          <p class="field-label">GUEST</p>
+          <p class="field-value">{{ user.username }}</p>
+        </div>
+        <div class="field">
+          <p class="field-label">SEATS</p>
+          <p class="field-value">{{ ticket_rows | length }}</p>
+        </div>
+      </div>
+
+      <!-- Venue -->
+      <div class="info-box">
+        <p class="field-label">VENUE</p>
+        <p class="field-value">{{ venue.venue_name }}</p>
+        <p class="field-sub">Room {{ venue.venue_room }}</p>
+      </div>
+
+      <!-- Seats breakdown -->
+      <div class="seats-section">
+        <p class="field-label">SEAT BREAKDOWN</p>
+        <table class="seats-table">
+          <thead>
+            <tr>
+              <th>Seat</th>
+              <th>Type</th>
+              <th style="text-align:right">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in ticket_rows %}
+            <tr>
+              <td><span class="seat-label">{{ row.seat_label }}</span></td>
+              <td><span class="type-pill {{ row.ticket_type }}">{{ row.ticket_type }}</span></td>
+              <td class="seat-price">PHP {{ row.price }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Total -->
+      <div class="total-row">
+        <span class="total-label">TOTAL</span>
+        <span class="total-amount">PHP {{ total_price }}</span>
+      </div>
+
+    </div>
+
+    <!-- QR -->
+    <div class="qr-section">
+      <p class="qr-label">SCAN TO VERIFY</p>
+      <img src="{{ url_for('static', filename='uploads/ticketCodes/' + qr_filename) }}" alt="QR Code">
+    </div>
+
+    <!-- FOOTER -->
+    <div class="ticket-footer">
+      <p>Thank you for booking with LUMA!</p>
+    </div>
+
+  </div>
+</body>
+</html>

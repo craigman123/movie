@@ -249,8 +249,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const hasSchedule = movieSchedules.length > 0;
         const hasGenre = Array.from(genreCheckboxes).some(c => c.checked);
 
-        // Require schedule now
-        if (hasPoster && hasVenue && hasSchedule && hasGenre) {
+        // Rule: Movie only → OK. Movie + Venue → schedule required. Movie + Venue + Schedule → OK.
+        // If venue is added, schedule becomes required.
+        const scheduleRequiredAndMissing = hasVenue && !hasSchedule;
+
+        const canSubmit = hasPoster && hasGenre && !scheduleRequiredAndMissing;
+
+        if (canSubmit) {
             submitBtn.style.backgroundColor = '#4CAF50';
             submitBtn.disabled = false;
             submitBtn.style.cursor = 'pointer';
@@ -261,7 +266,29 @@ document.addEventListener("DOMContentLoaded", () => {
             submitBtn.style.cursor = 'not-allowed';
             submitBtn.style.opacity = '0.6';
         }
-        console.log(`Submit status: poster=${hasPoster}, venue=${hasVenue}, schedule=${hasSchedule}, genre=${hasGenre}`);
+
+        // Update the schedule checklist item to reflect conditional requirement
+        if (scheduleCheck) {
+            if (hasSchedule) {
+                scheduleCheck.style.color = 'green';
+                scheduleCheck.textContent = 'Movie Schedule ✓';
+            } else if (hasVenue) {
+                // Venue was added → schedule is now required, highlight as warning
+                scheduleCheck.style.color = 'orange';
+                scheduleCheck.textContent = 'Movie Schedule (required — venue added)';
+            } else {
+                // No venue → schedule is optional
+                scheduleCheck.style.color = '#aaa';
+                scheduleCheck.textContent = 'Movie Schedule (optional)';
+            }
+        }
+
+        // Update venue check item
+        if (venueCheck) {
+            venueCheck.style.color = hasVenue ? 'green' : '';
+        }
+
+        console.log(`Submit status: poster=${hasPoster}, venue=${hasVenue}, schedule=${hasSchedule}, genre=${hasGenre}, scheduleRequiredAndMissing=${scheduleRequiredAndMissing}`);
     }
 
     [posterInput, trailerInput, venueInput].forEach(input => {
@@ -269,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
             updateCheck(posterInput, posterCheck);
             updateCheck(trailerInput, trailerCheck);
             updateCheck(venueInput, venueCheck);
-            updateSubmitButton();
+            updateSubmitButton(); // re-evaluate schedule requirement based on venue presence
         });
     });
 
@@ -282,19 +309,14 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Expose the schedule check function globally so it can be called when schedules are added/deleted
     window.updateScheduleCheck = function() {
-        const hasSchedule = updateScheduleCheck();
-        updateSubmitButton();
+        updateScheduleCheck(); // updates visual checklist
+        updateSubmitButton();  // re-evaluates submit with venue→schedule conditional logic
     };
     
-    // Initialize submit button as disabled (since no schedule exists initially)
-    // Force enable after load
+    // Initialize button and checklist state on load
     setTimeout(() => {
-        // Fix null errors
-        if (venueCheck) venueCheck.style.color = venueInput.files.length > 0 ? 'green' : '';
-        if (scheduleCheck) scheduleCheck.style.color = movieSchedules.length > 0 ? 'green' : '';
-        
-        updateSubmitButton();
-        console.log('Submit FIXED - no null errors');
+        updateSubmitButton(); // handles both venue check and schedule requirement
+        console.log('Submit initialized with venue→schedule conditional logic');
     }, 1000);
 });
 
@@ -579,4 +601,3 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('time2').value = '';
     });
 });
-

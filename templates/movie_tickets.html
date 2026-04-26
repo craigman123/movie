@@ -1,17 +1,22 @@
 {% extends "base.html" %}
 
 {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/luma_dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-user-pack.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movie_tickets.css') }}">  
+    <script src="{{ url_for('static', filename='js/movie_tickets.js') }}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    <title>Movie Tickets - LUMA</title>
+    <title>My Tickets — LUMA</title>
 {% endblock %}
 
 {% block body %}
 <div id="app">
   <div class="layout">
+
+    <!-- Sidebar -->
     <aside class="side">
       <div class="slogo">
-        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height: 1.2em; margin-right: 10px;">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height:1.2em;margin-right:10px;">
       </div>
       <div class="nsec">
         <div class="nlbl">Discover</div>
@@ -25,18 +30,16 @@
       </div>
       <div class="sbot">
         <a href="{{ url_for('view_profile') }}" class="uchip">
-          <div class="av" id="sav">
-            <img src="{{ profile_image }}" alt="Profile Image">
-          </div>
+          <div class="av"><img src="{{ profile_image }}" alt="Profile Image"></div>
           <div class="uinf">
-            <div class="uname" id="snm">{{ user.username }}</div>
-            <div class="urole" id="sumprof">
+            <div class="uname">{{ user.username }}</div>
+            <div class="urole">
               {% if user.role == "user" %}
-                  <span style="color:var(--gold)">User - Open Profile</span>
+                <span style="color:var(--gold)">User - Open Profile</span>
               {% elif user.role == "verified" %}
-                  <span style="color:var(--green)">Verified - Open Profile</span>
+                <span style="color:var(--green)">Verified - Open Profile</span>
               {% else %}
-                  <span style="color:var(--text2)">{{ user.role }}</span>
+                <span style="color:var(--text2)">{{ user.role }}</span>
               {% endif %}
               <span class="ulgo">↩</span>
             </div>
@@ -45,8 +48,22 @@
       </div>
     </aside>
 
-    <div class="pg" id="pg-tix">
-        <div class="phead"><div><div class="ptitle">My Tickets</div><div class="psub">Your booking history and QR codes</div></div></div>
-        <div class="tlist" id="tlist"></div>
+    <!-- Main -->
+    <div class="pg">
+      <div class="phead">
+        <div>
+          <div class="ptitle">My Tickets</div>
+          <div class="psub" id="ticket-sub">Loading...</div>
+        </div>
       </div>
+      <div class="tlist" id="tlist"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const TICKETS = {{ tickets | tojson }};
+  const dashboardUrl = "{{ url_for('user_dashboard') }}";
+</script>
 {% endblock %}

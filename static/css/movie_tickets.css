@@ -1,0 +1,75 @@
+.pg { flex: 1; overflow-y: auto; }
+.tlist { padding: 24px 32px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Combined ticket card ── */
+.tcard {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    transition: border-color .18s, transform .18s;
+}
+.tcard:hover { border-color: var(--border2); transform: translateY(-2px); }
+
+.tbar { width: 4px; flex-shrink: 0; background: var(--gold); }
+.tbar.mixed   { background: linear-gradient(180deg, #a78bfa 50%, var(--gold) 50%); }
+.tbar.premium { background: #a78bfa; }
+
+.tbody { flex: 1; padding: 18px 20px; display: flex; gap: 18px; align-items: flex-start; }
+
+/* poster */
+.tposter {
+    width: 60px; height: 88px;
+    border-radius: 8px; overflow: hidden;
+    flex-shrink: 0; background: var(--bg3);
+}
+.tposter img { width: 100%; height: 100%; object-fit: cover; }
+.tposter-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+
+/* details */
+.tdet { flex: 1; min-width: 0; }
+.tmov { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+.tmet { font-size: 12px; color: var(--text2); line-height: 1.8; margin-bottom: 10px; }
+
+/* seats row */
+.tseats { display: flex; flex-wrap: wrap; gap: 7px; }
+.tseat-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(232,193,74,.25);
+    color: var(--gold);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px; letter-spacing: 1.5px;
+    padding: 3px 10px; border-radius: 6px;
+}
+.tseat-pill.premium {
+    background: rgba(167,139,250,.1);
+    border-color: rgba(167,139,250,.28);
+    color: #a78bfa;
+}
+.tseat-pill .pill-star { font-size: 9px; opacity: .7; }
+
+/* right col */
+.tright {
+    text-align: right; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+}
+.tprice {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; color: var(--gold);
+    letter-spacing: 1px; line-height: 1;
+}
+.tprice-lbl { font-size: 9px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-top: -2px; }
+.tbadge {
+    font-size: 9px; padding: 3px 9px; border-radius: 20px;
+    font-weight: 500; letter-spacing: .5px; text-transform: uppercase;
+}
+.tv { background: rgba(78,203,122,.1); color: var(--green); border: 1px solid rgba(78,203,122,.18); }
+.tu { background: rgba(78,78,92,.2);   color: var(--text3); border: 1px solid var(--border); }
+
+/* empty */
+.empty { text-align: center; padding: 80px 20px; }
+.eico  { font-size: 48px; margin-bottom: 16px; }
+.etit  { font-size: 17px; font-weight: 500; margin-bottom: 8px; }
+.esub  { font-size: 13px; color: var(--text2); margin-bottom: 22px; }

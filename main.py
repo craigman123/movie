@@ -13,13 +13,17 @@ from national import nationalities
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
+import qrcode
+import qrcode.image.svg
+import socket
+
 
 app = Flask(__name__)
 
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['LAST_UPDATE'] = int(time.time())
 app.secret_key = "aries_vincent_secret"
-PAYMONGO_SECRET = "sk_test_your_key"
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///luma.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -27,16 +31,29 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 PROFILE_PICTURE_FOLDER = os.path.join(UPLOAD_FOLDER, 'uploadedPictures')
 DEFAULT_PICTURE_FOLDER = os.path.join(UPLOAD_FOLDER, 'defaultPictures')
+QR_TICKET_CODES = os.path.join(UPLOAD_FOLDER, 'ticketCodes')
+
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv', 'gif'}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROFILE_PICTURE_FOLDER, exist_ok=True)
 os.makedirs(DEFAULT_PICTURE_FOLDER, exist_ok=True)
+os.makedirs(QR_TICKET_CODES, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROFILE_PICTURE_FOLDER'] = PROFILE_PICTURE_FOLDER
 app.config['DEFAULT_PICTURE_FOLDER'] = DEFAULT_PICTURE_FOLDER
+app.config['QR_TICKET_CODES'] = QR_TICKET_CODES
 
 db = SQLAlchemy(app)
+
+class QrCode(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'), nullable=False)
+    qr_code_path_image = db.Column(db.String(1000), nullable=False)
+    __table_args__ = (db.UniqueConstraint('user_id', 'schedule_id', name='uq_user_schedule_qr'),)
 
 class UserTickets(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -46,6 +63,7 @@ class UserTickets(db.Model):
     seat_col = db.Column(db.Integer, nullable=False)
     ticket_type = db.Column(db.String(50), nullable=False, default='standard')
     booking_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    reference_code = db.Column(db.String(100), nullable=False, unique=True)
     
 
 class Profiles(db.Model):
@@ -146,6 +164,7 @@ def gotologin():
             return redirect(url_for('user_dashboard'))
 
     return render_template('login.html')
+
 @app.route('/api/movies')
 def api_movies():
     movies = Movies.query.all()
@@ -427,9 +446,6 @@ def view_logs():
 @app.route('/')
 def index():
     return render_template('landingpage.html')
-
-ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv'}
 
 def allowed_file(filename, allowed_ext):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_ext
@@ -762,13 +778,23 @@ def register():
 
 
 # ======================= CRUD FOR MOVIE =======================
-@app.route('/add_movie', methods=['GET', 'POST'])
+@app.route('/add_movie', methods=['POST'])
 def add_movie():
-    if request.method == 'POST':
+    try:
+        
+        print("🔥 ADD MOVIE HIT")
         
         poster_file = request.files.get('poster')
         trailer_file = request.files.get('trailer')
         venue_image_file = request.files.get('venue_image')
+        
+        print("Poster: ", poster_file)
+        print("Trailer: ", trailer_file)
+        print("Venue: ", venue_image_file)
+        
+        print("Poster allowed:", allowed_file(poster_file.filename, ALLOWED_IMAGE_EXTENSIONS))
+        print("Trailer allowed:", allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS))
+        print("Venue allowed:", allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS))
 
         # --- Poster Validation ---
         if not poster_file or poster_file.filename == "":
@@ -781,7 +807,6 @@ def add_movie():
 
         # --- Trailer OPTIONAL ---
         trailer_filename = None
-
         if trailer_file and trailer_file.filename != "":
             if not allowed_file(trailer_file.filename, ALLOWED_VIDEO_EXTENSIONS):
                 flash("Trailer must be an MP4 video.", "danger")
@@ -801,10 +826,6 @@ def add_movie():
             venue_filename = secure_filename(venue_image_file.filename)
             venue_image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], venue_filename))
 
-        if not allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
-            flash("Venue image must be an image file.", "danger")
-            return redirect(url_for('admin_dashboard'))
-
         # --- Movie Info ---
         movie_name = request.form.get('movie_name')
         duration = request.form.get('duration')
@@ -815,18 +836,27 @@ def add_movie():
         venue_availability = request.form.get('venue_availability')
         room = request.form.get('room')
         age_restrict = request.form.get('age_restrict')
-        
+
         venue_link = request.form.get('venue_link')
         description = request.form.get('description')
         venue_cap = request.form.get('cap')
-        
+
         # Get the full schedule data from hidden input (format: date | date | time ||| date | date | time)
         venue_date = request.form.get('venue_date') or ''
         scheduled_date = venue_date
         print(f"DEBUG: Raw venue_date length={len(venue_date) if venue_date else 0}, value='{venue_date[:100]}...'")
 
+        # --- Conditional Validation: if venue is provided, schedule is required ---
+        has_venue = bool(venue_name and venue_name.strip())
+        has_schedule = bool(scheduled_date and scheduled_date.strip())
+
+        if has_venue and not has_schedule:
+            flash("A schedule is required when a venue is added. Please add at least one schedule.", "danger")
+            return redirect(url_for('admin_dashboard'))
+
         # --- Save Files: only store filename in DB ---
-        poster_filename = trailer_filename = venue_filename = None
+        poster_filename = None
+        venue_filename = None
 
         if allowed_file(poster_file.filename, ALLOWED_IMAGE_EXTENSIONS):
             poster_filename = secure_filename(poster_file.filename)
@@ -845,16 +875,7 @@ def add_movie():
                 flash("Invalid release date format. Use YYYY-MM-DD.", "danger")
                 return redirect(url_for('admin_dashboard'))
         else:
-            release_date_obj = None 
-            
-        rows_str = request.form.get('rows', '10')
-        cols_str = request.form.get('cols', '16')
-        row_gap_str = request.form.get('row-gap', '0')
-        col_gap_str = request.form.get('col-gap', '4')
-
-        rows = int(rows_str)
-        cols = int(cols_str)
-        capacity = rows * cols
+            release_date_obj = None
 
         # --- Save Movie ---
         new_movie = Movies(
@@ -868,45 +889,62 @@ def add_movie():
             genre=genre_string,
             age_restrict=age_restrict,
         )
+        
+        print("DEBUG: New Movie Data:", {
+            "movie_name": movie_name,
+            "description": description,
+            })
 
         db.session.add(new_movie)
         db.session.flush()  # get movie id without committing
 
+        # --- Venue and Schedule: only process if venue was provided ---
+        venue_id_to_use = None
 
-        # --- Check if venue already exists ---
-        existing_venue = Venue.query.filter_by(
-            venue_name=venue_name,
-            venue_room=room,
-            venue_row=rows,
-            venue_col=cols,
-            venue_row_gap=int(row_gap_str),
-            venue_col_gap=int(col_gap_str),
-            venue_cap=capacity
-        ).first()
+        if has_venue:
+            rows_str = request.form.get('rows', '10')
+            cols_str = request.form.get('cols', '16')
+            row_gap_str = request.form.get('row-gap', '0')
+            col_gap_str = request.form.get('col-gap', '4')
 
-        if existing_venue:
-            venue_id_to_use = existing_venue.id
-            print("Venue already exists. Using existing venue.")
-        else:
-            new_venue = Venue(
+            rows = int(rows_str)
+            cols = int(cols_str)
+            capacity = rows * cols
+
+            # --- Check if venue already exists ---
+            existing_venue = Venue.query.filter_by(
                 venue_name=venue_name,
                 venue_room=room,
-                venue_image=venue_filename,
-                venue_availability=venue_availability,
-                venue_linkMap=venue_link,
                 venue_row=rows,
                 venue_col=cols,
                 venue_row_gap=int(row_gap_str),
                 venue_col_gap=int(col_gap_str),
                 venue_cap=capacity
-            )
+            ).first()
 
-            db.session.add(new_venue)
-            db.session.flush()   # get venue id
-            venue_id_to_use = new_venue.id
-            print("New venue created.")
+            if existing_venue:
+                venue_id_to_use = existing_venue.id
+                print("Venue already exists. Using existing venue.")
+            else:
+                new_venue = Venue(
+                    venue_name=venue_name,
+                    venue_room=room,
+                    venue_image=venue_filename,
+                    venue_availability=venue_availability,
+                    venue_linkMap=venue_link,
+                    venue_row=rows,
+                    venue_col=cols,
+                    venue_row_gap=int(row_gap_str),
+                    venue_col_gap=int(col_gap_str),
+                    venue_cap=capacity
+                )
 
-        if scheduled_date:
+                db.session.add(new_venue)
+                db.session.flush()   # get venue id
+                venue_id_to_use = new_venue.id
+                print("New venue created.")
+
+        if has_venue and has_schedule and venue_id_to_use:
             try:
                 schedules = [s for s in scheduled_date.split('|||') if s.strip()]
                 print(f"DEBUG: Split into {len(schedules)} schedules")
@@ -972,6 +1010,14 @@ def add_movie():
         db.session.commit()
 
         flash(f"Movies added successfully! Schedules: {schedule_count if 'schedule_count' in locals() else 0}", "success")
+        return redirect(url_for('admin_dashboard'))
+    
+    except Exception as e:
+        print("💥 ERROR IN /add_movie")
+        print(str(e))
+        traceback.print_exc()
+
+        flash("Something went wrong while adding the movie.", "danger")
         return redirect(url_for('admin_dashboard'))
 
 @app.route('/delete_movie/<int:movie_id>', methods=['DELETE'])
@@ -1415,32 +1461,69 @@ def view_tickets():
         return redirect(url_for('gotologin'))
 
     user = User.query.get(session['user_id'])
-    
-    profile = Profiles.query.filter_by(user_id=user.id).first()
+
+    # ── Profile image ──────────────────────────────────────────────────
+    profile      = Profiles.query.filter_by(user_id=user.id).first()
     first_letter = user.username[0].lower() if user.username else "a"
 
     if profile and profile.profile_image:
         uploaded_path = os.path.join(
-            current_app.root_path,
-            "static",
-            "uploads",
-            "uploadedPictures",
-            profile.profile_image
+            current_app.root_path, "static", "uploads",
+            "uploadedPictures", profile.profile_image
         )
-
-        if os.path.exists(uploaded_path):
-            profile_image = url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
-        else:
-            profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+        profile_image = (
+            url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+            if os.path.exists(uploaded_path)
+            else url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+        )
     else:
         profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
-    
-    print("DEBUG: Profile Image Path:", profile_image)
-    
+
+    # ── Fetch tickets with joined schedule / movie / venue data ────────
+    raw_tickets = (
+        UserTickets.query
+        .filter_by(user_id=user.id)
+        .order_by(UserTickets.booking_time.desc())
+        .all()
+    )
+
+    now = datetime.datetime.now()
+    tickets = []
+
+    for t in raw_tickets:
+        schedule = t.schedule
+        movie    = schedule.movie
+        venue    = schedule.venue
+
+        # Convert seat_row int → letter, seat_col int → number  e.g. row=6,col=8 → "F8"
+        seat_label = f"{chr(64 + t.seat_row)}{t.seat_col}"
+
+        # Determine if the show is in the past
+        show_date = schedule.date.date() if isinstance(schedule.date, datetime.datetime) else schedule.date
+        show_end  = datetime.datetime.combine(show_date, schedule.end_time)
+        is_past   = show_end < now
+
+        tickets.append({
+            "id":           t.id,
+            "reference_code": t.reference_code,
+            "movie_name":   movie.movie_name,
+            "movie_image":  movie.movie_image,
+            "date":         schedule.date.strftime("%b %d, %Y") if hasattr(schedule.date, 'strftime') else str(schedule.date),
+            "start_time":   schedule.start_time.strftime("%H:%M"),
+            "end_time":     schedule.end_time.strftime("%H:%M"),
+            "venue_name":   venue.venue_name,
+            "venue_room":   venue.venue_room,
+            "seat_label":   seat_label,
+            "ticket_type":  t.ticket_type,
+            "booking_time": t.booking_time,
+            "is_past":      is_past,
+        })
+
     return render_template(
-        'movie_tickets.html', 
-        user=user, 
-        profile_image=profile_image
+        'movie_tickets.html',
+        user=user,
+        profile_image=profile_image,
+        tickets=tickets,
     )
 
 
@@ -1665,18 +1748,16 @@ def create_payment():
 
     data            = request.get_json()
     schedule_id     = data.get('schedule_id')
-    seats           = data.get('seats', [])        # list of seat labels e.g. ["A1","A2"]
+    seats           = data.get('seats', [])
     ticket_type     = data.get('type', 'standard')
     payment_method  = data.get('payment_method', 'GCash')
 
     if not seats or not schedule_id:
         return jsonify({"error": "Missing fields"}), 400
 
-    price_per_seat  = 500 if ticket_type == 'premium' else 350
-    total_cents     = len(seats) * price_per_seat * 100  # PayMongo uses centavos
-
-    method_map      = {"GCash": "gcash", "PayMaya": "paymaya"}
-    pm_method       = method_map.get(payment_method, "gcash")
+    price_per_seat = 500 if ticket_type == 'premium' else 350
+    method_map     = {"GCash": "gcash", "PayMaya": "paymaya"}
+    pm_method      = method_map.get(payment_method, "gcash")
 
     auth    = base64.b64encode(f"{PAYMONGO_SECRET}:".encode()).decode()
     headers = {"Authorization": f"Basic {auth}", "Content-Type": "application/json"}
@@ -1684,17 +1765,22 @@ def create_payment():
     payload = {
         "data": {
             "attributes": {
-                "amount": total_cents,
-                "currency": "PHP",
-                "description": f"LUMA - {len(seats)} seat(s) - Schedule #{schedule_id}",
-                "redirect": {
-                    "success": "http://127.0.0.1:5000/payment/success",
-                    "failed":  "http://127.0.0.1:5000/payment/failed"
-                },
+                "line_items": [
+                    {
+                        "currency": "PHP",
+                        "amount": price_per_seat * 100,
+                        "name": f"{'Premium' if ticket_type == 'premium' else 'Standard'} Seat — {', '.join(seats)}",
+                        "quantity": len(seats),
+                    }
+                ],
                 "payment_method_types": [pm_method],
+                # ✅ CORRECT - directly inside attributes
+                "success_url": "http://127.0.0.1:5000/payment/success",
+                "cancel_url":  "http://127.0.0.1:5000/payment/failed",
+                "description": f"LUMA - Schedule #{schedule_id}",
                 "metadata": {
-                    "user_id":     session['user_id'],
-                    "schedule_id": schedule_id,
+                    "user_id":     str(session['user_id']),
+                    "schedule_id": str(schedule_id),
                     "seats":       ",".join(seats),
                     "type":        ticket_type
                 }
@@ -1705,12 +1791,193 @@ def create_payment():
     res  = requests.post("https://api.paymongo.com/v1/checkout_sessions", json=payload, headers=headers)
     resp = res.json()
 
+    # Log the full response so you can debug
+    print("PayMongo response:", resp)
+
     checkout_url = resp.get("data", {}).get("attributes", {}).get("checkout_url")
     if checkout_url:
+        # Add this just before the return jsonify({"checkout_url": ...})
+        session['pending_booking'] = {
+            "user_id":     session['user_id'],
+            "schedule_id": schedule_id,
+            "seats":       ",".join(seats),
+            "type":        ticket_type
+        }
+
         return jsonify({"checkout_url": checkout_url})
     else:
         return jsonify({"error": resp.get("errors", [{}])[0].get("detail", "Payment failed")}), 400
 
+@app.route('/payment/success')
+def payment_success():
+    if 'user_id' not in session:
+        return redirect(url_for('gotologin'))
+
+    session_id = request.args.get('session_id')
+    pending    = session.get('pending_booking')
+
+    if not pending and not session_id:
+        flash("No booking data found.", "danger")
+        return redirect(url_for('user_dashboard'))
+
+    if session_id:
+        auth    = base64.b64encode(f"{PAYMONGO_SECRET}:".encode()).decode()
+        headers = {"Authorization": f"Basic {auth}"}
+        res     = requests.get(
+            f"https://api.paymongo.com/v1/checkout_sessions/{session_id}",
+            headers=headers
+        )
+        resp   = res.json()
+        attrs  = resp.get("data", {}).get("attributes", {})
+
+        if attrs.get("payment_status") != "paid":
+            flash("Payment not confirmed.", "danger")
+            return redirect(url_for('user_dashboard'))
+
+        meta        = attrs.get("metadata", {})
+        user_id     = int(meta.get("user_id", session['user_id']))
+        schedule_id = int(meta.get("schedule_id", 0))
+        seats_str   = meta.get("seats", "")
+        ticket_type = meta.get("type", "standard")
+    else:
+        user_id     = pending['user_id']
+        schedule_id = pending['schedule_id']
+        seats_str   = pending['seats']
+        ticket_type = pending['type']
+
+    seat_labels = [s.strip() for s in seats_str.split(",") if s.strip()]
+
+    # ── Fetch related data for QR content ──────────────────────────────
+    user     = User.query.get(user_id)
+    schedule = Schedule.query.get(schedule_id)
+    movie    = Movies.query.get(schedule.movie_id)
+    venue    = Venue.query.get(schedule.venue_id)
+
+    saved = []
+    for label in seat_labels:
+        row_letter = label[0].upper()
+        col_number = int(label[1:])
+        seat_row   = ord(row_letter) - 64
+
+        # Skip already booked seats
+        already = UserTickets.query.filter_by(
+            schedule_id=schedule_id,
+            seat_row=seat_row,
+            seat_col=col_number
+        ).first()
+        if already:
+            continue
+
+        # ── Generate unique reference code per seat ──────────────────────
+        ref_code = f"LUMA-{uuid.uuid4().hex[:10].upper()}"
+        while UserTickets.query.filter_by(reference_code=ref_code).first():
+            ref_code = f"LUMA-{uuid.uuid4().hex[:10].upper()}"
+
+        # ── Save ticket ─────────────────────────────────────────────────
+        ticket = UserTickets(
+            user_id        = user_id,
+            schedule_id    = schedule_id,
+            seat_row       = seat_row,
+            seat_col       = col_number,
+            ticket_type    = ticket_type,
+            reference_code = ref_code,
+        )
+        db.session.add(ticket)
+        saved.append(label)
+
+    db.session.flush()  # flush all new tickets before generating QR
+
+    # ── One QR per user+schedule (create or overwrite) ──────────────────
+    # Stable filename based on user_id + schedule_id
+    qr_filename = f"USER{user_id}_SCHED{schedule_id}.png"
+    qr_path     = os.path.join(QR_TICKET_CODES, qr_filename)
+
+    # Build QR URL pointing to the grouped ticket view
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    local_ip = s.getsockname()[0]
+    s.close()
+    qr_data = f"http://{local_ip}:5000/ticket/{user_id}/{schedule_id}"
+
+    # Regenerate the QR image (overwrites old one automatically)
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    img.save(qr_path)
+
+    # ── Upsert QrCode record (one row per user+schedule) ────────────────
+    qr_record = QrCode.query.filter_by(user_id=user_id, schedule_id=schedule_id).first()
+    if qr_record:
+        qr_record.qr_code_path_image = qr_filename  # update in case filename changed
+    else:
+        qr_record = QrCode(
+            user_id            = user_id,
+            schedule_id        = schedule_id,
+            qr_code_path_image = qr_filename,
+        )
+        db.session.add(qr_record)
+
+    db.session.commit()
+    session.pop('pending_booking', None)
+
+    flash(f"Booking confirmed! Seats: {', '.join(saved)}", "success")
+    return redirect(url_for('view_tickets'))
+
+@app.route('/ticket/<int:user_id>/<int:schedule_id>')
+def view_ticket(user_id, schedule_id):
+    user     = User.query.get_or_404(user_id)
+    schedule = Schedule.query.get_or_404(schedule_id)
+    movie    = Movies.query.get(schedule.movie_id)
+    venue    = Venue.query.get(schedule.venue_id)
+
+    # All tickets for this user on this schedule
+    tickets = UserTickets.query.filter_by(
+        user_id=user_id,
+        schedule_id=schedule_id
+    ).order_by(UserTickets.seat_row, UserTickets.seat_col).all()
+
+    if not tickets:
+        return "No tickets found.", 404
+
+    # Build per-ticket seat info with type and price
+    ticket_rows = []
+    for t in tickets:
+        seat_label = f"{chr(t.seat_row + 64)}{t.seat_col}"
+        price      = 500 if t.ticket_type == 'premium' else 350
+        ticket_rows.append({
+            "seat_label":  seat_label,
+            "ticket_type": t.ticket_type,
+            "price":       price,
+        })
+
+    standard_seats = [r for r in ticket_rows if r['ticket_type'] == 'standard']
+    premium_seats  = [r for r in ticket_rows if r['ticket_type'] == 'premium']
+    total_price    = sum(r['price'] for r in ticket_rows)
+    qr_filename    = f"USER{user_id}_SCHED{schedule_id}.png"
+
+    return render_template('ticket.html',
+        user=user,
+        schedule=schedule,
+        movie=movie,
+        venue=venue,
+        ticket_rows=ticket_rows,
+        standard_seats=standard_seats,
+        premium_seats=premium_seats,
+        total_price=total_price,
+        qr_filename=qr_filename
+    )
+
+
+@app.route('/payment/failed')
+def payment_failed():
+    flash("Payment was cancelled or failed. Please try again.", "danger")
+    return redirect(url_for('user_dashboard'))
 
 if __name__ == '__main__':
 
@@ -1718,4 +1985,4 @@ if __name__ == '__main__':
         db.create_all()
         db.session.commit()
 
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

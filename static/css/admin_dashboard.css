@@ -610,6 +610,7 @@ main {
     border: 2px dashed royalblue;
     border-radius: 10px;
     display: flex;
+    overflow: hidden;
     align-items: center;
     justify-content: center;
     flex-direction: column;
@@ -1432,9 +1433,10 @@ input:hover {
     gap: 15px;
     padding: 20px;
     border-radius: 8px;
-    width: 20vw;
+    max-width: 28vw;
+    min-width: 22vw;
     max-height: 90vh;
-    overflow-y: hidden;
+    overflow-y: scroll;
     text-align: center;
 }
 
