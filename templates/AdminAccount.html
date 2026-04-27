@@ -11,21 +11,6 @@
 
 {% block body %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="flash-wrap" id="flashWrap">
-        {% for cat, msg in messages %}
-        <div class="flash-msg {{ cat }}">{{ msg }}</div>
-        {% endfor %}
-    </div>
-    <script>
-        setTimeout(() => {
-            const fw = document.getElementById('flashWrap');
-            if (fw) { fw.style.opacity='0'; fw.style.transition='opacity .5s'; setTimeout(()=>fw.remove(),500); }
-        }, 3500);
-    </script>
-    {% endif %}
-    {% endwith %}
 
     <!-- ══ SIDEBAR ══════════════════════════════════════════════════ -->
     <aside class="sidebar sidehide" id="sidebar">

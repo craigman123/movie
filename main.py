@@ -5,10 +5,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import time, os, uuid, json, traceback
+import smtplib
+import random
 from datetime import time as dt_time
 import datetime
 import requests
 import base64
+from email.message import EmailMessage
 from national import nationalities
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
@@ -16,7 +19,39 @@ from sqlalchemy.orm import joinedload
 import qrcode
 import qrcode.image.svg
 import socket
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
+def load_local_env(env_path=".env", override=True):
+    """Load simple KEY=VALUE pairs from a local .env file into os.environ."""
+    if not os.path.exists(env_path):
+        return
+
+    try:
+        with open(env_path, "r", encoding="utf-8") as env_file:
+            for raw_line in env_file:
+                line = raw_line.strip()
+
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+
+                if not key:
+                    continue
+
+                if (value.startswith('"') and value.endswith('"')) or (
+                    value.startswith("'") and value.endswith("'")
+                ):
+                    value = value[1:-1]
+
+                if override or key not in os.environ:
+                    os.environ[key] = value
+    except OSError:
+        pass
+
+load_local_env()
 
 app = Flask(__name__)
 
@@ -26,6 +61,16 @@ app.secret_key = "aries_vincent_secret"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///luma.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT", 587))
+app.config["MAIL_USE_TLS"] = os.environ.get("MAIL_USE_TLS", "true").lower() == "true"
+app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME", "")
+app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD", "")
+app.config["MAIL_FROM"] = os.environ.get("MAIL_FROM", app.config["MAIL_USERNAME"])
+app.config["PASSWORD_RESET_SALT"] = os.environ.get("PASSWORD_RESET_SALT", "luma-password-reset")
+app.config["GOOGLE_CLIENT_ID"] = os.environ.get("GOOGLE_CLIENT_ID", "")
+
+password_reset_sessions = {}
 
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 PROFILE_PICTURE_FOLDER = os.path.join(UPLOAD_FOLDER, 'uploadedPictures')
@@ -97,7 +142,7 @@ class UserTickets(db.Model):
     ticket_type = db.Column(db.String(50), nullable=False, default='standard')
     booking_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     reference_code = db.Column(db.String(100), nullable=False, unique=True)
-    
+    scanned = db.Column(db.Boolean, nullable=False, default=False)
 
 class Profiles(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -216,6 +261,198 @@ def log_admin_action(action: str):
     except Exception:
         db.session.rollback()
 
+def get_reset_serializer():
+    return URLSafeTimedSerializer(app.secret_key)
+
+def create_email_verification_token(user_id):
+    return get_reset_serializer().dumps(
+        {"user_id": user_id, "purpose": "email-verify"},
+        salt="luma-email-verify"
+    )
+
+def load_email_verification_token(token, max_age=86400):  # 24 hours
+    data = get_reset_serializer().loads(
+        token,
+        salt="luma-email-verify",
+        max_age=max_age
+    )
+    if data.get("purpose") != "email-verify":
+        raise BadSignature("Invalid verification purpose.")
+    return data
+
+def send_verification_email(user, token):
+    mail_username = app.config.get("MAIL_USERNAME")
+    mail_password = app.config.get("MAIL_PASSWORD")
+    mail_from     = app.config.get("MAIL_FROM")
+
+    verify_link = url_for("verify_email", token=token, _external=True)
+
+    message = EmailMessage()
+    message["Subject"] = "LUMA – Verify your email address"
+    message["From"]    = mail_from
+    message["To"]      = user.email
+    message.set_content(
+        f"Hello {user.username},\n\n"
+        "Thanks for registering at LUMA!\n\n"
+        "Please verify your email address by clicking the link below:\n"
+        f"{verify_link}\n\n"
+        "This link expires in 24 hours. If you did not register, ignore this email."
+    )
+
+    with smtplib.SMTP(app.config["MAIL_SERVER"], app.config["MAIL_PORT"]) as server:
+        if app.config.get("MAIL_USE_TLS", True):
+            server.starttls()
+        server.login(mail_username, mail_password)
+        server.send_message(message)
+
+def create_password_reset_token(user_id):
+    return get_reset_serializer().dumps(
+        {"user_id": user_id, "purpose": "password-reset"},
+        salt=app.config["PASSWORD_RESET_SALT"]
+    )
+
+def load_password_reset_token(token, max_age=3600):
+    data = get_reset_serializer().loads(
+        token,
+        salt=app.config["PASSWORD_RESET_SALT"],
+        max_age=max_age
+    )
+
+    if data.get("purpose") != "password-reset":
+        raise BadSignature("Invalid password reset purpose.")
+
+    return data
+
+def create_password_reset_pin():
+    return f"{random.randint(0, 999999):06d}"
+
+def set_password_reset_session(token, pin, verified=False):
+    password_reset_sessions[token] = {
+        "pin": pin,
+        "verified": verified,
+        "updated_at": time.time(),
+    }
+
+def get_password_reset_session(token):
+    entry = password_reset_sessions.get(token)
+    if not entry:
+        return None
+    return entry
+
+def is_password_reset_verified(token):
+    entry = get_password_reset_session(token)
+    if not entry:
+        return False
+    return bool(entry.get("verified"))
+
+def verify_password_reset_pin(token, pin):
+    entry = get_password_reset_session(token)
+    if not entry:
+        return False
+
+    if str(entry.get("pin")) != str(pin):
+        return False
+
+    entry["verified"] = True
+    entry["updated_at"] = time.time()
+    return True
+
+def send_password_reset_email(user, token=None, pin=None):
+    mail_username = app.config.get("MAIL_USERNAME")
+    mail_password = app.config.get("MAIL_PASSWORD")
+    mail_from = app.config.get("MAIL_FROM")
+
+    missing_settings = []
+    if not mail_username:
+        missing_settings.append("MAIL_USERNAME")
+    if not mail_password:
+        missing_settings.append("MAIL_PASSWORD")
+    if not mail_from:
+        missing_settings.append("MAIL_FROM")
+
+    if missing_settings:
+        raise RuntimeError(f"Missing mail settings: {', '.join(missing_settings)}")
+
+    token = token or create_password_reset_token(user.id)
+    pin = pin or create_password_reset_pin()
+    reset_link = url_for("reset_password", token=token, _external=True)
+
+    message = EmailMessage()
+    message["Subject"] = "LUMA password reset confirmation"
+    message["From"] = mail_from
+    message["To"] = user.email
+    message.set_content(
+        f"Hello {user.username},\n\n"
+        "Yes, we received your password reset request for your LUMA account.\n\n"
+        "Use this 6-digit verification PIN to continue resetting your password:\n"
+        f"{pin}\n\n"
+        "Enter this PIN on the device where you started the request.\n\n"
+        f"Backup reset link:\n{reset_link}\n\n"
+        "This link expires in 1 hour. If you did not request this, you can ignore this email."
+    )
+
+    try:
+        with smtplib.SMTP(app.config["MAIL_SERVER"], app.config["MAIL_PORT"]) as server:
+            if app.config.get("MAIL_USE_TLS", True):
+                server.starttls()
+            server.login(mail_username, mail_password)
+            server.send_message(message)
+    except smtplib.SMTPAuthenticationError as exc:
+        raise RuntimeError(
+            "SMTP authentication failed. Check MAIL_USERNAME and use a valid app password for MAIL_PASSWORD."
+        ) from exc
+    except smtplib.SMTPException as exc:
+        raise RuntimeError(f"SMTP error: {exc}") from exc
+    except OSError as exc:
+        raise RuntimeError(f"Mail server connection error: {exc}") from exc
+
+def verify_google_credential(credential):
+    google_client_id = app.config.get("GOOGLE_CLIENT_ID", "").strip()
+    if not google_client_id:
+        raise RuntimeError("Google sign-in is not configured. Add GOOGLE_CLIENT_ID to .env.")
+
+    response = requests.get(
+        "https://oauth2.googleapis.com/tokeninfo",
+        params={"id_token": credential},
+        timeout=10
+    )
+    payload = response.json()
+
+    if not response.ok:
+        raise RuntimeError(payload.get("error_description") or payload.get("error") or "Google token verification failed.")
+
+    if payload.get("aud") != google_client_id:
+        raise RuntimeError("Google client ID mismatch.")
+
+    if payload.get("iss") not in ("accounts.google.com", "https://accounts.google.com"):
+        raise RuntimeError("Invalid Google token issuer.")
+
+    if str(payload.get("email_verified")).lower() != "true":
+        raise RuntimeError("Google email is not verified.")
+
+    return payload
+
+def create_default_profile_for_user(user, default_image=None):
+    first_letter = user.username[0].lower() if user.username else "default"
+    profile_image = default_image or f"{first_letter}.jpg"
+
+    new_profile = Profiles(
+        user_id=user.id,
+        profile_image=profile_image,
+        bio="",
+        nationality="",
+        gender="",
+        dob=datetime.date.today(),
+        preffered_genre=""
+    )
+    db.session.add(new_profile)
+
+def start_user_session(user):
+    session['user_id'] = user.id
+    session['email'] = user.email
+    session['role'] = user.role
+    session['username'] = user.username
+
 # ======== AUTH DECORATORS =================
 from functools import wraps
 
@@ -259,11 +496,11 @@ def user_required(f):
 def gotologin():
     if 'user_id' in session:
         if session.get('role') == 'admin':
-            return redirect(url_for('overviewAdmin'))
+            return redirect(url_for('overview'))
         else:
             return redirect(url_for('user_dashboard'))
 
-    return render_template('login.html')
+    return render_template('login.html', google_client_id=app.config.get("GOOGLE_CLIENT_ID", ""))
 
 @app.route('/api/movies')
 def api_movies():
@@ -794,6 +1031,7 @@ def view_logs():
 
 @app.route('/')
 def index():
+    # session.clear()
     return render_template('landingpage.html')
 
 def allowed_file(filename, allowed_ext):
@@ -1217,10 +1455,16 @@ def login():
         flash("Account does not exist!.", "danger")
         return redirect(url_for('gotologin'))
 
-    if user.access == "Inactive":
+    if user.access.lower() == "inactive":
         log_event(actor='system', action='Failed login attempt', target=f'User: {user.username}',
-                  details='Account is inactive', level='WARNING', user_id=user.id)
-        flash("Account disable contact support, or make a new account!", "danger")
+                details='Account not yet verified', level='WARNING', user_id=user.id)
+        flash("Please verify your email before logging in. Check your inbox.", "danger")
+        return redirect(url_for('gotologin'))
+
+    if user.access.lower() == "banned":
+        log_event(actor='system', action='Failed login attempt', target=f'User: {user.username}',
+                details='Account is banned', level='WARNING', user_id=user.id)
+        flash("Your account has been banned. Contact support for assistance.", "danger")
         return redirect(url_for('gotologin'))
 
     if not user.check_password(password):
@@ -1238,67 +1482,408 @@ def login():
         log_event(actor=user.username, action='Admin logged in', target=f'User #{user.id}', user_id=user.id)
         flash(f"Welcome back {user.username}, you have been logged in successfully!", "success")
         return redirect(url_for('overview'))
-    elif user.role == "user" or user.role == "verified" and user.access == "active":
+    elif user.role in ("user", "verified") and user.access == "active":
         log_event(actor=user.username, action='User logged in', target=f'User #{user.id}', user_id=user.id)
         flash(f"Welcome back {user.username}, you have been logged in successfully!", "success")
         return redirect(url_for('user_dashboard'))
-    elif user.role == "user" or user.role == "verified" and user.access == "inactive":
-        return redirect(url_for('gotologin'))
-    elif user.role == "user" or user.role == "verified" and user.access == "banned":
-        return redirect(url_for('gotologin'))
     else:
         flash("Invalid user role", "danger")
         return redirect(url_for('gotologin'))
 
+@app.route('/api/auth/google', methods=['POST'])
+def google_auth():
+    data = request.get_json(silent=True) or {}
+    credential = data.get('credential', '').strip()
+
+    if not credential:
+        return jsonify({"ok": False, "message": "Missing Google credential."}), 400
+
+    try:
+        google_user = verify_google_credential(credential)
+        email = (google_user.get("email") or "").strip().lower()
+        username = (google_user.get("name") or email.split("@")[0] or "Google User").strip()
+
+        if not email:
+            return jsonify({"ok": False, "message": "Google account email is missing."}), 400
+
+        user = User.query.filter_by(email=email).first()
+        created = False
+
+        if not user:
+            user = User(username=username, email=email, role='user', access='active')
+            user.set_password(uuid.uuid4().hex)
+            db.session.add(user)
+            db.session.flush()
+            create_default_profile_for_user(user)
+            db.session.commit()
+            created = True
+            log_event(
+                actor=user.username,
+                action='New user registered with Google',
+                target=f'User #{user.id}',
+                details=f'Email: {email}',
+                user_id=user.id
+            )
+
+        access_value = (user.access or "").strip().lower()
+        if access_value == "inactive":
+            return jsonify({"ok": False, "message": "Account disabled. Contact support."}), 403
+        if access_value == "banned":
+            return jsonify({"ok": False, "message": "Account is banned."}), 403
+
+        start_user_session(user)
+
+        if user.role == "admin" and access_value == "active":
+            log_event(actor=user.username, action='Admin logged in with Google', target=f'User #{user.id}', user_id=user.id)
+            redirect_url = url_for('overview')
+        else:
+            log_event(actor=user.username, action='User logged in with Google', target=f'User #{user.id}', user_id=user.id)
+            redirect_url = url_for('user_dashboard')
+
+        return jsonify({
+            "ok": True,
+            "created": created,
+            "redirect_url": redirect_url
+        })
+    except RuntimeError as exc:
+        return jsonify({"ok": False, "message": str(exc)}), 400
+    except Exception:
+        traceback.print_exc()
+        return jsonify({"ok": False, "message": "Google sign-in failed. Please try again."}), 500
+
+@app.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    email = request.form.get('email', '').strip().lower()
+
+    if not email:
+        flash("Enter your email address first.", "danger")
+        return redirect(url_for('gotologin'))
+
+    user = User.query.filter_by(email=email).first()
+
+    if user:
+        try:
+            token = create_password_reset_token(user.id)
+            pin = create_password_reset_pin()
+            set_password_reset_session(token, pin, verified=False)
+            send_password_reset_email(user, token=token, pin=pin)
+            log_event(
+                actor='system',
+                action='Password reset email sent',
+                target=f'User #{user.id}',
+                details=f'Email: {user.email}',
+                user_id=user.id
+            )
+        except Exception as exc:
+            log_event(
+                actor='system',
+                action='Password reset email failed',
+                target=f'Email: {email}',
+                details=str(exc),
+                level='ERROR',
+                user_id=user.id
+            )
+            flash(str(exc), "danger")
+            return redirect(url_for('gotologin'))
+
+    flash("If that email is registered, a password reset link has been sent.", "info")
+    return redirect(url_for('gotologin'))
+
+@app.route('/api/forgot-password/start', methods=['POST'])
+def forgot_password_start_api():
+    data = request.get_json(silent=True) or {}
+    email = data.get('email', '').strip().lower()
+
+    if not email:
+        return jsonify({"ok": False, "message": "Enter your email address first."}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"ok": False, "message": "No account found for that email."}), 404
+
+    try:
+        token = create_password_reset_token(user.id)
+        pin = create_password_reset_pin()
+        set_password_reset_session(token, pin, verified=False)
+        send_password_reset_email(user, token=token, pin=pin)
+
+        log_event(
+            actor='system',
+            action='Password reset API started',
+            target=f'User #{user.id}',
+            details=f'Email: {user.email}',
+            user_id=user.id
+        )
+        return jsonify({
+            "ok": True,
+            "message": "We sent a 6-digit PIN to the account email.",
+            "reset_token": token
+        })
+    except Exception as exc:
+        log_event(
+            actor='system',
+            action='Password reset API failed',
+            target=f'Email: {email}',
+            details=str(exc),
+            level='ERROR',
+            user_id=user.id
+        )
+        return jsonify({
+            "ok": False,
+            "message": str(exc)
+        }), 500
+
+@app.route('/api/forgot-password/verify-pin', methods=['POST'])
+def forgot_password_verify_pin_api():
+    data = request.get_json(silent=True) or {}
+    token = data.get('reset_token', '').strip()
+    pin = data.get('pin', '').strip()
+
+    if not token:
+        return jsonify({"ok": False, "message": "Missing reset token."}), 400
+
+    if not pin or len(pin) != 6 or not pin.isdigit():
+        return jsonify({"ok": False, "message": "Enter the 6-digit PIN from your email."}), 400
+
+    try:
+        payload = load_password_reset_token(token)
+        user = User.query.get(payload.get("user_id"))
+
+        if not user:
+            return jsonify({"ok": False, "message": "Account not found."}), 404
+
+        if not verify_password_reset_pin(token, pin):
+            return jsonify({"ok": False, "message": "That PIN is incorrect. Try again."}), 400
+
+        log_event(
+            actor='system',
+            action='Password reset PIN verified',
+            target=f'User #{user.id}',
+            user_id=user.id
+        )
+        return jsonify({"ok": True, "message": "PIN verified."})
+    except SignatureExpired:
+        return jsonify({"ok": False, "message": "That reset session has expired. Please start again."}), 400
+    except BadSignature:
+        return jsonify({"ok": False, "message": "Invalid reset session."}), 400
+
+@app.route('/api/forgot-password/complete', methods=['POST'])
+def forgot_password_complete_api():
+    data = request.get_json(silent=True) or {}
+    token = data.get('reset_token', '').strip()
+    password = data.get('password', '')
+    confirm_password = data.get('confirm_password', '')
+
+    if not token:
+        return jsonify({"ok": False, "message": "Missing reset token."}), 400
+
+    if len(password) < 6:
+        return jsonify({"ok": False, "message": "New password must be at least 6 characters long."}), 400
+
+    if password != confirm_password:
+        return jsonify({"ok": False, "message": "Passwords do not match."}), 400
+
+    try:
+        payload = load_password_reset_token(token)
+        user = User.query.get(payload.get("user_id"))
+
+        if not user:
+            return jsonify({"ok": False, "message": "Account not found."}), 404
+
+        if not is_password_reset_verified(token):
+            return jsonify({"ok": False, "message": "Verify the 6-digit PIN from your email first."}), 403
+
+        user.set_password(password)
+        db.session.commit()
+        password_reset_sessions.pop(token, None)
+
+        log_event(
+            actor=user.username,
+            action='Password reset completed via modal flow',
+            target=f'User #{user.id}',
+            user_id=user.id
+        )
+        return jsonify({"ok": True, "message": "Your password has been updated. Please log in."})
+    except SignatureExpired:
+        return jsonify({"ok": False, "message": "That reset session has expired. Please start again."}), 400
+    except BadSignature:
+        return jsonify({"ok": False, "message": "Invalid reset session."}), 400
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    try:
+        data = load_password_reset_token(token)
+    except SignatureExpired:
+        flash("That reset link has expired. Please request a new one.", "danger")
+        return redirect(url_for('gotologin'))
+    except BadSignature:
+        flash("That reset link is invalid.", "danger")
+        return redirect(url_for('gotologin'))
+
+    user = User.query.get(data.get("user_id"))
+    if not user:
+        flash("Account not found for that reset link.", "danger")
+        return redirect(url_for('gotologin'))
+
+    if not is_password_reset_verified(token):
+        flash("Enter the 6-digit PIN from your email first.", "danger")
+        return redirect(url_for('gotologin'))
+
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if len(password) < 6:
+            flash("New password must be at least 6 characters long.", "danger")
+            return render_template('reset_password.html', token=token)
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return render_template('reset_password.html', token=token)
+
+        user.set_password(password)
+        db.session.commit()
+        password_reset_sessions.pop(token, None)
+
+        log_event(
+            actor=user.username,
+            action='Password reset completed',
+            target=f'User #{user.id}',
+            user_id=user.id
+        )
+        flash("Your password has been updated. Please log in.", "success")
+        return redirect(url_for('gotologin'))
+
+    return render_template('reset_password.html', token=token)
+
 @app.route('/register', methods=['POST'])
 def register():
-    
     name_parts = [request.form.get('last', ''), request.form.get('first', '')]
     username = " ".join([p.capitalize() for p in name_parts if p.strip()]).strip()
     password = request.form['password']
-    email = request.form['email']
+    email    = request.form['email'].strip().lower()
 
     existing_user = User.query.filter_by(email=email).first()
-    
     if existing_user:
         flash("Email already exists. Please choose a different one.", "error")
-        return render_template('login.html')
+        return render_template('login.html', google_client_id=app.config.get("GOOGLE_CLIENT_ID", ""))
 
-    # ✅ Create user
-    new_user = User(username=username, email=email, role='user', access='active')
+    # Create user as inactive until PIN verified
+    new_user = User(username=username, email=email, role='user', access='inactive')
     new_user.set_password(password)
     db.session.add(new_user)
-    db.session.commit()  # commit first to get user.id
+    db.session.commit()
 
-    # ✅ Generate default profile image (first letter)
     first_letter = username[0].lower() if username else "default"
-    default_image = f"{first_letter}.jpg"
-
-    # ✅ Create empty profile (except image)
     new_profile = Profiles(
         user_id=new_user.id,
-        profile_image=default_image,
-        bio="",
-        nationality="",
-        gender="",
-        dob=datetime.date.today(),  # must NOT be None
+        profile_image=f"{first_letter}.jpg",
+        bio="", nationality="", gender="",
+        dob=datetime.date.today(),
         preffered_genre=""
     )
-
     db.session.add(new_profile)
     db.session.commit()
 
-    log_event(actor=new_user.username, action='New user registered',
-              target=f'User #{new_user.id}', details=f'Email: {email}', user_id=new_user.id)
+    # Generate PIN and store in session
+    pin = create_password_reset_pin()  # reuses your existing 6-digit generator
+    session['verify_user_id'] = new_user.id
+    session['verify_pin'] = pin
 
-    # ✅ Session
-    session['user_id'] = new_user.id
-    session['email'] = new_user.email
-    session['role'] = new_user.role
-    session['username'] = new_user.username
+    try:
+        send_email_verification_pin(new_user, pin)
+        log_event(actor=new_user.username, action='Email verification PIN sent',
+                  target=f'User #{new_user.id}', details=f'Email: {email}', user_id=new_user.id)
+    except Exception as e:
+        log_event(actor='system', action='Verification PIN email failed',
+                  details=str(e), level='ERROR', user_id=new_user.id)
 
-    flash("Registration successful!", "success")
-    return redirect(url_for('user_dashboard'))
+    # Return with flag so frontend shows the PIN modal
+    return render_template('login.html',
+                           google_client_id=app.config.get("GOOGLE_CLIENT_ID", ""),
+                           show_verify_modal=True)
+
+@app.route('/verify-email/<token>')
+def verify_email(token):
+    try:
+        data = load_email_verification_token(token)
+    except SignatureExpired:
+        flash("That verification link has expired. Please register again.", "danger")
+        return redirect(url_for('gotologin'))
+    except BadSignature:
+        flash("Invalid verification link.", "danger")
+        return redirect(url_for('gotologin'))
+
+    user = User.query.get(data.get("user_id"))
+    if not user:
+        flash("Account not found.", "danger")
+        return redirect(url_for('gotologin'))
+
+    if user.access == 'active':
+        flash("Your email is already verified. Please log in.", "info")
+        return redirect(url_for('gotologin'))
+
+    user.access = 'active'
+    db.session.commit()
+    log_event(actor=user.username, action='Email verified',
+              target=f'User #{user.id}', user_id=user.id)
+    flash("Email verified! You can now log in.", "success")
+    return redirect(url_for('gotologin'))
+
+def send_email_verification_pin(user, pin):
+    mail_username = app.config.get("MAIL_USERNAME")
+    mail_password = app.config.get("MAIL_PASSWORD")
+    mail_from     = app.config.get("MAIL_FROM")
+
+    message = EmailMessage()
+    message["Subject"] = "LUMA – Email Verification PIN"
+    message["From"]    = mail_from
+    message["To"]      = user.email
+    message.set_content(
+        f"Hello {user.username},\n\n"
+        f"Your LUMA email verification PIN is:\n\n"
+        f"{pin}\n\n"
+        "Enter this 6-digit PIN to complete your registration.\n"
+        "This PIN expires in 10 minutes. If you did not register, ignore this email."
+    )
+
+    with smtplib.SMTP(app.config["MAIL_SERVER"], app.config["MAIL_PORT"]) as server:
+        if app.config.get("MAIL_USE_TLS", True):
+            server.starttls()
+        server.login(mail_username, mail_password)
+        server.send_message(message)
+        
+@app.route('/api/verify-registration-pin', methods=['POST'])
+def verify_registration_pin():
+    data = request.get_json(silent=True) or {}
+    pin  = str(data.get('pin', '')).strip()
+
+    user_id     = session.get('verify_user_id')
+    stored_pin  = str(session.get('verify_pin', ''))
+
+    if not user_id or not stored_pin:
+        return jsonify({"ok": False, "message": "No pending verification. Please register again."}), 400
+
+    if pin != stored_pin:
+        return jsonify({"ok": False, "message": "Incorrect PIN. Please try again."}), 400
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"ok": False, "message": "Account not found."}), 404
+
+    user.access = 'active'
+    db.session.commit()
+
+    # Clear verify session keys and start real session
+    session.pop('verify_user_id', None)
+    session.pop('verify_pin', None)
+    start_user_session(user)
+
+    log_event(actor=user.username, action='Email verified via PIN',
+              target=f'User #{user.id}', user_id=user.id)
+
+    flash("Email verified! You are now logged in.", "success")
+    return jsonify({"ok": True, "redirect_url": url_for('user_dashboard')})
 
 
 # ======================= CRUD FOR MOVIE =======================

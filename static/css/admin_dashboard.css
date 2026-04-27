@@ -503,6 +503,10 @@
     margin-bottom: 4px;
 }
 
+.venue-info h4 {
+    color: white;
+}
+
 /* ── INPUTS ──────────────────────────────────────────────────── */
 .input,
 input.input,

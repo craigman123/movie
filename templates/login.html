@@ -3,25 +3,12 @@
 {% block head %}
     <title>LUMA Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <script>window.GOOGLE_CLIENT_ID = {{ google_client_id|tojson if google_client_id is defined else '""' }};</script>
     <script src="{{ url_for('static', filename='js/login.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/flash-pack.js') }}"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/flash-pack.css') }}">
+    <script src="https://accounts.google.com/gsi/client" async defer onload="window.initializeGoogleLogin && window.initializeGoogleLogin()"></script>
 {% endblock %}
 
 {% block body %}
-
-<div class="flash-container">
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="flash {{ category }}">
-                {{ message }}
-                <span class="close-btn" onclick="this.parentElement.remove()">×</span>
-            </div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-</div>
 
   <div class="bg bg1"></div>
   <div class="bg bg2"></div>
@@ -60,10 +47,8 @@
                 </button>
             </div>
 
-            <div class="social-register">
-                <img alt="google" class="img1" src="{{ url_for('static', filename='assets/google-removebg-preview.png') }}">
-                <strong>Continue with Google</strong>
-            </div>
+            <div class="social-register google-button-host" id="googleRegisterButton"></div>
+            <p class="google-status hidden" id="googleStatusRegister"></p>
             </form>
         </div>
 
@@ -80,7 +65,7 @@
                     <input type="password" name="password" placeholder="Password" required>
                 </div>
 
-                <div class="forgot">Forgot Password?</div>
+                <button type="button" class="forgot" id="showForgotPassword">Forgot Password?</button>
 
                 <button type="submit" class="btn">LOG IN</button>
 
@@ -91,13 +76,79 @@
                     </button>
                 </div>
 
-                <div class="social-login">
-                    <img alt="google" class="img1" src="{{ url_for('static', filename='assets/google-removebg-preview.png') }}">
-                    <strong>Continue with Google</strong>
-                </div>
+                <div class="social-login google-button-host" id="googleLoginButton"></div>
+                <p class="google-status hidden" id="googleStatusLogin"></p>
             </form>
         </div>
 </section>
 
-</body>
+<div class="forgot-modal hidden" id="forgotPasswordModal">
+    <div class="forgot-modal-backdrop" id="forgotPasswordBackdrop"></div>
+    <div class="forgot-modal-card" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordTitle">
+        <button type="button" class="forgot-close" id="hideForgotPassword" aria-label="Close">&times;</button>
+        <form class="forgot-form" id="forgotEmailForm">
+            <h3 id="forgotPasswordTitle">Reset Your Password</h3>
+            <p class="forgot-copy">Enter your email and we will send you a confirmation reset link.</p>
+            <div class="input-box">
+                <input type="email" name="email" id="forgotEmailInput" placeholder="Enter your account email" required>
+            </div>
+            <p class="forgot-status hidden" id="forgotEmailStatus"></p>
+            <button type="submit" class="btn forgot-btn">SEND</button>
+        </form>
+    </div>
+</div>
+
+<div class="forgot-modal hidden" id="phoneConfirmModal">
+    <div class="forgot-modal-backdrop" id="phoneConfirmBackdrop"></div>
+    <div class="forgot-modal-card" role="dialog" aria-modal="true" aria-labelledby="phoneConfirmTitle">
+        <button type="button" class="forgot-close" id="hidePhoneConfirm" aria-label="Close">&times;</button>
+        <form class="forgot-form" id="verifyPinForm">
+            <h3 id="phoneConfirmTitle">Enter Verification PIN</h3>
+            <p class="forgot-copy" id="phoneConfirmCopy">We sent a 6-digit PIN to your email. Enter it below to continue.</p>
+            <div class="input-box">
+                <input type="text" id="verifyPinInput" inputmode="numeric" maxlength="6" placeholder="6-digit PIN" required>
+            </div>
+            <p class="forgot-status hidden" id="phoneConfirmStatus"></p>
+            <div class="forgot-actions">
+                <button type="submit" class="btn forgot-btn" id="verifyPinButton">VERIFY PIN</button>
+                <button type="button" class="forgot-secondary" id="cancelPhoneConfirm">CANCEL</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="forgot-modal hidden" id="changePasswordModal">
+    <div class="forgot-modal-backdrop" id="changePasswordBackdrop"></div>
+    <div class="forgot-modal-card" role="dialog" aria-modal="true" aria-labelledby="changePasswordTitle">
+        <button type="button" class="forgot-close" id="hideChangePassword" aria-label="Close">&times;</button>
+        <form class="forgot-form" id="changePasswordForm">
+            <h3 id="changePasswordTitle">Change Password</h3>
+            <p class="forgot-copy">Set your new password below.</p>
+            <div class="input-box">
+                <input type="password" name="password" id="changePasswordInput" placeholder="New Password" required minlength="6">
+            </div>
+            <div class="input-box">
+                <input type="password" name="confirm_password" id="confirmPasswordInput" placeholder="Confirm New Password" required minlength="6">
+            </div>
+            <p class="forgot-status hidden" id="changePasswordStatus"></p>
+            <button type="submit" class="btn forgot-btn">CHANGE PASSWORD</button>
+        </form>
+    </div>
+</div>
+
+<!-- Email Verification PIN Modal -->
+<div class="forgot-modal {% if not show_verify_modal %}hidden{% endif %}" id="verifyEmailModal">
+    <div class="forgot-modal-backdrop"></div>
+    <div class="forgot-modal-card" role="dialog" aria-modal="true">
+        <div class="forgot-form">
+            <h3>Verify Your Email</h3>
+            <p class="forgot-copy">We sent a 6-digit PIN to your email. Enter it below to activate your account.</p>
+            <div class="input-box">
+                <input type="text" id="emailVerifyPinInput" inputmode="numeric" maxlength="6" placeholder="6-digit PIN">
+            </div>
+            <p class="forgot-status hidden" id="emailVerifyStatus"></p>
+            <button type="button" class="btn forgot-btn" id="emailVerifySubmit">VERIFY</button>
+        </div>
+    </div>
+</div>
 {% endblock %}

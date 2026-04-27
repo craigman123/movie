@@ -96,13 +96,6 @@
           </div>
         </div>
 
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% for category, message in messages %}
-            <div class="inline-alert {{ 'success' if category == 'success' else 'error' }}">{{ message }}</div>
-          {% endfor %}
-        {% endwith %}
-
         <!-- Rating Form -->
         <div class="section-card">
           <p class="section-label">Your Review</p>

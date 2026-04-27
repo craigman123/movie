@@ -9,19 +9,6 @@
 {% endblock %}
 
 {% block body %}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flash-container">
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">
-                        <span>{{ message }}</span>
-                        <button onclick="this.parentElement.remove()">×</button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
-
     <aside class="sidebar" id="sidebar">
         <nav class="nav">
             <div class="logoandname">
