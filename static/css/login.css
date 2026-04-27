@@ -277,7 +277,7 @@ body::before {
     cursor: pointer;
     border-radius: 8px;
     font-weight: bold;
-    width: 18rem;
+    width: 100%;
 
     background: linear-gradient(
         45deg,
