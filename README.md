@@ -1,7 +1,7 @@
 <div align="center">
 
 <p align="center">
-  <img src="assets/logo-removebg-preview.png" width="180"/>
+  <img src="static/assets/logo-removebg-preview.png" width="180"/>
 </p>
 
 <p align="center">
