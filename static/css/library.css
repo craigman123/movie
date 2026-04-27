@@ -1,0 +1,199 @@
+/* ── Library Page ─────────────────────────────────────────────────── */
+
+main {
+  padding: 0 2rem 0 2rem;
+}
+
+.lib-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.4rem;
+  padding: 3rem 2rem;
+}
+
+/* Card */
+.lib-card {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+  position: relative;
+}
+.lib-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Poster */
+.lib-poster-wrap {
+  position: relative;
+  aspect-ratio: 2/3;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface2, #1a1a1a);
+}
+.lib-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+.lib-card:hover .lib-poster {
+  transform: scale(1.04);
+}
+.lib-poster-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  background: var(--surface2, #1a1a1a);
+}
+
+/* Hover overlay */
+.lib-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  border-radius: 10px;
+}
+.lib-card:hover .lib-overlay {
+  opacity: 1;
+}
+.lib-view-btn {
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1.5px solid rgba(255,255,255,0.7);
+  padding: 6px 14px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+/* Remove button */
+.lib-remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  border: none;
+  border-radius: 20%;
+  font-weight: 500;
+  width: 50px;
+  height: 26px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  z-index: 10;
+}
+.lib-card:hover .lib-remove-btn {
+  opacity: 1;
+}
+.lib-remove-btn:hover {
+  background: rgba(220, 60, 60, 0.85);
+}
+
+/* Info */
+.lib-info {
+  padding: 0 0.2rem 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.lib-movie-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text1, #f0f0f0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lib-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.lib-genre-pill {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--gold, #f5c518);
+  background: rgba(245, 197, 24, 0.12);
+  border: 1px solid rgba(245, 197, 24, 0.25);
+  border-radius: 20px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.lib-duration {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  color: var(--text2, #888);
+}
+.lib-lang {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  color: var(--text2, #888);
+}
+
+/* ── Empty State ────────────────────────────────────────────────────── */
+.lib-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 6rem 2rem;
+  text-align: center;
+}
+.lib-empty-icon {
+  font-size: 3rem;
+  opacity: 0.4;
+}
+.lib-empty-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.06em;
+  color: var(--text1, #f0f0f0);
+}
+.lib-empty-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  color: var(--text2, #888);
+  max-width: 280px;
+}
+.lib-empty-btn {
+  margin-top: 0.5rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gold, #f5c518);
+  border: 1.5px solid var(--gold, #f5c518);
+  border-radius: 20px;
+  padding: 8px 22px;
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  transition: background 0.2s, color 0.2s;
+}
+.lib-empty-btn:hover {
+  background: var(--gold, #f5c518);
+  color: #000;
+}

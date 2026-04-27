@@ -1,96 +1,296 @@
 {% extends "base.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/viewUsers.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movieViewAdmin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/viewSales.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-pack.css') }}">
-    <title>View Users</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/adminAccount.css') }}">
+    <script src="{{ url_for('static', filename='js/adminAccount.js') }}"></script>
+    <title>LUMA Admin — Account</title>
 {% endblock %}
 
 {% block body %}
-    <aside class="sidebar" id="sidebar">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-wrap" id="flashWrap">
+        {% for cat, msg in messages %}
+        <div class="flash-msg {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+    </div>
+    <script>
+        setTimeout(() => {
+            const fw = document.getElementById('flashWrap');
+            if (fw) { fw.style.opacity='0'; fw.style.transition='opacity .5s'; setTimeout(()=>fw.remove(),500); }
+        }, 3500);
+    </script>
+    {% endif %}
+    {% endwith %}
+
+    <!-- ══ SIDEBAR ══════════════════════════════════════════════════ -->
+    <aside class="sidebar sidehide" id="sidebar">
         <nav class="nav">
             <div class="logoandname">
                 <header class="head">
                     <div class="image">
-                        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" class="logo" alt="Luma"></img>
+                        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" class="logo" alt="Luma">
                         <span class="AdminName">WELCOME ADMIN,<br> {{ user.username }} </span>
                     </div>
                 </header>
             </div>
-
             <div class="menu-container">
                 <div class="button-container">
                     <ul class="menu">
-                        <li class="menu-btn">
-                            <a href="{{ url_for('overview') }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"]
-                                fill="#ffffff" viewBox="0 0 24 24" style="fill: rgb(255, 255, 255);transform: ;msFilter:;">
-                                <path d="M4.626 8.878a7.937 7.937 0 0 1 1.71-2.541 7.92 7.92 0 0 1 2.542-1.71 8.12 8.12 0 0 1 6.13-.041A2.49 2.49 0 0 0 17.5 7C18.886 7 20 5.886 20 4.5S18.886 2 17.5 2c-.689 0-1.312.276-1.763.725-2.431-.973-5.223-.958-7.635.059-1.19.5-2.26 1.22-3.18 2.139A9.98 9.98 0 0 0 2 12h2c0-1.086.211-2.136.626-3.122zm14.747 6.244c-.401.952-.977 1.808-1.71 2.541s-1.589 1.309-2.542 1.71a8.12 8.12 0 0 1-6.13.041A2.488 2.488 0 0 0 6.5 17C5.114 17 4 18.114 4 19.5S5.114 22 6.5 22c.689 0 1.312-.276 1.763-.725A9.973 9.973 0 0 0 12 22a9.983 9.983 0 0 0 9.217-6.102A9.992 9.992 0 0 0 22 12h-2a7.993 7.993 0 0 1-.627 3.122z">
-                                </path><path d="M12 7.462c-2.502 0-4.538 2.036-4.538 4.538S9.498 16.538 12 16.538c2.502 0 4.538-2.036 4.538-4.538S14.502 7.462 12 7.462z"></path></svg>
-                            <span>OVERVIEW</span>
-                            </a>
+                        <li class="menu-btn"><a href="{{ url_for('overview') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="0 0 24 24"><path d="M4.626 8.878a7.937 7.937 0 0 1 1.71-2.541 7.92 7.92 0 0 1 2.542-1.71 8.12 8.12 0 0 1 6.13-.041A2.49 2.49 0 0 0 17.5 7C18.886 7 20 5.886 20 4.5S18.886 2 17.5 2c-.689 0-1.312.276-1.763.725-2.431-.973-5.223-.958-7.635.059-1.19.5-2.26 1.22-3.18 2.139A9.98 9.98 0 0 0 2 12h2c0-1.086.211-2.136.626-3.122zm14.747 6.244c-.401.952-.977 1.808-1.71 2.541s-1.589 1.309-2.542 1.71a8.12 8.12 0 0 1-6.13.041A2.488 2.488 0 0 0 6.5 17C5.114 17 4 18.114 4 19.5S5.114 22 6.5 22c.689 0 1.312-.276 1.763-.725A9.973 9.973 0 0 0 12 22a9.983 9.983 0 0 0 9.217-6.102A9.992 9.992 0 0 0 22 12h-2a7.993 7.993 0 0 1-.627 3.122z"/><path d="M12 7.462c-2.502 0-4.538 2.036-4.538 4.538S9.498 16.538 12 16.538c2.502 0 4.538-2.036 4.538-4.538S14.502 7.462 12 7.462z"/></svg>
+                            <span>OVERVIEW</span></a>
                         </li>
-                        <li class="menu-btn">
-                            <a href="{{ url_for('admin_dashboard') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"  
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M18 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.33L22 17V7l-4 3.33zm-2 12H4V6h12z"></path><path d="M11 8H9v3H6v2h3v3h2v-3h3v-2h-3z"></path>
-                                </svg>
-                                <span>ADD MOVIES</span>
-                            </a>
+                        <li class="menu-btn"><a href="{{ url_for('admin_dashboard') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20"><path d="M18 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.33L22 17V7l-4 3.33zm-2 12H4V6h12z"/><path d="M11 8H9v3H6v2h3v3h2v-3h3v-2h-3z"/></svg>
+                            <span>ADD MOVIES</span></a>
                         </li>
-                        <li class="menu-btn">
-                            <a href="{{ url_for('view_users') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M8.5 10.5c0 2 1.5 3.5 3.5 3.5s3.5-1.5 3.5-3.5S14 7 12 7s-3.5 1.5-3.5 3.5m5 0c0 .88-.62 1.5-1.5 1.5s-1.5-.62-1.5-1.5S11.12 9 12 9s1.5.62 1.5 1.5"></path><path d="m20.53 7.15-8-5c-.32-.2-.74-.2-1.06 0l-8 5c-.29.18-.47.5-.47.85v8c0 .34.18.67.47.85l8 5a1.01 1.01 0 0 0 1.06 0l8-5c.29-.18.47-.5.47-.85V8c0-.34-.18-.67-.47-.85M12 19.82l-3.1-1.94c.55-.56 1.29-.88 2.1-.88h2c.8 0 1.55.32 2.1.88zm7-4.38-2.19 1.37A4.97 4.97 0 0 0 13 15h-2c-1.48 0-2.87.68-3.81 1.81L5 15.44V8.55l7-4.38 7 4.38z"></path>
-                                </svg>
-                                <span>USERS</span>  
-                            </a>  
+                        <li class="menu-btn"><a href="{{ url_for('view_users') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20"><path d="M8.5 10.5c0 2 1.5 3.5 3.5 3.5s3.5-1.5 3.5-3.5S14 7 12 7s-3.5 1.5-3.5 3.5m5 0c0 .88-.62 1.5-1.5 1.5s-1.5-.62-1.5-1.5S11.12 9 12 9s1.5.62 1.5 1.5"/><path d="m20.53 7.15-8-5c-.32-.2-.74-.2-1.06 0l-8 5c-.29.18-.47.5-.47.85v8c0 .34.18.67.47.85l8 5a1.01 1.01 0 0 0 1.06 0l8-5c.29-.18.47-.5.47-.85V8c0-.34-.18-.67-.47-.85M12 19.82l-3.1-1.94c.55-.56 1.29-.88 2.1-.88h2c.8 0 1.55.32 2.1.88zm7-4.38-2.19 1.37A4.97 4.97 0 0 0 13 15h-2c-1.48 0-2.87.68-3.81 1.81L5 15.44V8.55l7-4.38 7 4.38z"/></svg>
+                            <span>USERS</span></a>
                         </li>
-                        <li class="menu-btn">
-                            <a href="{{ url_for('view_sales') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh" 
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path><path d="M12 11c-2 0-2-.63-2-1 0-.48.7-1 2-1 1.18 0 1.39.64 1.4 1.02l1-.02h1c0-1.03-.67-2.47-2.4-2.88V6h-2v1.09C9.03 7.42 8 8.72 8 10c0 1.12.52 3 4 3 2 0 2 .68 2 1 0 .42-.62 1-2 1-1.84 0-1.99-.86-2-1H8c0 .92.66 2.55 3 2.92V18h2v-1.09c1.97-.33 3-1.63 3-2.91 0-1.12-.52-3-4-3"></path>
-                                </svg>
-                                <span>SALES</span>
-                            </a>
+                        <li class="menu-btn"><a href="{{ url_for('view_sales') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20"><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"/><path d="M12 11c-2 0-2-.63-2-1 0-.48.7-1 2-1 1.18 0 1.39.64 1.4 1.02l1-.02h1c0-1.03-.67-2.47-2.4-2.88V6h-2v1.09C9.03 7.42 8 8.72 8 10c0 1.12.52 3 4 3 2 0 2 .68 2 1 0 .42-.62 1-2 1-1.84 0-1.99-.86-2-1H8c0 .92.66 2.55 3 2.92V18h2v-1.09c1.97-.33 3-1.63 3-2.91 0-1.12-.52-3-4-3"/></svg>
+                            <span>SALES</span></a>
                         </li>
-                        <li class="menu-btn">
-                            <a href="{{ url_for('movieViewAdmin') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2M9.54 9 6.87 5h2.6l2.67 4zm5 0-2.67-4h2.6l2.67 4zM4 5h.46l2.67 4H4zm0 14v-8h16V9h-.46l-2.67-4H20v14z"></path><path d="m10 18 5-3-5-3z"></path>
-                                </svg>
-                                <span>MOVIES</span>
-                            </a>
+                        <li class="menu-btn"><a href="{{ url_for('movieViewAdmin') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20"><path d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2M9.54 9 6.87 5h2.6l2.67 4zm5 0-2.67-4h2.6l2.67 4zM4 5h.46l2.67 4H4zm0 14v-8h16V9h-.46l-2.67-4H20v14z"/><path d="m10 18 5-3-5-3z"/></svg>
+                            <span>MOVIES</span></a>
                         </li>
-                        <li class="menu-btn">
-                            <a href="{{ url_for('view_logs') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M4 11h16v2H4zm0-5h16v2H4zm0 10h16v2H4z"></path>
-                                </svg>
-                                <span>LOGS</span>
-                            </a>
+                        <li class="menu-btn"><a href="{{ url_for('view_logs') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20"><path d="M4 11h16v2H4zm0-5h16v2H4zm0 10h16v2H4z"/></svg>
+                            <span>LOGS</span></a>
                         </li>
-                        <li class="menu-btn">
-                            <a href="{{ url_for('AdminAccount') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M8.5 12a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3m7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3"></path><path d="M12 22c5.51 0 10-4.49 10-10S17.51 2 12 2 2 6.49 2 12s4.49 10 10 10m7.7-12.13a7.06 7.06 0 0 1-4.83-3.51c.15-.28.3-.56.42-.85.09-.22.17-.44.24-.67 2.02 1 3.55 2.82 4.17 5.03M12 4c.57 0 1.12.06 1.65.17-.06.19-.13.37-.2.55-.15.35-.33.68-.53 1l-.04.06c-.31.48-.67.91-1.07 1.29-.05.05-.11.1-.16.14-.14.13-.29.25-.45.37-.07.05-.13.1-.2.15-.18.12-.36.24-.55.35-.04.02-.08.05-.11.07-.22.12-.45.23-.69.32-.08.03-.17.06-.25.09-.17.06-.34.12-.52.17-.09.02-.17.05-.26.07-.19.04-.38.08-.57.11-.08.01-.16.03-.24.04a6.8 6.8 0 0 1-3.05-.33C6.04 5.89 8.8 4 12 4m-7.86 6.52c.92.31 1.87.48 2.86.48.31 0 .62-.02.93-.05.11-.01.23-.04.34-.05.18-.03.37-.05.55-.08h.03c.12-.03.25-.06.37-.1.17-.04.33-.08.5-.13s.33-.12.49-.18c.1-.04.21-.07.31-.11.01 0 .02-.01.04-.02.16-.07.32-.15.48-.23.11-.05.21-.1.32-.16.15-.08.29-.17.44-.26.08-.05.17-.1.26-.16.03-.02.05-.04.07-.05.12-.08.24-.18.36-.27s.25-.19.37-.29l.28-.25c.09-.08.18-.15.26-.24.05-.05.1-.11.14-.16.03-.03.06-.06.09-.08a9.07 9.07 0 0 0 6.4 3.82v.06c0 4.41-3.59 8-8 8s-8-3.59-8-8c0-.5.05-1 .14-1.48Z"></path>
-                                </svg>
-                                <span>ACCOUNT</span>
-                            </a>
+                        <li class="menu-btn active-menu"><a href="{{ url_for('AdminAccount') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20"><path d="M8.5 12a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3m7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3"/><path d="M12 22c5.51 0 10-4.49 10-10S17.51 2 12 2 2 6.49 2 12s4.49 10 10 10m7.7-12.13a7.06 7.06 0 0 1-4.83-3.51c.15-.28.3-.56.42-.85.09-.22.17-.44.24-.67 2.02 1 3.55 2.82 4.17 5.03M12 4c.57 0 1.12.06 1.65.17-.06.19-.13.37-.2.55-.15.35-.33.68-.53 1l-.04.06c-.31.48-.67.91-1.07 1.29-.05.05-.11.1-.16.14-.14.13-.29.25-.45.37-.07.05-.13.1-.2.15-.18.12-.36.24-.55.35-.04.02-.08.05-.11.07-.22.12-.45.23-.69.32-.08.03-.17.06-.25.09-.17.06-.34.12-.52.17-.09.02-.17.05-.26.07-.19.04-.38.08-.57.11-.08.01-.16.03-.24.04a6.8 6.8 0 0 1-3.05-.33C6.04 5.89 8.8 4 12 4m-7.86 6.52c.92.31 1.87.48 2.86.48.31 0 .62-.02.93-.05.11-.01.23-.04.34-.05.18-.03.37-.05.55-.08h.03c.12-.03.25-.06.37-.1.17-.04.33-.08.5-.13s.33-.12.49-.18c.1-.04.21-.07.31-.11.01 0 .02-.01.04-.02.16-.07.32-.15.48-.23.11-.05.21-.1.32-.16.15-.08.29-.17.44-.26.08-.05.17-.1.26-.16.03-.02.05-.04.07-.05.12-.08.24-.18.36-.27s.25-.19.37-.29l.28-.25c.09-.08.18-.15.26-.24.05-.05.1-.11.14-.16.03-.03.06-.06.09-.08a9.07 9.07 0 0 0 6.4 3.82v.06c0 4.41-3.59 8-8 8s-8-3.59-8-8c0-.5.05-1 .14-1.48Z"/></svg>
+                            <span>ACCOUNT</span></a>
                         </li>
                     </ul>
                 </div>
             </div>
-        </nav> 
+        </nav>
     </aside>
 
-    <section> 
-        
-    </section>
+    <!-- ══ MAIN CONTENT ══════════════════════════════════════════════ -->
+    <main class="main-content">
+
+        <div class="movies-header">
+            <h4>ACCOUNT DASHBOARD</h4>
+        </div>
+
+        <div class="account-grid">
+
+            <!-- ── LEFT: Profile Card ── -->
+            <div class="profile-card">
+                <div class="avatar-wrap">
+                    <img src="{{ profile_image }}" id="avatarPreview" alt="Avatar">
+                    <button class="avatar-edit-btn" type="button"
+                            onclick="document.getElementById('avatarInput').click()"
+                            title="Change photo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 17.25V21h3.75l11.06-11.06-3.75-3.75L3 17.25zm17.71-10.21a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="profile-name">{{ user.username }}</div>
+                <span class="profile-role-badge">⚡ ADMINISTRATOR</span>
+                <div class="profile-email">{{ user.email }}</div>
+                <div class="profile-bio">
+                    {{ profile.bio if profile and profile.bio else 'No bio set yet.' }}
+                </div>
+
+                <div class="profile-meta">
+                    <div class="meta-row">
+                        <span class="meta-label">Gender</span>
+                        <span class="meta-val">{{ profile.gender if profile and profile.gender else '—' }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Nationality</span>
+                        <span class="meta-val">{{ profile.nationality if profile and profile.nationality else '—' }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Date of Birth</span>
+                        <span class="meta-val">
+                            {% if profile and profile.dob %}{{ profile.dob.strftime('%b %d, %Y') }}{% else %}—{% endif %}
+                        </span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Member Since</span>
+                        <span class="meta-val">{{ user.created_at.strftime('%b %Y') }}</span>
+                    </div>
+                </div>
+
+                <div class="mini-stats">
+                    <div class="mini-stat">
+                        <div class="ms-val">{{ total_users }}</div>
+                        <div class="ms-label">Users</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="ms-val">{{ total_movies }}</div>
+                        <div class="ms-label">Movies</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="ms-val">{{ total_tickets }}</div>
+                        <div class="ms-label">Tickets</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="ms-val">{{ total_logs }}</div>
+                        <div class="ms-label">Log Events</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── RIGHT ── -->
+            <div class="right-col">
+
+                <!-- Edit Profile -->
+                <div class="acc-card">
+                    <div class="acc-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#46e59d" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75l11.06-11.06-3.75-3.75L3 17.25zm17.71-10.21a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        <h5>Edit Profile Info</h5>
+                    </div>
+                    <form method="POST" action="{{ url_for('admin_update_account') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="update_info">
+                        <input type="file" id="avatarInput" name="profile_image"
+                               accept="image/png,image/jpeg,image/webp"
+                               onchange="previewAvatar(this)">
+                        <div class="form-grid">
+                            <div class="field-group">
+                                <label>Username</label>
+                                <input type="text" name="username" value="{{ user.username }}" maxlength="150" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Email (read-only)</label>
+                                <input type="email" value="{{ user.email }}" disabled style="opacity:.5;cursor:not-allowed;">
+                            </div>
+                            <div class="field-group">
+                                <label>Gender</label>
+                                <select name="gender">
+                                    <option value="">— Select —</option>
+                                    {% for g in ['Male','Female','Non-binary','Prefer not to say'] %}
+                                    <option value="{{ g }}" {% if profile and profile.gender == g %}selected{% endif %}>{{ g }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Nationality</label>
+                                <input type="text" name="nationality"
+                                       value="{{ profile.nationality if profile and profile.nationality else '' }}"
+                                       maxlength="80" placeholder="e.g. Filipino">
+                            </div>
+                            <div class="field-group">
+                                <label>Date of Birth</label>
+                                <input type="date" name="dob"
+                                       value="{{ profile.dob.strftime('%Y-%m-%d') if profile and profile.dob else '' }}">
+                            </div>
+                            <div class="field-group full">
+                                <label>Bio</label>
+                                <textarea name="bio" maxlength="500" placeholder="Write something about yourself…">{{ profile.bio if profile and profile.bio else '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-save">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Change Password -->
+                <div class="acc-card">
+                    <div class="acc-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#46e59d" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <h5>Change Password</h5>
+                    </div>
+                    <form method="POST" action="{{ url_for('admin_update_account') }}">
+                        <input type="hidden" name="action" value="change_password">
+                        <div class="form-grid">
+                            <div class="field-group full">
+                                <label>Current Password</label>
+                                <div class="pw-wrap">
+                                    <input type="password" name="current_password" id="pwCurrent" autocomplete="current-password">
+                                    <button type="button" class="pw-eye" onclick="togglePw('pwCurrent',this)">👁</button>
+                                </div>
+                            </div>
+                            <div class="field-group">
+                                <label>New Password</label>
+                                <div class="pw-wrap">
+                                    <input type="password" name="new_password" id="pwNew"
+                                           oninput="checkStrength(this.value)" autocomplete="new-password">
+                                    <button type="button" class="pw-eye" onclick="togglePw('pwNew',this)">👁</button>
+                                </div>
+                                <div class="strength-bar-wrap"><div class="strength-bar" id="strengthBar"></div></div>
+                                <div class="strength-label" id="strengthLabel"></div>
+                            </div>
+                            <div class="field-group">
+                                <label>Confirm New Password</label>
+                                <div class="pw-wrap">
+                                    <input type="password" name="confirm_password" id="pwConfirm" autocomplete="new-password">
+                                    <button type="button" class="pw-eye" onclick="togglePw('pwConfirm',this)">👁</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-save">Update Password</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="acc-card">
+                    <div class="acc-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#46e59d" viewBox="0 0 24 24"><path d="M4 11h16v2H4zm0-5h16v2H4zm0 10h16v2H4z"/></svg>
+                        <h5>My Recent Activity</h5>
+                    </div>
+                    <table class="activity-log-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Action</th>
+                                <th>Target</th>
+                                <th>Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in recent_logs %}
+                            <tr>
+                                <td style="white-space:nowrap;color:#64748b;font-variant-numeric:tabular-nums;">
+                                    {{ log.timestamp.strftime('%b %d, %Y %H:%M') }}
+                                </td>
+                                <td style="color:#f1f5f9;font-weight:500;">{{ log.action }}</td>
+                                <td style="color:#8892a4;font-style:italic;">{{ log.target or '—' }}</td>
+                                <td><span class="level-badge {{ log.level | lower }}">{{ log.level }}</span></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="no-data">No activity recorded yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div style="text-align:right;margin-top:.8rem;">
+                        <a href="{{ url_for('view_logs') }}"
+                           style="font-size:.8rem;color:#46e59d;text-decoration:none;font-weight:600;">
+                            View all logs →
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="danger-zone">
+                    <h5>⚠ Danger Zone</h5>
+                    <p>These actions are irreversible. Proceed with caution.</p>
+                    <div class="danger-actions">
+                        <form method="POST" action="{{ url_for('gotologin') }}"
+                              onsubmit="return confirm('Log out of the admin panel?')">
+                            <button type="submit" class="btn-danger">🚪 Log Out</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
 {% endblock %}

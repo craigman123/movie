@@ -49,26 +49,40 @@ document.addEventListener("DOMContentLoaded", () => {
       ? `<img src="/static/uploads/${ref.movie_image}" alt="${ref.movie_name}">`
       : `<div class="tposter-ph">🎬</div>`;
 
-    const card = document.createElement('div');
-    card.className = 'tcard';
-    card.innerHTML = `
-      <div class="tbar ${barClass}"></div>
-      <div class="tbody">
-        <div class="tposter">${posterHTML}</div>
-        <div class="tdet">
-          <div class="tmov">${ref.movie_name}</div>
-          <div class="tmet">
-            📅 ${ref.date} &nbsp;·&nbsp; 🕐 ${ref.start_time} – ${ref.end_time}<br>
-            🏨 ${ref.venue_name} &nbsp;·&nbsp; 🚪 ${ref.venue_room}
-          </div>
-          <div class="tseats">${pillsHTML}</div>
-        </div>
-        <div class="tright">
-          <div class="tprice">₱${total.toLocaleString()}</div>
-          <div class="tprice-lbl">${group.length} seat${group.length !== 1 ? 's' : ''}</div>
-          <div class="tbadge ${isPast ? 'tu' : 'tv'}">${isPast ? 'Watched' : 'Upcoming'}</div>
-        </div>
-      </div>`;
+    const backdropHTML = isPast
+  ? `<div class="tbackdrop">👁️ Watched</div>`
+  : '';
+
+const card = document.createElement('div');
+card.className = `tcard ${isPast ? 'watched' : ''}`;
+
+card.innerHTML = `
+  <div class="tbar ${barClass}"></div>
+  <div class="tbody">
+    <div class="tposter">${posterHTML}</div>
+    <div class="tdet">
+      <div class="tmov">${ref.movie_name}</div>
+      <div class="tmet">
+        📅 ${ref.date} &nbsp;·&nbsp; 🕐 ${ref.start_time} – ${ref.end_time}<br>
+        🏨 ${ref.venue_name} &nbsp;·&nbsp; 🚪 ${ref.venue_room}
+      </div>
+      <div class="tseats">${pillsHTML}</div>
+    </div>
+    <div class="tright">
+      <div class="tprice">₱${total.toLocaleString()}</div>
+      <div class="tprice-lbl">${group.length} seat${group.length !== 1 ? 's' : ''}</div>
+      <div class="tbadge ${isPast ? 'tu' : 'tv'}">
+        ${isPast ? 'Watched' : 'Upcoming'}
+      </div>
+    </div>
+  </div>
+`;
+
+    // Make card clickable → ticket_info page
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => {
+      window.location.href = `/ticket_info/${ref.user_id}/${ref.schedule_id}`;
+    });
 
     list.appendChild(card);
   }

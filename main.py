@@ -23,7 +23,6 @@ app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['LAST_UPDATE'] = int(time.time())
 app.secret_key = "aries_vincent_secret"
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///luma.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -47,6 +46,33 @@ app.config['DEFAULT_PICTURE_FOLDER'] = DEFAULT_PICTURE_FOLDER
 app.config['QR_TICKET_CODES'] = QR_TICKET_CODES
 
 db = SQLAlchemy(app)
+
+class SystemLog(db.Model):
+    __tablename__ = 'system_log'
+ 
+    id        = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    level     = db.Column(db.String(10),  nullable=False, default='INFO')   # INFO | WARNING | ERROR
+    actor     = db.Column(db.String(150), nullable=False)                   # username or 'system'
+    action    = db.Column(db.String(200), nullable=False)                   # human-readable verb
+    target    = db.Column(db.String(200), nullable=True)                    # affected entity, e.g. "Movie #3"
+    details   = db.Column(db.Text,        nullable=True)
+
+class MovieRating(db.Model):
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'),    nullable=False)
+    movie_id   = db.Column(db.Integer, db.ForeignKey('movies.id'),  nullable=False)
+    stars      = db.Column(db.Integer, nullable=False)          # 1 – 5
+    review     = db.Column(db.String(500), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+ 
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'movie_id', name='uq_user_movie_rating'),
+    )
+ 
+    user  = db.relationship('User',   backref='ratings', lazy='joined')
+    movie = db.relationship('Movies', backref='ratings', lazy='joined')
 
 class QrCode(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -90,6 +116,7 @@ class Movies(db.Model):
     age_restrict = db.Column(db.String(100), nullable=False)
 
     schedules = db.relationship('Schedule', backref='movie', lazy=True)
+    movie_libraries = db.relationship('Libraries', backref='movie', lazy=True)  
 
 class Venue(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -122,11 +149,8 @@ class Schedule(db.Model):
 
 class Libraries(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    library_name = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.String(200), nullable=False)
-    library_image = db.Column(db.String(1000), nullable=False)
-    schedule_open = db.Column(db.String(1000), nullable=False)
-    library_linkMap = db.Column(db.String(1000), nullable=False)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
 class User(db.Model):
@@ -140,7 +164,7 @@ class User(db.Model):
 
     profile = db.relationship('Profiles', backref='user', uselist=False, lazy='joined')
     user_tickets = db.relationship('UserTickets', backref='user', lazy=True)
-    # libraries = db.relationship('Libraries', backref='user', lazy=True)
+    user_libraries = db.relationship('Libraries', backref='user', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -153,6 +177,23 @@ def inject_now():
     return {'now': int(time.time())}
 
 app.context_processor(inject_now)
+
+# ======== LOG HELPER =================
+def log_event(actor: str, action: str, target: str = None,
+               details: str = None, level: str = 'INFO'):
+    """Append one row to SystemLog. Only the backend calls this."""
+    try:
+        entry = SystemLog(
+            level=level.upper(),
+            actor=actor,
+            action=action,
+            target=target,
+            details=details,
+        )
+        db.session.add(entry)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 # ======== ROUTES =================       
 @app.route('/gotologin')
@@ -414,34 +455,312 @@ def AdminAccount():
         flash("Unauthorized access", "danger")
         return redirect(url_for('user_dashboard'))
 
-    user = User.query.get(session['user_id'])
-    return render_template('AdminAccount.html', user=user)
+    user    = User.query.get(session['user_id'])
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+
+    # profile image
+    first_letter = user.username[0].lower() if user.username else 'a'
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path, 'static', 'uploads',
+            'uploadedPictures', profile.profile_image
+        )
+        profile_image = (
+            url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+            if os.path.exists(uploaded_path)
+            else url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+        )
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+
+    # quick stats
+    total_users   = User.query.count()
+    total_movies  = Movies.query.count()
+    total_tickets = UserTickets.query.count()
+    total_logs    = SystemLog.query.count()
+
+    # recent logs by this admin
+    recent_logs = (
+        SystemLog.query
+        .filter(SystemLog.actor == user.username)
+        .order_by(SystemLog.timestamp.desc())
+        .limit(8).all()
+    )
+
+    return render_template(
+        'AdminAccount.html',
+        user          = user,
+        profile       = profile,
+        profile_image = profile_image,
+        total_users   = total_users,
+        total_movies  = total_movies,
+        total_tickets = total_tickets,
+        total_logs    = total_logs,
+        recent_logs   = recent_logs,
+    )
+
+
+@app.route('/admin/update_account', methods=['POST'])
+def admin_update_account():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('gotologin'))
+
+    user    = User.query.get(session['user_id'])
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+    if not profile:
+        profile = Profiles(user_id=user.id, profile_image='',
+                           nationality='', gender='', preffered_genre='')
+        db.session.add(profile)
+
+    action = request.form.get('action')
+
+    if action == 'update_info':
+        new_username = request.form.get('username', '').strip()
+        if new_username and new_username != user.username:
+            user.username = new_username
+            session['username'] = new_username
+        profile.bio         = request.form.get('bio', '').strip()
+        profile.nationality = request.form.get('nationality', '').strip()
+        profile.gender      = request.form.get('gender', '').strip()
+        dob_str = request.form.get('dob', '')
+        if dob_str:
+            try:
+                profile.dob = datetime.datetime.strptime(dob_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        # avatar upload
+        pic = request.files.get('profile_image')
+        if pic and pic.filename and allowed_file(pic.filename, ALLOWED_IMAGE_EXTENSIONS):
+            filename = f"user_{user.id}_{secure_filename(pic.filename)}"
+            pic.save(os.path.join(app.config['PROFILE_PICTURE_FOLDER'], filename))
+            profile.profile_image = filename
+        db.session.commit()
+        log_event(actor=user.username, action='Updated admin account info', target=f'Admin #{user.id}')
+        flash('Account info updated!', 'success')
+
+    elif action == 'change_password':
+        current  = request.form.get('current_password', '')
+        new_pw   = request.form.get('new_password', '')
+        confirm  = request.form.get('confirm_password', '')
+        if not user.check_password(current):
+            flash('Current password is incorrect.', 'danger')
+        elif len(new_pw) < 6:
+            flash('New password must be at least 6 characters.', 'danger')
+        elif new_pw != confirm:
+            flash('Passwords do not match.', 'danger')
+        else:
+            user.set_password(new_pw)
+            db.session.commit()
+            log_event(actor=user.username, action='Changed password', target=f'Admin #{user.id}', level='WARNING')
+            flash('Password changed successfully!', 'success')
+
+    return redirect(url_for('AdminAccount'))
 
 @app.route('/sales')
 def view_sales():
     if 'user_id' not in session:
         flash("Please log in first", "danger")
         return redirect(url_for('gotologin'))
-
+ 
     if session.get('role') != 'admin':
         flash("Unauthorized access", "danger")
         return redirect(url_for('user_dashboard'))
-
+ 
     user = User.query.get(session['user_id'])
-    return render_template('viewSales.html', user=user)
+    search = request.args.get('search', '').strip().lower()
+ 
+    # ── Pull all tickets with related data ──────────────────────────────────
+    all_tickets = (
+        UserTickets.query
+        .join(Schedule, UserTickets.schedule_id == Schedule.id)
+        .join(Movies,   Schedule.movie_id      == Movies.id)
+        .join(Venue,    Schedule.venue_id       == Venue.id)
+        .join(User,     UserTickets.user_id     == User.id)
+        .order_by(UserTickets.booking_time.desc())
+        .all()
+    )
+ 
+    # ── Apply search filter ─────────────────────────────────────────────────
+    if search:
+        all_tickets = [
+            t for t in all_tickets
+            if search in t.schedule.movie.movie_name.lower()
+            or search in t.user.username.lower()
+            or search in t.reference_code.lower()
+        ]
+ 
+    # ── KPI totals ──────────────────────────────────────────────────────────
+    STANDARD_PRICE = 350
+    PREMIUM_PRICE  = 500
+ 
+    standard_tickets = [t for t in all_tickets if t.ticket_type == 'standard']
+    premium_tickets  = [t for t in all_tickets if t.ticket_type == 'premium']
+ 
+    standard_count  = len(standard_tickets)
+    premium_count   = len(premium_tickets)
+    total_tickets   = len(all_tickets)
+    total_revenue   = standard_count * STANDARD_PRICE + premium_count * PREMIUM_PRICE
+    unique_buyers   = len(set(t.user_id for t in all_tickets))
+ 
+    # ── Revenue per day (last 30 days) ──────────────────────────────────────
+    from collections import defaultdict
+    daily_map = defaultdict(int)
+    for t in all_tickets:
+        day = t.booking_time.strftime('%b %d')
+        price = PREMIUM_PRICE if t.ticket_type == 'premium' else STANDARD_PRICE
+        daily_map[day] += price
+ 
+    # Keep last 30 distinct days sorted
+    sorted_days = sorted(daily_map.keys(),
+                         key=lambda d: datetime.datetime.strptime(d + ' 2026', '%b %d %Y'))[-30:]
+    daily_labels  = sorted_days
+    daily_revenue = [daily_map[d] for d in sorted_days]
+ 
+    # ── Revenue per month ───────────────────────────────────────────────────
+    monthly_map = defaultdict(int)
+    for t in all_tickets:
+        month = t.booking_time.strftime('%b %Y')
+        price = PREMIUM_PRICE if t.ticket_type == 'premium' else STANDARD_PRICE
+        monthly_map[month] += price
+ 
+    sorted_months   = sorted(monthly_map.keys(),
+                             key=lambda m: datetime.datetime.strptime(m, '%b %Y'))
+    monthly_labels  = sorted_months
+    monthly_revenue = [monthly_map[m] for m in sorted_months]
+ 
+    # ── Revenue + ticket counts per movie ───────────────────────────────────
+    movie_map = defaultdict(lambda: {'ticket_count': 0, 'standard_count': 0,
+                                      'premium_count': 0, 'revenue': 0,
+                                      'genre': ''})
+    for t in all_tickets:
+        movie = t.schedule.movie
+        key   = movie.movie_name
+        price = PREMIUM_PRICE if t.ticket_type == 'premium' else STANDARD_PRICE
+        movie_map[key]['ticket_count'] += 1
+        movie_map[key]['revenue']      += price
+        movie_map[key]['genre']         = movie.genre
+        if t.ticket_type == 'premium':
+            movie_map[key]['premium_count'] += 1
+        else:
+            movie_map[key]['standard_count'] += 1
+ 
+    top_movies = sorted(
+        [{'movie_name': k, **v} for k, v in movie_map.items()],
+        key=lambda x: x['revenue'], reverse=True
+    )
+ 
+    # Add share percentage
+    for m in top_movies:
+        m['share'] = (m['revenue'] / total_revenue * 100) if total_revenue else 0
+ 
+    # Chart data (top 8 movies)
+    chart_movies        = top_movies[:8]
+    movie_chart_names   = [m['movie_name'] for m in chart_movies]
+    movie_chart_revenues= [m['revenue']    for m in chart_movies]
+ 
+    # ── Revenue per venue ───────────────────────────────────────────────────
+    venue_map = defaultdict(int)
+    for t in all_tickets:
+        venue_name = t.schedule.venue.venue_name
+        venue_map[venue_name] += 1
+ 
+    venue_chart_names  = list(venue_map.keys())
+    venue_chart_counts = list(venue_map.values())
+ 
+    # ── Recent 50 transactions (table) ─────────────────────────────────────
+    recent_tickets = []
+    for t in all_tickets[:50]:
+        movie   = t.schedule.movie
+        venue   = t.schedule.venue
+        price   = PREMIUM_PRICE if t.ticket_type == 'premium' else STANDARD_PRICE
+        seat    = f"{chr(t.seat_row + 64)}{t.seat_col}"
+        recent_tickets.append({
+            'reference_code': t.reference_code,
+            'buyer':          t.user.username,
+            'movie':          movie.movie_name,
+            'venue':          venue.venue_name,
+            'date':           t.booking_time.strftime('%b %d, %Y'),
+            'seat':           seat,
+            'ticket_type':    t.ticket_type,
+            'price':          price,
+        })
+ 
+    return render_template(
+        'viewSales.html',
+        user             = user,
+        # KPIs
+        total_revenue    = total_revenue,
+        total_tickets    = total_tickets,
+        standard_count   = standard_count,
+        premium_count    = premium_count,
+        unique_buyers    = unique_buyers,
+        # Chart data
+        daily_labels     = daily_labels,
+        daily_revenue    = daily_revenue,
+        monthly_labels   = monthly_labels,
+        monthly_revenue  = monthly_revenue,
+        movie_chart_names    = movie_chart_names,
+        movie_chart_revenues = movie_chart_revenues,
+        venue_chart_names    = venue_chart_names,
+        venue_chart_counts   = venue_chart_counts,
+        # Tables
+        top_movies       = top_movies,
+        recent_tickets   = recent_tickets,
+    )
 
 @app.route('/logs')
 def view_logs():
     if 'user_id' not in session:
-        flash("Please log in first", "danger")
+        flash("Please log in first.", "danger")
         return redirect(url_for('gotologin'))
-
+ 
     if session.get('role') != 'admin':
-        flash("Unauthorized access", "danger")
+        flash("Unauthorized access.", "danger")
         return redirect(url_for('user_dashboard'))
+ 
+    user   = User.query.get(session['user_id'])
+    search = request.args.get('search', '').strip().lower()
+    level  = request.args.get('level', '').strip().upper()
+ 
+    query = SystemLog.query.order_by(SystemLog.timestamp.desc())
+ 
+    if level in ('INFO', 'WARNING', 'ERROR'):
+        query = query.filter(SystemLog.level == level)
 
-    user = User.query.get(session['user_id'])
-    return render_template('viewLogs.html', user=user)
+    if search:
+        like = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                SystemLog.actor.ilike(like),
+                SystemLog.action.ilike(like),
+                SystemLog.target.ilike(like),
+                SystemLog.details.ilike(like),
+            )
+        )
+ 
+    logs = query.all()
+ 
+    # keep server-side counts always based on full table (unfiltered)
+    today      = datetime.date.today()
+    all_logs   = SystemLog.query.all()
+    total_logs   = len(all_logs)
+    info_count   = sum(1 for l in all_logs if l.level == 'INFO')
+    warning_count= sum(1 for l in all_logs if l.level == 'WARNING')
+    error_count  = sum(1 for l in all_logs if l.level == 'ERROR')
+    today_count  = sum(1 for l in all_logs if l.timestamp.date() == today)
+ 
+    return render_template(
+        'viewLogs.html',
+        user          = user,
+        logs          = logs,
+        total_logs    = total_logs,
+        info_count    = info_count,
+        warning_count = warning_count,
+        error_count   = error_count,
+        today_count   = today_count,
+        active_search = search,
+        active_level  = level,
+    )
 
 @app.route('/')
 def index():
@@ -458,7 +777,7 @@ def view_movie(movie_id):
 
     movie = Movies.query.get_or_404(movie_id)
     schedule = Schedule.query.filter_by(movie_id=movie.id).first()
-    venue = Venue.query.filter_by(movie_id=movie.id).first()
+    venue = Venue.query.filter_by().first()
 
     status = None
 
@@ -472,13 +791,43 @@ def view_movie(movie_id):
         else:
             status = 'ended'
 
+    user = User.query.get(session['user_id'])
+    profile_image = user.profile.profile_image if user.profile and user.profile.profile_image else 'assets/default-avatar.png'
+
     return render_template(
         'view_movie.html',
         movie=movie,
         venue=venue,
         schedule=schedule,
-        status=status
+        status=status,
+        user=user,
+        profile_image=profile_image,
     )
+
+@app.route('/library/toggle/<int:movie_id>', methods=['POST'])
+def toggle_library(movie_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    existing = Libraries.query.filter_by(
+        user_id=session['user_id'],
+        movie_id=movie_id
+    ).first()
+
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        log_event(actor=session.get('username', 'user'), action='Removed movie from library',
+                  target=f'Movie #{movie_id}')
+        return jsonify({'in_library': False})
+    else:
+        entry = Libraries(user_id=session['user_id'], movie_id=movie_id)
+        db.session.add(entry)
+        db.session.commit()
+        log_event(actor=session.get('username', 'user'), action='Added movie to library',
+                  target=f'Movie #{movie_id}')
+        return jsonify({'in_library': True})
+
 @app.route('/admin_dashboard')
 def admin_dashboard():
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -687,6 +1036,8 @@ def about():
 
 @app.route('/logout', methods=['POST'])
 def logout():
+    actor = session.get('username', 'unknown')
+    log_event(actor=actor, action='Logged out')
     session.clear()
     flash("You have been logged out.", "success")
     return '', 200 
@@ -699,14 +1050,20 @@ def login():
     user = User.query.filter_by(email=email).first()
 
     if not user:
+        log_event(actor='system', action='Failed login attempt', target=f'Email: {email}',
+                  details='Account does not exist', level='WARNING')
         flash("Account does not exist!.", "danger")
         return redirect(url_for('gotologin'))
 
     if user.access == "Inactive":
+        log_event(actor='system', action='Failed login attempt', target=f'User: {user.username}',
+                  details='Account is inactive', level='WARNING')
         flash("Account disable contact support, or make a new account!", "danger")
         return redirect(url_for('gotologin'))
 
     if not user.check_password(password):
+        log_event(actor='system', action='Failed login attempt', target=f'User: {user.username}',
+                  details='Incorrect password', level='WARNING')
         flash("Incorrect password or email!", "danger")
         return redirect(url_for('gotologin'))
 
@@ -716,9 +1073,11 @@ def login():
     session['username'] = user.username
 
     if user.role == "admin" and user.access == "active":
+        log_event(actor=user.username, action='Admin logged in', target=f'User #{user.id}')
         flash(f"Welcome back {user.username}, you have been logged in successfully!", "success")
         return redirect(url_for('overview'))
     elif user.role == "user" or user.role == "verified" and user.access == "active":
+        log_event(actor=user.username, action='User logged in', target=f'User #{user.id}')
         flash(f"Welcome back {user.username}, you have been logged in successfully!", "success")
         return redirect(url_for('user_dashboard'))
     elif user.role == "user" or user.role == "verified" and user.access == "inactive":
@@ -766,6 +1125,9 @@ def register():
 
     db.session.add(new_profile)
     db.session.commit()
+
+    log_event(actor=new_user.username, action='New user registered',
+              target=f'User #{new_user.id}', details=f'Email: {email}')
 
     # ✅ Session
     session['user_id'] = new_user.id
@@ -1009,6 +1371,13 @@ def add_movie():
 
         db.session.commit()
 
+        log_event(
+            actor=session.get('username', 'admin'),
+            action='Added movie',
+            target=f'Movie: {movie_name}',
+            details=f'{schedule_count if "schedule_count" in locals() else 0} schedule(s) created'
+        )
+
         flash(f"Movies added successfully! Schedules: {schedule_count if 'schedule_count' in locals() else 0}", "success")
         return redirect(url_for('admin_dashboard'))
     
@@ -1017,6 +1386,8 @@ def add_movie():
         print(str(e))
         traceback.print_exc()
 
+        log_event(actor=session.get('username', 'admin'), action='Failed to add movie',
+                  details=str(e), level='ERROR')
         flash("Something went wrong while adding the movie.", "danger")
         return redirect(url_for('admin_dashboard'))
 
@@ -1024,6 +1395,7 @@ def add_movie():
 def delete_movie(movie_id):
     try:
         movie = Movies.query.get_or_404(movie_id)
+        movie_name = movie.movie_name
 
         for s in movie.schedules:
             db.session.delete(s)
@@ -1031,20 +1403,27 @@ def delete_movie(movie_id):
         db.session.delete(movie)
         db.session.commit()
 
+        log_event(actor=session.get('username', 'admin'), action='Deleted movie',
+                  target=f'Movie #{movie_id}: {movie_name}', level='WARNING')
         return jsonify({"success": True})
 
     except Exception as e:
         print("DELETE ERROR:", e)
+        log_event(actor=session.get('username', 'admin'), action='Failed to delete movie',
+                  target=f'Movie #{movie_id}', details=str(e), level='ERROR')
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/delete_schedule/<int:schedule_id>', methods=['DELETE'])
 def delete_schedule(schedule_id):
 
     schedule = Schedule.query.get_or_404(schedule_id)
+    movie_name = schedule.movie.movie_name if schedule.movie else '?'
 
     db.session.delete(schedule)
     db.session.commit()
 
+    log_event(actor=session.get('username', 'admin'), action='Deleted schedule',
+              target=f'Schedule #{schedule_id} ({movie_name})', level='WARNING')
     return jsonify({"success": True})
 
 @app.route("/create_schedule", methods=["POST"])
@@ -1093,6 +1472,10 @@ def update_schedule(schedule_id):
 
     db.session.commit()
 
+    log_event(actor=session.get('username', 'admin'), action='Updated schedule',
+              target=f'Schedule #{schedule_id}',
+              details=f'Date: {data["date"]} | {data["start"]}–{data["end"]} | Status: {stat}')
+
     return jsonify({
         "success": True,
         "message": "Schedule updated"
@@ -1131,6 +1514,8 @@ def update_movie(movie_id):
     
     print("✅ UPDATED:", movie.movie_name, movie.genre)
 
+    log_event(actor=session.get('username', 'admin'), action='Updated movie',
+              target=f'Movie #{movie_id}: {movie.movie_name}')
     flash("Movie updated successfully", "success")
     return redirect(url_for('movieViewAdmin'))
 
@@ -1171,6 +1556,8 @@ def create_venue():
     except Exception as e:
         print("🔥 ERROR:", e)
         traceback.print_exc()
+        log_event(actor=session.get('username', 'admin'), action='Failed to create venue/schedule',
+                  details=str(e), level='ERROR')
         return jsonify({"success": False, "error": str(e)}), 500
     
 def insert_schedule(venue_id, date, start, end, movie_id):
@@ -1275,6 +1662,9 @@ def edit_user(user_id):
 
     db.session.commit()
 
+    log_event(actor=session.get('username', 'admin'), action='Edited user',
+              target=f'User #{user_id}: {user.username}',
+              details=f'Role: {user.role} | Access: {user.access}')
     return redirect(url_for('view_users'))
 
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
@@ -1299,6 +1689,8 @@ def delete_user(user_id):
     db.session.delete(user)
     db.session.commit()
 
+    log_event(actor=session.get('username', 'admin'), action='Deleted user',
+              target=f'User #{user_id}', level='WARNING')
     flash("User deleted successfully.", "success")
     return redirect(url_for('view_users'))
 
@@ -1359,12 +1751,20 @@ def movie_detail(movie_id):
         profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
     
     print("DEBUG: Profile Image Path:", profile_image)
+    
+    in_library = Libraries.query.filter_by(
+        user_id=session['user_id'],
+        movie_id=movie_id
+    ).first() is not None
+    
+    print(in_library)
 
     return render_template(
         'view_movie.html', 
         movie=movie, 
         user=user, 
-        profile_image=profile_image
+        profile_image=profile_image,
+        in_library=in_library
         )
 
 @app.route('/movie_schedule')
@@ -1517,6 +1917,8 @@ def view_tickets():
             "ticket_type":  t.ticket_type,
             "booking_time": t.booking_time,
             "is_past":      is_past,
+            "user_id":      user.id,
+            "schedule_id":  t.schedule_id,
         })
 
     return render_template(
@@ -1526,6 +1928,105 @@ def view_tickets():
         tickets=tickets,
     )
 
+@app.route('/library')
+def view_library():
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    user = User.query.get(session['user_id'])
+
+    # ── Profile image ──────────────────────────────────────────────────
+    profile      = Profiles.query.filter_by(user_id=user.id).first()
+    first_letter = user.username[0].lower() if user.username else "a"
+
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path, "static", "uploads",
+            "uploadedPictures", profile.profile_image
+        )
+        profile_image = (
+            url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+            if os.path.exists(uploaded_path)
+            else url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+        )
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+
+    # ── Fetch library movies ───────────────────────────────────────────
+    library_entries = Libraries.query.filter_by(user_id=user.id).all()
+    movie_ids = [entry.movie_id for entry in library_entries]
+    movies = Movies.query.filter(Movies.id.in_(movie_ids)).all()
+
+    return render_template(
+        'library.html',
+        user=user,
+        profile_image=profile_image,
+        movies=movies,
+    )
+
+@app.route('/ticket_info/<int:user_id>/<int:schedule_id>')
+def ticket_info(user_id, schedule_id):
+    if 'user_id' not in session:
+        flash("Please log in first", "danger")
+        return redirect(url_for('gotologin'))
+
+    user     = User.query.get_or_404(user_id)
+    schedule = Schedule.query.get_or_404(schedule_id)
+    movie    = Movies.query.get(schedule.movie_id)
+    venue    = Venue.query.get(schedule.venue_id)
+
+    tickets = UserTickets.query.filter_by(
+        user_id=user_id,
+        schedule_id=schedule_id
+    ).order_by(UserTickets.seat_row, UserTickets.seat_col).all()
+
+    if not tickets:
+        return "No tickets found.", 404
+
+    ticket_rows = []
+    for t in tickets:
+        seat_label = f"{chr(t.seat_row + 64)}{t.seat_col}"
+        price      = 500 if t.ticket_type == 'premium' else 350
+        ticket_rows.append({
+            "seat_label":  seat_label,
+            "ticket_type": t.ticket_type,
+            "price":       price,
+        })
+
+    standard_seats = [r for r in ticket_rows if r['ticket_type'] == 'standard']
+    premium_seats  = [r for r in ticket_rows if r['ticket_type'] == 'premium']
+    total_price    = sum(r['price'] for r in ticket_rows)
+    qr_filename    = f"USER{user_id}_SCHED{schedule_id}.png"
+
+    # Profile image
+    profile      = Profiles.query.filter_by(user_id=user.id).first()
+    first_letter = user.username[0].lower() if user.username else "a"
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path, "static", "uploads",
+            "uploadedPictures", profile.profile_image
+        )
+        profile_image = (
+            url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+            if os.path.exists(uploaded_path)
+            else url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+        )
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+
+    return render_template('ticket_info.html',
+        user=user,
+        schedule=schedule,
+        movie=movie,
+        venue=venue,
+        ticket_rows=ticket_rows,
+        standard_seats=standard_seats,
+        premium_seats=premium_seats,
+        total_price=total_price,
+        qr_filename=qr_filename,
+        profile_image=profile_image,
+    )
 
 
 @app.route('/book/<int:schedule_id>')
@@ -1738,6 +2239,7 @@ def update_profile():
             return redirect(url_for('view_profile'))
  
     db.session.commit()
+    log_event(actor=user.username, action='Updated profile', target=f'User #{user.id}')
     flash("Profile updated successfully!", "success")
     return redirect(url_for('view_profile'))
 
@@ -1926,6 +2428,13 @@ def payment_success():
     db.session.commit()
     session.pop('pending_booking', None)
 
+    log_event(
+        actor=user.username,
+        action='Booked ticket(s)',
+        target=f'Schedule #{schedule_id} — {movie.movie_name} @ {venue.venue_name}',
+        details=f'Seats: {", ".join(saved)} | Type: {ticket_type} | Count: {len(saved)}'
+    )
+
     flash(f"Booking confirmed! Seats: {', '.join(saved)}", "success")
     return redirect(url_for('view_tickets'))
 
@@ -1976,8 +2485,218 @@ def view_ticket(user_id, schedule_id):
 
 @app.route('/payment/failed')
 def payment_failed():
+    log_event(actor=session.get('username', 'system'), action='Payment cancelled or failed',
+              level='WARNING')
     flash("Payment was cancelled or failed. Please try again.", "danger")
     return redirect(url_for('user_dashboard'))
+
+@app.route('/movie/<int:movie_id>/rate')
+def movie_rating_page(movie_id):
+    """Show the rate-and-review page for a movie."""
+    if 'user_id' not in session:
+        flash("Please log in first.", "danger")
+        return redirect(url_for('gotologin'))
+ 
+    user  = User.query.get_or_404(session['user_id'])
+    movie = Movies.query.get_or_404(movie_id)
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+ 
+    # User can only rate if they have at least one ticket for this movie
+    has_ticket = db.session.query(UserTickets).join(Schedule).filter(
+        UserTickets.user_id  == user.id,
+        Schedule.movie_id    == movie_id
+    ).first() is not None
+ 
+    user_rating = MovieRating.query.filter_by(
+        user_id=user.id, movie_id=movie_id
+    ).first()
+ 
+    all_ratings = MovieRating.query.filter_by(movie_id=movie_id)\
+        .order_by(MovieRating.created_at.desc()).all()
+ 
+    total_ratings   = len(all_ratings)
+    avg_rating      = (sum(r.stars for r in all_ratings) / total_ratings) if total_ratings else None
+    rating_breakdown = {s: sum(1 for r in all_ratings if r.stars == s) for s in range(1, 6)}
+ 
+    # Profile image helper (same pattern as your other pages)
+    first_letter = user.username[0].lower() if user.username else "a"
+
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path,
+            "static",
+            "uploads",
+            "uploadedPictures",
+            profile.profile_image
+        )
+
+        if os.path.exists(uploaded_path):
+            profile_image = url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+        else:
+            profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+ 
+    return render_template(
+        'movie_ratings.html',
+        user            = user,
+        movie           = movie,
+        can_rate        = has_ticket,
+        user_rating     = user_rating,
+        all_ratings     = all_ratings,
+        avg_rating      = avg_rating,
+        total_ratings   = total_ratings,
+        rating_breakdown= rating_breakdown,
+        profile_image   = profile_image,
+    )
+ 
+ 
+@app.route('/movie/<int:movie_id>/rate', methods=['POST'])
+def submit_rating(movie_id):
+    """Create or update a rating."""
+    if 'user_id' not in session:
+        return redirect(url_for('gotologin'))
+ 
+    stars_raw = request.form.get('stars', '').strip()
+    if not stars_raw or not stars_raw.isdigit() or not (1 <= int(stars_raw) <= 5):
+        flash("Please select a star rating (1–5).", "danger")
+        return redirect(url_for('movie_rating_page', movie_id=movie_id))
+ 
+    stars  = int(stars_raw)
+    review = request.form.get('review', '').strip()[:500]
+ 
+    existing = MovieRating.query.filter_by(
+        user_id=session['user_id'], movie_id=movie_id
+    ).first()
+ 
+    if existing:
+        existing.stars      = stars
+        existing.review     = review or None
+        existing.updated_at = datetime.datetime.now()
+        log_event(actor=session.get('username', 'user'), action='Updated movie rating',
+                  target=f'Movie #{movie_id}', details=f'Stars: {stars}')
+        flash("Your rating has been updated!", "success")
+    else:
+        db.session.add(MovieRating(
+            user_id  = session['user_id'],
+            movie_id = movie_id,
+            stars    = stars,
+            review   = review or None,
+        ))
+        log_event(actor=session.get('username', 'user'), action='Submitted movie rating',
+                  target=f'Movie #{movie_id}', details=f'Stars: {stars}')
+        flash("Thanks for your rating!", "success")
+ 
+    db.session.commit()
+    return redirect(url_for('movie_rating_page', movie_id=movie_id))
+ 
+ 
+@app.route('/movie/<int:movie_id>/rate/delete', methods=['POST'])
+def delete_rating(movie_id):
+    """Remove a user's rating."""
+    if 'user_id' not in session:
+        return redirect(url_for('gotologin'))
+ 
+    rating = MovieRating.query.filter_by(
+        user_id=session['user_id'], movie_id=movie_id
+    ).first()
+ 
+    if rating:
+        db.session.delete(rating)
+        db.session.commit()
+        log_event(actor=session.get('username', 'user'), action='Deleted movie rating',
+                  target=f'Movie #{movie_id}', level='WARNING')
+        flash("Your rating has been removed.", "success")
+ 
+    return redirect(url_for('movie_rating_page', movie_id=movie_id))
+
+@app.route('/ratings')
+def view_ratings():
+    if 'user_id' not in session:
+        flash("Please log in first.", "danger")
+        return redirect(url_for('gotologin'))
+ 
+    if session.get('role') == 'admin':
+        return redirect(url_for('admin_dashboard'))
+ 
+    user    = User.query.get_or_404(session['user_id'])
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+    movies  = Movies.query.all()
+ 
+    # ── Profile image (same helper used on other pages) ──────────────────────
+    first_letter  = user.username[0].lower() if user.username else "a"
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path, "static", "uploads",
+            "uploadedPictures", profile.profile_image
+        )
+        profile_image = (
+            url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+            if os.path.exists(uploaded_path)
+            else url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+        )
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+ 
+    # ── Build per-movie rating data ───────────────────────────────────────────
+    movies_data = []
+ 
+    for movie in movies:
+        all_ratings = (
+            MovieRating.query
+            .filter_by(movie_id=movie.id)
+            .order_by(MovieRating.created_at.desc())
+            .all()
+        )
+ 
+        total_ratings   = len(all_ratings)
+        avg_rating      = (sum(r.stars for r in all_ratings) / total_ratings) if total_ratings else None
+        breakdown       = {s: sum(1 for r in all_ratings if r.stars == s) for s in range(1, 6)}
+        user_rated      = any(r.user_id == user.id for r in all_ratings)
+ 
+        # Build reviewer info for up to 3 most recent reviews
+        latest_reviews = []
+        for r in all_ratings[:3]:
+            reviewer      = r.user
+            rev_profile   = Profiles.query.filter_by(user_id=reviewer.id).first()
+            rev_letter    = reviewer.username[0].lower() if reviewer.username else "a"
+ 
+            if rev_profile and rev_profile.profile_image:
+                rev_path = os.path.join(
+                    current_app.root_path, "static", "uploads",
+                    "uploadedPictures", rev_profile.profile_image
+                )
+                rev_img = (
+                    url_for('static', filename=f'uploads/uploadedPictures/{rev_profile.profile_image}')
+                    if os.path.exists(rev_path)
+                    else url_for('static', filename=f'uploads/defaultPictures/{rev_letter}.jpg')
+                )
+            else:
+                rev_img = url_for('static', filename=f'uploads/defaultPictures/{rev_letter}.jpg')
+ 
+            latest_reviews.append({
+                "username":   reviewer.username,
+                "stars":      r.stars,
+                "review":     r.review,
+                "created_at": r.created_at,
+                "profile_image": rev_img,
+            })
+ 
+        movies_data.append({
+            "movie":          movie,
+            "total_ratings":  total_ratings,
+            "avg_rating":     avg_rating,
+            "breakdown":      breakdown,
+            "user_rated":     user_rated,
+            "latest_reviews": latest_reviews,
+        })
+ 
+    return render_template(
+        'ratings.html',
+        user          = user,
+        profile_image = profile_image,
+        movies_data   = movies_data,
+    )
 
 if __name__ == '__main__':
 

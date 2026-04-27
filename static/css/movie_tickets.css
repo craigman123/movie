@@ -73,3 +73,50 @@
 .eico  { font-size: 48px; margin-bottom: 16px; }
 .etit  { font-size: 17px; font-weight: 500; margin-bottom: 8px; }
 .esub  { font-size: 13px; color: var(--text2); margin-bottom: 22px; }
+
+.tcard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+/* Dark cinematic overlay */
+.tcard.watched::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom right,
+    rgba(10, 10, 10, 0.7),
+    rgba(8, 8, 8, 0.85)
+  );
+  z-index: 1;
+}
+
+/* WATCHED watermark */
+.tcard.watched::before {
+  content: "ENDED";
+  position: absolute;
+  top: 20%;
+  left: 32%;
+
+  font-size: 3vw;
+  font-weight: 700;
+  letter-spacing: 70px;
+
+  color: rgba(255, 108, 108, 0.15);
+  text-transform: uppercase;
+
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Slight fade of content under overlay */
+.tcard.watched .tbody {
+  opacity: 0.75;
+}
+
+/* Optional: desaturate poster */
+.tcard.watched .tposter img {
+  filter: grayscale(50%) brightness(0.8);
+}

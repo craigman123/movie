@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/luma_dashboard.css') }}">
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-user-pack.css') }}"> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ticket_info.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>{{ movie.movie_name }} Ticket — LUMA</title>
+{% endblock %}
+
+{% block body %}
+<div id="app">
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="side">
+      <div class="slogo">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height:1.2em;margin-right:10px;">
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Discover</div>
+        <a class="ni" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Community</div>
+        <a class="ni" href="{{ url_for('view_ratings') }}"><span class="nico">⭐</span> Ratings</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Account</div>
+        <a class="ni on" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Libraries</div>
+        <a class="ni" href="{{ url_for('view_library') }}"><span class="nico">💼</span> Library</a>
+      </div>
+      <div class="sbot">
+        <a href="{{ url_for('view_profile') }}" class="uchip">
+          <div class="av"><img src="{{ profile_image }}" alt="Profile Image"></div>
+          <div class="uinf">
+            <div class="uname">{{ user.username }}</div>
+            <div class="urole">
+              {% if user.role == "user" %}
+                <span style="color:var(--gold)">User - Open Profile</span>
+              {% elif user.role == "verified" %}
+                <span style="color:var(--green)">Verified - Open Profile</span>
+              {% else %}
+                <span style="color:var(--text2)">{{ user.role }}</span>
+              {% endif %}
+              <span class="ulgo">↩</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <div class="pg on">
+        <div class="ti-wrap">
+
+          <!-- Header -->
+          <div class="phead">
+            <div>
+              <div class="ptitle">Ticket Details</div>
+              <div class="psub">{{ movie.movie_name }} · {{ schedule.date.strftime('%B %d, %Y') }}</div>
+            </div>
+            <a href="{{ url_for('view_tickets') }}" class="pbtn">&#8592; My Tickets</a>
+          </div>
+
+          <!-- Ticket card -->
+          <div class="ti-card">
+
+            <!-- LEFT: info -->
+            <div class="ti-left">
+
+              <!-- Movie row -->
+              <div class="ti-movie-row">
+                {% if movie.movie_image %}
+                  <img src="{{ url_for('static', filename='uploads/' + movie.movie_image) }}" class="ti-poster" alt="{{ movie.movie_name }}">
+                {% else %}
+                  <div class="ti-poster-ph">🎬</div>
+                {% endif %}
+                <div>
+                  <div class="ti-movie-name">{{ movie.movie_name }}</div>
+                  <span class="ti-genre-pill">{{ movie.genre }}</span>
+                </div>
+              </div>
+
+              <!-- Meta -->
+              <div class="ti-meta">
+                <div>
+                  <div class="ti-field-lbl">Date</div>
+                  <div class="ti-field-val">{{ schedule.date.strftime('%b %d, %Y') }}</div>
+                </div>
+                <div>
+                  <div class="ti-field-lbl">Time</div>
+                  <div class="ti-field-val">{{ schedule.start_time.strftime('%H:%M') }} – {{ schedule.end_time.strftime('%H:%M') }}</div>
+                </div>
+                <div>
+                  <div class="ti-field-lbl">Guest</div>
+                  <div class="ti-field-val">{{ user.username }}</div>
+                </div>
+                <div>
+                  <div class="ti-field-lbl">Venue</div>
+                  <div class="ti-field-val">{{ venue.venue_name }}</div>
+                  <div class="ti-field-sub">Room {{ venue.venue_room }}</div>
+                </div>
+                <div>
+                  <div class="ti-field-lbl">Total Seats</div>
+                  <div class="ti-field-val">{{ ticket_rows | length }}</div>
+                </div>
+                <div>
+                  <div class="ti-field-lbl">Duration</div>
+                  <div class="ti-field-val">{{ movie.duration }} min</div>
+                </div>
+              </div>
+
+              <!-- Seat table -->
+              <div>
+                <div class="ti-seats-lbl">Seat Breakdown</div>
+                <table class="ti-seat-table">
+                  <thead>
+                    <tr>
+                      <th>Seat</th>
+                      <th>Type</th>
+                      <th style="text-align:right">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in ticket_rows %}
+                    <tr>
+                      <td><span class="seat-num">{{ row.seat_label }}</span></td>
+                      <td><span class="type-pill {{ row.ticket_type }}">{{ row.ticket_type }}</span></td>
+                      <td class="seat-price">PHP {{ row.price }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                <div class="ti-total">
+                  <span class="ti-total-lbl">Total</span>
+                  <span class="ti-total-val">PHP {{ total_price }}</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- DIVIDER with notches -->
+            <div class="ti-divider"></div>
+
+            <!-- RIGHT: QR -->
+            <div class="ti-right">
+              <div class="ti-qr-lbl">Scan to Verify</div>
+              <div class="ti-qr-wrap">
+                <img src="{{ url_for('static', filename='uploads/ticketCodes/' + qr_filename) }}" alt="QR Code">
+              </div>
+
+              <!-- Type badges -->
+              <div class="ti-badge-group">
+                {% if premium_seats %}
+                <div class="ti-badge premium">
+                  <div class="ti-badge-lbl">Premium ×{{ premium_seats | length }}</div>
+                  <div class="ti-badge-val">PHP {{ 500 * (premium_seats | length) }}</div>
+                </div>
+                {% endif %}
+                {% if standard_seats %}
+                <div class="ti-badge standard">
+                  <div class="ti-badge-lbl">Standard ×{{ standard_seats | length }}</div>
+                  <div class="ti-badge-val">PHP {{ 350 * (standard_seats | length) }}</div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+          </div><!-- /.ti-card -->
+
+        </div>
+      </div>
+    </main>
+
+  </div>
+</div>
+{% endblock %}

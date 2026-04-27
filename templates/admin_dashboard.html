@@ -3,6 +3,7 @@
 {% block head %}
     <title>LUMA Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-pack.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_seat_plan.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/calendar-pack.css') }}">
@@ -37,7 +38,7 @@
                             <span>OVERVIEW</span>
                             </a>
                         </li>
-                        <li class="menu-btn">
+                        <li class="menu-btn active-menu">
                             <a href="{{ url_for('admin_dashboard') }}">
                                 <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"  
                                     fill="#ffffff" viewBox="2 2 20 20" >

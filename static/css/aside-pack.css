@@ -265,3 +265,8 @@ main {
     background: #888;
     border-radius: 40px;
 }
+
+.active-menu {
+    background: #1a3a2a !important;
+    border-left: 3px solid #46e59d;
+}

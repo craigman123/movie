@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block head %}
+  <title>LUMA — Ratings</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/luma_dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ratings.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block body %}
+
+<div id="app">
+  <div class="layout">
+
+    <!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+    <aside class="side">
+      <div class="slogo">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height: 1.2em; margin-right: 10px;">
+      </div>
+
+      <div class="nsec">
+        <div class="nlbl">Discover</div>
+        <a class="ni" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
+      </div>
+
+      <div class="nsec">
+        <div class="nlbl">Community</div>
+        <a class="ni on" href="{{ url_for('view_ratings') }}"><span class="nico">⭐</span> Ratings</a>
+      </div>
+
+      <div class="nsec">
+        <div class="nlbl">Account</div>
+        <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+      </div>
+
+      <div class="nsec">
+        <div class="nlbl">Libraries</div>
+        <a class="ni" href="{{ url_for('view_library') }}"><span class="nico">💼</span> Library</a>
+      </div>
+
+      <div class="sbot">
+        <a href="{{ url_for('view_profile') }}" class="uchip">
+          <div class="av" id="sav">
+            <img src="{{ profile_image }}" alt="Profile Image">
+          </div>
+          <div class="uinf">
+            <div class="uname" id="snm">{{ user.username }}</div>
+            <div class="urole" id="sumprof">
+              {% if user.role == "user" %}
+                <span style="color:var(--gold)">User - Open Profile</span>
+              {% elif user.role == "verified" %}
+                <span style="color:var(--green)">Verified - Open Profile</span>
+              {% else %}
+                <span style="color:var(--text2)">{{ user.role }}</span>
+              {% endif %}
+              <span class="ulgo">↩</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ══ MAIN ═════════════════════════════════════════════════ -->
+    <main class="main">
+
+      <!-- Hero Banner -->
+      <div class="phead">
+        <div>
+          <div class="ptitle">Community Ratings</div>
+          <div class="psub">See what everyone is watching and saying</div>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="htxt">
+          <div class="hbrow">Luma Cinemas · Cebu, Philippines</div>
+          <div class="hh">WHAT PEOPLE<br><span>ARE SAYING</span></div>
+          <div class="hdesc">Browse crowd-sourced ratings and reviews for every film. Click any movie to read the full reviews and share your own.</div>
+        </div>
+        <div class="hstats">
+          <div class="cards-container">
+            <div class="card">
+              <h3>TOTAL MOVIES</h3>
+              <p>{{ movies_data | length }}</p>
+            </div>
+            <div class="card">
+              <h3>RATED MOVIES</h3>
+              <p>{{ movies_data | selectattr('total_ratings', 'gt', 0) | list | length }}</p>
+            </div>
+            <div class="card">
+              <h3>TOTAL REVIEWS</h3>
+              <p>{{ movies_data | sum(attribute='total_ratings') }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search + Filters -->
+      <div class="csec">
+        <div class="slbl">All Films</div>
+        <div class="stit">Ratings &amp; Reviews</div>
+
+        <div class="srch" style="margin-bottom:16px;">
+          <span class="sico">🔍</span>
+          <input class="si" type="text" id="rq" placeholder="Search movies..." oninput="filterRatings()">
+        </div>
+
+        <!-- Sort Controls -->
+        <div class="sort-bar">
+          <span class="sort-label">Sort by:</span>
+          <button class="sort-btn active" data-sort="avg" onclick="setSort(this,'avg')">⭐ Highest Rated</button>
+          <button class="sort-btn" data-sort="count" onclick="setSort(this,'count')">💬 Most Reviews</button>
+          <button class="sort-btn" data-sort="name" onclick="setSort(this,'name')">🔤 A → Z</button>
+          <button class="sort-btn" data-sort="none" onclick="setSort(this,'none')">📋 Default</button>
+        </div>
+
+        <!-- Movies Rating Grid -->
+        <div class="ratings-grid" id="ratingsGrid">
+
+          {% for item in movies_data %}
+          <div class="rcard"
+               data-name="{{ item.movie.movie_name | lower }}"
+               data-avg="{{ item.avg_rating or 0 }}"
+               data-count="{{ item.total_ratings }}">
+
+            <!-- Poster -->
+            <a href="{{ url_for('movie_detail', movie_id=item.movie.id) }}" class="rcard-poster-link">
+              <div class="rcard-poster">
+                <img src="{{ url_for('static', filename='uploads/' + item.movie.movie_image) }}"
+                     alt="{{ item.movie.movie_name }}">
+                <div class="rcard-overlay">
+                  <span class="rcard-view-btn">View Details →</span>
+                </div>
+              </div>
+            </a>
+
+            <!-- Info -->
+            <div class="rcard-info">
+              <div class="rcard-top">
+                <div>
+                  <div class="rcard-title">{{ item.movie.movie_name }}</div>
+                  <div class="rcard-genre">{{ item.movie.genre }} · {{ item.movie.language }}</div>
+                </div>
+
+                {% if item.avg_rating %}
+                <div class="rcard-avg">
+                  <span class="rcard-avg-num">{{ "%.1f"|format(item.avg_rating) }}</span>
+                  <span class="rcard-avg-star">★</span>
+                </div>
+                {% else %}
+                <div class="rcard-no-rating">No Ratings</div>
+                {% endif %}
+              </div>
+
+              <!-- Star Bar Breakdown -->
+              {% if item.total_ratings > 0 %}
+              <div class="star-breakdown">
+                {% for s in [5,4,3,2,1] %}
+                {% set count = item.breakdown[s] %}
+                {% set pct = (count / item.total_ratings * 100) | round(1) %}
+                <div class="sb-row">
+                  <span class="sb-star">{{ s }}★</span>
+                  <div class="sb-bar-bg">
+                    <div class="sb-bar-fill" style="width:{{ pct }}%"></div>
+                  </div>
+                  <span class="sb-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+              </div>
+              <div class="rcard-total">{{ item.total_ratings }} review{{ 's' if item.total_ratings != 1 else '' }}</div>
+              {% else %}
+              <div class="rcard-empty">No reviews yet. Be the first!</div>
+              {% endif %}
+
+              <!-- Latest Reviewers -->
+              {% if item.latest_reviews %}
+              <div class="reviewer-list">
+                {% for r in item.latest_reviews %}
+                <div class="reviewer-row">
+                  <div class="reviewer-av">
+                    <img src="{{ r.profile_image }}" alt="{{ r.username }}">
+                  </div>
+                  <div class="reviewer-body">
+                    <div class="reviewer-meta">
+                      <span class="reviewer-name">{{ r.username }}</span>
+                      <span class="reviewer-stars">
+                        {% for i in range(1,6) %}
+                          {% if i <= r.stars %}<span class="rs on">★</span>{% else %}<span class="rs">★</span>{% endif %}
+                        {% endfor %}
+                      </span>
+                      <span class="reviewer-date">{{ r.created_at.strftime('%b %d, %Y') }}</span>
+                    </div>
+                    {% if r.review %}
+                    <div class="reviewer-text">{{ r.review }}</div>
+                    {% else %}
+                    <div class="reviewer-text" style="color:var(--text3);font-style:italic;">No written review.</div>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+
+                {% if item.total_ratings > 3 %}
+                <a href="{{ url_for('movie_detail', movie_id=item.movie.id) }}" class="see-all-link">
+                  See all {{ item.total_ratings }} reviews →
+                </a>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Rate Button -->
+              <a href="{{ url_for('movie_rating_page', movie_id=item.movie.id) }}" class="pbtn rate-btn">
+                {% if item.user_rated %}✏️ Edit My Rating{% else %}⭐ Rate This Film{% endif %}
+              </a>
+
+            </div>
+          </div>
+          {% endfor %}
+
+        </div>
+
+        {% if movies_data | length == 0 %}
+        <p class="no-movies">No movies available.</p>
+        {% endif %}
+
+        <div id="noResults" class="no-movies" style="display:none;">No movies match your search.</div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  let currentSort = 'avg';
+
+  function filterRatings() {
+    const q = document.getElementById('rq').value.toLowerCase().trim();
+    renderCards(q, currentSort);
+  }
+
+  function setSort(btn, sort) {
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSort = sort;
+    const q = document.getElementById('rq').value.toLowerCase().trim();
+    renderCards(q, sort);
+  }
+
+  function renderCards(q, sort) {
+    const grid = document.getElementById('ratingsGrid');
+    const cards = Array.from(grid.querySelectorAll('.rcard'));
+    let visible = cards.filter(c => {
+      const name = c.dataset.name || '';
+      return !q || name.includes(q);
+    });
+
+    // Sort
+    visible.sort((a, b) => {
+      if (sort === 'avg')   return parseFloat(b.dataset.avg)   - parseFloat(a.dataset.avg);
+      if (sort === 'count') return parseInt(b.dataset.count)   - parseInt(a.dataset.count);
+      if (sort === 'name')  return a.dataset.name.localeCompare(b.dataset.name);
+      return 0; // default
+    });
+
+    cards.forEach(c => { c.style.display = 'none'; });
+    visible.forEach(c => { c.style.display = ''; });
+    grid.innerHTML = '';
+    visible.forEach(c => grid.appendChild(c));
+    const hidden = cards.filter(c => !visible.includes(c));
+    hidden.forEach(c => { c.style.display = 'none'; grid.appendChild(c); });
+
+    document.getElementById('noResults').style.display = visible.length === 0 ? 'block' : 'none';
+  }
+</script>
+
+{% endblock %}

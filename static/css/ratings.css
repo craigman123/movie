@@ -1,0 +1,395 @@
+/* ═══════════════════════════════════════════════
+   ratings.css  —  LUMA Ratings Page
+   Inherits luma_dashboard.css variables & base
+   ═══════════════════════════════════════════════ */
+
+/* ── Sort Bar ─────────────────────────────────── */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.sort-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
+.sort-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .15s;
+}
+
+.sort-btn:hover {
+  border-color: var(--border2);
+  color: var(--text);
+}
+
+.sort-btn.active {
+  background: var(--gold-dim);
+  border-color: rgba(232,193,74,.25);
+  color: var(--gold);
+}
+
+/* ── Ratings Grid ─────────────────────────────── */
+.ratings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Rating Card ──────────────────────────────── */
+.rcard {
+  display: flex;
+  gap: 22px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color .2s, transform .2s;
+}
+
+.rcard:hover {
+  border-color: var(--border2);
+  transform: translateY(-2px);
+}
+
+/* Poster */
+.rcard-poster-link {
+  flex-shrink: 0;
+  display: block;
+  width: 120px;
+}
+
+.rcard-poster {
+  position: relative;
+  width: 120px;
+  height: 100%;
+  min-height: 180px;
+  overflow: hidden;
+  background: var(--bg3);
+}
+
+.rcard-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s;
+}
+
+.rcard:hover .rcard-poster img {
+  transform: scale(1.06);
+}
+
+.rcard-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+.rcard:hover .rcard-overlay {
+  opacity: 1;
+}
+
+.rcard-view-btn {
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: .6px;
+  border: 1px solid rgba(255,255,255,.4);
+  border-radius: 6px;
+  padding: 5px 10px;
+  backdrop-filter: blur(4px);
+}
+
+/* Info Panel */
+.rcard-info {
+  flex: 1;
+  padding: 18px 22px 18px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rcard-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.rcard-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 1px;
+  line-height: 1;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rcard-genre {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+
+/* Avg Score Badge */
+.rcard-avg {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  flex-shrink: 0;
+  background: var(--gold-dim);
+  border: 1px solid rgba(232,193,74,.2);
+  border-radius: 8px;
+  padding: 5px 10px;
+}
+
+.rcard-avg-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.rcard-avg-star {
+  font-size: 14px;
+  color: var(--gold);
+}
+
+.rcard-no-rating {
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Star Breakdown Bars */
+.star-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sb-star {
+  font-size: 11px;
+  color: var(--gold);
+  width: 22px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.sb-bar-bg {
+  flex: 1;
+  height: 5px;
+  background: var(--bg4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sb-bar-fill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 3px;
+  transition: width .4s ease;
+}
+
+.sb-count {
+  font-size: 10px;
+  color: var(--text3);
+  width: 18px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.rcard-total {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.rcard-empty {
+  font-size: 12px;
+  color: var(--text3);
+  font-style: italic;
+}
+
+/* Reviewer List */
+.reviewer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.reviewer-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.reviewer-av {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+}
+
+.reviewer-av img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reviewer-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.reviewer-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 3px;
+}
+
+.reviewer-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.reviewer-stars {
+  display: flex;
+  gap: 1px;
+}
+
+.rs {
+  font-size: 12px;
+  color: var(--bg5);
+}
+
+.rs.on {
+  color: var(--gold);
+}
+
+.reviewer-date {
+  font-size: 10px;
+  color: var(--text3);
+  margin-left: auto;
+}
+
+.reviewer-text {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.see-all-link {
+  font-size: 11px;
+  color: var(--gold);
+  text-decoration: none;
+  letter-spacing: .5px;
+  transition: color .15s;
+}
+
+.see-all-link:hover {
+  color: var(--gold-lt);
+}
+
+/* Rate Button */
+.rate-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 12px;
+  padding: 7px 16px;
+}
+
+/* Cards stat container reuse */
+.cards-container {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.card {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--rsm);
+  padding: 12px 18px;
+  min-width: 100px;
+  text-align: center;
+}
+
+.card h3 {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text3);
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.card p {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: var(--gold);
+  line-height: 1;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .rcard {
+    flex-direction: column;
+  }
+  .rcard-poster-link {
+    width: 100%;
+    height: 200px;
+  }
+  .rcard-poster {
+    width: 100%;
+    height: 200px;
+  }
+  .rcard-info {
+    padding: 14px 16px;
+  }
+}

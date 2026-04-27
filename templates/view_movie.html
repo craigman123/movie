@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/luma_dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/view_movie.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-user-pack.css') }}">
+    <script src="{{ url_for('static', filename='js/view_movie.js') }}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <title>{{ movie.movie_name }} - LUMA</title>
 {% endblock %}
@@ -22,8 +23,16 @@
         <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
       </div>
       <div class="nsec">
+        <div class="nlbl">Community</div>
+        <a class="ni" href="{{ url_for('view_ratings') }}"><span class="nico">⭐</span> Ratings</a>
+      </div>
+      <div class="nsec">
         <div class="nlbl">Account</div>
         <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Libraries</div>
+        <a class="ni" href="{{ url_for('view_library') }}"><span class="nico">💼</span> Library</a>
       </div>
       <div class="sbot">
         <a href="{{ url_for('view_profile') }}" class="uchip">
@@ -56,7 +65,9 @@
             <div class="ptitle">{{ movie.movie_name }}</div>
             <div class="psub">{{ movie.genre }} &bull; {{ movie.duration }} min</div>
           </div>
-          <a href="{{ url_for('user_dashboard') }}" class="pbtn" style="text-decoration:none;">&#8592; Back to Movies</a>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <a href="{{ url_for('user_dashboard') }}" class="pbtn" style="text-decoration:none;">&#8592; Back to Movies</a>
+          </div>
         </div>
 
         <div class="csec">
@@ -96,24 +107,38 @@
 
           <!-- Row 3: Meta pills -->
           <div class="meta-row">
-            <div class="meta-pill">
-              <span class="meta-label">Language</span>
-              <span class="meta-value">{{ movie.language }}</span>
+            <div style="display:flex;gap:10px;flex-direction: row;">
+              <div class="meta-pill">
+                <span class="meta-label">Language</span>
+                <span class="meta-value">{{ movie.language }}</span>
+              </div>
+              <div class="meta-pill">
+                <span class="meta-label">Genre</span>
+                <span class="meta-value">{{ movie.genre }}</span>
+              </div>
+              <div class="meta-pill">
+                <span class="meta-label">Duration</span>
+                <span class="meta-value">{{ movie.duration }} min</span>
+              </div>
+              <div class="meta-pill">
+                <span class="meta-label">Release Date</span>
+                <span class="meta-value">{{ movie.movie_date_created }}</span>
+              </div>
             </div>
-            <div class="meta-pill">
-              <span class="meta-label">Genre</span>
-              <span class="meta-value">{{ movie.genre }}</span>
-            </div>
-            <div class="meta-pill">
-              <span class="meta-label">Duration</span>
-              <span class="meta-value">{{ movie.duration }} min</span>
-            </div>
-            <div class="meta-pill">
-              <span class="meta-label">Release Date</span>
-              <span class="meta-value">{{ movie.movie_date_created }}</span>
+            <div>
+              <button
+                id="libraryBtn"
+                class="pbtnlist"
+                style="background-color: {{ 'orange' if in_library else 'green' }};"
+                onclick="toggleLibrary({{ movie.id }})">
+                <span id="libraryIcon">{{ '🏷️' if in_library else '➕' }}</span>
+                <span id="libraryText">{{ 'In My List' if in_library else 'Add to List' }}</span>
+              </button>
+              <a href="{{ url_for('movie_rating_page', movie_id=movie.id) }}" class="pbtn">
+                ⭐ Rate this Movie
+              </a>
             </div>
           </div>
-
         </div>
       </div>
     </main>
@@ -139,6 +164,4 @@
     </div>
   </div>
 </div>
-
-<script src="{{ url_for('static', filename='js/view_movie.js') }}"></script>
 {% endblock %}

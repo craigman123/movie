@@ -1,0 +1,292 @@
+/* ═══════════════════════════════════════════════════════
+   viewSales.css  —  Admin Sales Dashboard
+   Builds on movieViewAdmin.css dark theme
+   ═══════════════════════════════════════════════════════ */
+
+/* ── KPI Cards (reuse .cards-container / .card from movieViewAdmin) ── */
+.cards-container {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.card {
+    background: #2a2a2a;
+    border: 1px solid #383838;
+    border-radius: 12px;
+    padding: 14px 20px;
+    min-width: 120px;
+    text-align: center;
+    transition: transform .2s, border-color .2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    border-color: #46e59d55;
+}
+
+.card h3 {
+    font-size: 9px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.card p {
+    font-size: 1.8vw;
+    font-weight: 700;
+    color: #46e59d;
+    line-height: 1;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ── Active sidebar item ── */
+.active-menu {
+    background: #1a3a2a !important;
+    border-left: 3px solid #46e59d;
+}
+
+/* ── Chart Grid ─────────────────────────────────────────── */
+.charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.chart-card {
+    background: #262626;
+    border: 1px solid #333;
+    border-radius: 14px;
+    padding: 20px 24px;
+    transition: border-color .2s;
+}
+
+.chart-card:hover {
+    border-color: #444;
+}
+
+.chart-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.chart-title {
+    font-size: 1vw;
+    font-weight: 600;
+    color: #e0e7ff;
+    letter-spacing: .5px;
+}
+
+/* Chart tab switcher */
+.chart-tabs {
+    display: flex;
+    background: #1e1e1e;
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+}
+
+.ctab {
+    padding: 5px 14px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #64748b;
+    font-size: 12px;
+    font-family: 'Segoe UI', sans-serif;
+    cursor: pointer;
+    transition: all .15s;
+}
+
+.ctab.active {
+    background: #46e59d22;
+    color: #46e59d;
+    font-weight: 600;
+}
+
+/* Donut legend */
+.donut-legend {
+    text-align: center;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.dl-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* ── Sales Sections ─────────────────────────────────────── */
+.sales-section {
+    background: #262626;
+    border: 1px solid #333;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 22px;
+    width: 100%;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.section-header h5 {
+    font-size: 1vw;
+    font-weight: 600;
+    color: #e0e7ff;
+    letter-spacing: .5px;
+}
+
+.badge-count {
+    font-size: 11px;
+    color: #64748b;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+/* ── Tables ─────────────────────────────────────────────── */
+.sales-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .88vw;
+}
+
+.sales-table thead tr {
+    background: #1e293b;
+}
+
+.sales-table th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: .75vw;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.sales-table td {
+    padding: 11px 14px;
+    color: #cbd5e1;
+    border-bottom: 1px solid #2a2a2a;
+    white-space: nowrap;
+}
+
+.sales-table tbody tr:hover {
+    background: #2c2c2c;
+}
+
+.sales-table tbody tr:last-child td {
+    text-align: center;
+}
+
+.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.rev {
+    color: #46e59d;
+    font-weight: 600;
+}
+
+.no-data {
+    text-align: center;
+    color: #4a5568;
+    padding: 28px !important;
+    font-style: italic;
+}
+
+/* Rank */
+.rank-cell { text-align: center; }
+.rank { font-size: .85vw; color: #64748b; }
+
+/* Genre pill */
+.genre-pill {
+    background: #1e293b;
+    color: #94a3b8;
+    padding: 3px 9px;
+    border-radius: 10px;
+    font-size: .75vw;
+    white-space: nowrap;
+}
+
+/* Movie name */
+.movie-name-cell {
+    font-weight: 600;
+    color: #f1f5f9;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Share bar */
+.share-bar-bg {
+    display: inline-block;
+    width: 80px;
+    height: 6px;
+    background: #1e293b;
+    border-radius: 3px;
+    vertical-align: middle;
+    overflow: hidden;
+    margin-right: 6px;
+}
+
+.share-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #46e59d, #6366f1);
+    border-radius: 3px;
+    transition: width .5s ease;
+}
+
+.share-pct {
+    font-size: .75vw;
+    color: #64748b;
+}
+
+/* Ref code */
+.ref-code {
+    font-size: .75vw;
+    font-family: monospace;
+    color: #64748b;
+    letter-spacing: .5px;
+}
+
+/* Ticket type badge */
+.type-badge {
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: .75vw;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.type-badge.standard {
+    background: rgba(70, 229, 157, .12);
+    color: #46e59d;
+    border: 1px solid rgba(70, 229, 157, .2);
+}
+
+.type-badge.premium {
+    background: rgba(99, 102, 241, .15);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, .25);
+}

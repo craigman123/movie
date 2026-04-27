@@ -1,18 +1,23 @@
 {% extends "base.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/viewUsers.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movieViewAdmin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/viewSales.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-pack.css') }}">
-    <title>View Users</title>
+    <script src ="{{ url_for('static', filename='js/viewSales.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <title>LUMA Admin — Sales</title>
 {% endblock %}
 
 {% block body %}
-    <aside class="sidebar" id="sidebar">
+
+    <!-- ══ SIDEBAR (untouched from movieViewAdmin) ══════════════════ -->
+    <aside class="sidebar sidehide" id="sidebar">
         <nav class="nav">
             <div class="logoandname">
                 <header class="head">
                     <div class="image">
-                        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" class="logo" alt="Luma"></img>
+                        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" class="logo" alt="Luma">
                         <span class="AdminName">WELCOME ADMIN,<br> {{ user.username }} </span>
                     </div>
                 </header>
@@ -23,63 +28,62 @@
                     <ul class="menu">
                         <li class="menu-btn">
                             <a href="{{ url_for('overview') }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"]
-                                fill="#ffffff" viewBox="0 0 24 24" style="fill: rgb(255, 255, 255);transform: ;msFilter:;">
-                                <path d="M4.626 8.878a7.937 7.937 0 0 1 1.71-2.541 7.92 7.92 0 0 1 2.542-1.71 8.12 8.12 0 0 1 6.13-.041A2.49 2.49 0 0 0 17.5 7C18.886 7 20 5.886 20 4.5S18.886 2 17.5 2c-.689 0-1.312.276-1.763.725-2.431-.973-5.223-.958-7.635.059-1.19.5-2.26 1.22-3.18 2.139A9.98 9.98 0 0 0 2 12h2c0-1.086.211-2.136.626-3.122zm14.747 6.244c-.401.952-.977 1.808-1.71 2.541s-1.589 1.309-2.542 1.71a8.12 8.12 0 0 1-6.13.041A2.488 2.488 0 0 0 6.5 17C5.114 17 4 18.114 4 19.5S5.114 22 6.5 22c.689 0 1.312-.276 1.763-.725A9.973 9.973 0 0 0 12 22a9.983 9.983 0 0 0 9.217-6.102A9.992 9.992 0 0 0 22 12h-2a7.993 7.993 0 0 1-.627 3.122z">
-                                </path><path d="M12 7.462c-2.502 0-4.538 2.036-4.538 4.538S9.498 16.538 12 16.538c2.502 0 4.538-2.036 4.538-4.538S14.502 7.462 12 7.462z"></path></svg>
-                            <span>OVERVIEW</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="0 0 24 24">
+                                    <path d="M4.626 8.878a7.937 7.937 0 0 1 1.71-2.541 7.92 7.92 0 0 1 2.542-1.71 8.12 8.12 0 0 1 6.13-.041A2.49 2.49 0 0 0 17.5 7C18.886 7 20 5.886 20 4.5S18.886 2 17.5 2c-.689 0-1.312.276-1.763.725-2.431-.973-5.223-.958-7.635.059-1.19.5-2.26 1.22-3.18 2.139A9.98 9.98 0 0 0 2 12h2c0-1.086.211-2.136.626-3.122zm14.747 6.244c-.401.952-.977 1.808-1.71 2.541s-1.589 1.309-2.542 1.71a8.12 8.12 0 0 1-6.13.041A2.488 2.488 0 0 0 6.5 17C5.114 17 4 18.114 4 19.5S5.114 22 6.5 22c.689 0 1.312-.276 1.763-.725A9.973 9.973 0 0 0 12 22a9.983 9.983 0 0 0 9.217-6.102A9.992 9.992 0 0 0 22 12h-2a7.993 7.993 0 0 1-.627 3.122z"/>
+                                    <path d="M12 7.462c-2.502 0-4.538 2.036-4.538 4.538S9.498 16.538 12 16.538c2.502 0 4.538-2.036 4.538-4.538S14.502 7.462 12 7.462z"/>
+                                </svg>
+                                <span>OVERVIEW</span>
                             </a>
                         </li>
                         <li class="menu-btn">
                             <a href="{{ url_for('admin_dashboard') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"  
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M18 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.33L22 17V7l-4 3.33zm-2 12H4V6h12z"></path><path d="M11 8H9v3H6v2h3v3h2v-3h3v-2h-3z"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M18 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.33L22 17V7l-4 3.33zm-2 12H4V6h12z"/>
+                                    <path d="M11 8H9v3H6v2h3v3h2v-3h3v-2h-3z"/>
                                 </svg>
                                 <span>ADD MOVIES</span>
                             </a>
                         </li>
                         <li class="menu-btn">
                             <a href="{{ url_for('view_users') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M8.5 10.5c0 2 1.5 3.5 3.5 3.5s3.5-1.5 3.5-3.5S14 7 12 7s-3.5 1.5-3.5 3.5m5 0c0 .88-.62 1.5-1.5 1.5s-1.5-.62-1.5-1.5S11.12 9 12 9s1.5.62 1.5 1.5"></path><path d="m20.53 7.15-8-5c-.32-.2-.74-.2-1.06 0l-8 5c-.29.18-.47.5-.47.85v8c0 .34.18.67.47.85l8 5a1.01 1.01 0 0 0 1.06 0l8-5c.29-.18.47-.5.47-.85V8c0-.34-.18-.67-.47-.85M12 19.82l-3.1-1.94c.55-.56 1.29-.88 2.1-.88h2c.8 0 1.55.32 2.1.88zm7-4.38-2.19 1.37A4.97 4.97 0 0 0 13 15h-2c-1.48 0-2.87.68-3.81 1.81L5 15.44V8.55l7-4.38 7 4.38z"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M8.5 10.5c0 2 1.5 3.5 3.5 3.5s3.5-1.5 3.5-3.5S14 7 12 7s-3.5 1.5-3.5 3.5m5 0c0 .88-.62 1.5-1.5 1.5s-1.5-.62-1.5-1.5S11.12 9 12 9s1.5.62 1.5 1.5"/>
+                                    <path d="m20.53 7.15-8-5c-.32-.2-.74-.2-1.06 0l-8 5c-.29.18-.47.5-.47.85v8c0 .34.18.67.47.85l8 5a1.01 1.01 0 0 0 1.06 0l8-5c.29-.18.47-.5.47-.85V8c0-.34-.18-.67-.47-.85M12 19.82l-3.1-1.94c.55-.56 1.29-.88 2.1-.88h2c.8 0 1.55.32 2.1.88zm7-4.38-2.19 1.37A4.97 4.97 0 0 0 13 15h-2c-1.48 0-2.87.68-3.81 1.81L5 15.44V8.55l7-4.38 7 4.38z"/>
                                 </svg>
-                                <span>USERS</span>  
-                            </a>  
+                                <span>USERS</span>
+                            </a>
                         </li>
-                        <li class="menu-btn">
+                        <li class="menu-btn active-menu">
                             <a href="{{ url_for('view_sales') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh" 
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path><path d="M12 11c-2 0-2-.63-2-1 0-.48.7-1 2-1 1.18 0 1.39.64 1.4 1.02l1-.02h1c0-1.03-.67-2.47-2.4-2.88V6h-2v1.09C9.03 7.42 8 8.72 8 10c0 1.12.52 3 4 3 2 0 2 .68 2 1 0 .42-.62 1-2 1-1.84 0-1.99-.86-2-1H8c0 .92.66 2.55 3 2.92V18h2v-1.09c1.97-.33 3-1.63 3-2.91 0-1.12-.52-3-4-3"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"/>
+                                    <path d="M12 11c-2 0-2-.63-2-1 0-.48.7-1 2-1 1.18 0 1.39.64 1.4 1.02l1-.02h1c0-1.03-.67-2.47-2.4-2.88V6h-2v1.09C9.03 7.42 8 8.72 8 10c0 1.12.52 3 4 3 2 0 2 .68 2 1 0 .42-.62 1-2 1-1.84 0-1.99-.86-2-1H8c0 .92.66 2.55 3 2.92V18h2v-1.09c1.97-.33 3-1.63 3-2.91 0-1.12-.52-3-4-3"/>
                                 </svg>
                                 <span>SALES</span>
                             </a>
                         </li>
                         <li class="menu-btn">
                             <a href="{{ url_for('movieViewAdmin') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2M9.54 9 6.87 5h2.6l2.67 4zm5 0-2.67-4h2.6l2.67 4zM4 5h.46l2.67 4H4zm0 14v-8h16V9h-.46l-2.67-4H20v14z"></path><path d="m10 18 5-3-5-3z"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2M9.54 9 6.87 5h2.6l2.67 4zm5 0-2.67-4h2.6l2.67 4zM4 5h.46l2.67 4H4zm0 14v-8h16V9h-.46l-2.67-4H20v14z"/>
+                                    <path d="m10 18 5-3-5-3z"/>
                                 </svg>
                                 <span>MOVIES</span>
                             </a>
                         </li>
                         <li class="menu-btn">
                             <a href="{{ url_for('view_logs') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M4 11h16v2H4zm0-5h16v2H4zm0 10h16v2H4z"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M4 11h16v2H4zm0-5h16v2H4zm0 10h16v2H4z"/>
                                 </svg>
                                 <span>LOGS</span>
                             </a>
                         </li>
                         <li class="menu-btn">
                             <a href="{{ url_for('AdminAccount') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M8.5 12a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3m7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3"></path><path d="M12 22c5.51 0 10-4.49 10-10S17.51 2 12 2 2 6.49 2 12s4.49 10 10 10m7.7-12.13a7.06 7.06 0 0 1-4.83-3.51c.15-.28.3-.56.42-.85.09-.22.17-.44.24-.67 2.02 1 3.55 2.82 4.17 5.03M12 4c.57 0 1.12.06 1.65.17-.06.19-.13.37-.2.55-.15.35-.33.68-.53 1l-.04.06c-.31.48-.67.91-1.07 1.29-.05.05-.11.1-.16.14-.14.13-.29.25-.45.37-.07.05-.13.1-.2.15-.18.12-.36.24-.55.35-.04.02-.08.05-.11.07-.22.12-.45.23-.69.32-.08.03-.17.06-.25.09-.17.06-.34.12-.52.17-.09.02-.17.05-.26.07-.19.04-.38.08-.57.11-.08.01-.16.03-.24.04a6.8 6.8 0 0 1-3.05-.33C6.04 5.89 8.8 4 12 4m-7.86 6.52c.92.31 1.87.48 2.86.48.31 0 .62-.02.93-.05.11-.01.23-.04.34-.05.18-.03.37-.05.55-.08h.03c.12-.03.25-.06.37-.1.17-.04.33-.08.5-.13s.33-.12.49-.18c.1-.04.21-.07.31-.11.01 0 .02-.01.04-.02.16-.07.32-.15.48-.23.11-.05.21-.1.32-.16.15-.08.29-.17.44-.26.08-.05.17-.1.26-.16.03-.02.05-.04.07-.05.12-.08.24-.18.36-.27s.25-.19.37-.29l.28-.25c.09-.08.18-.15.26-.24.05-.05.1-.11.14-.16.03-.03.06-.06.09-.08a9.07 9.07 0 0 0 6.4 3.82v.06c0 4.41-3.59 8-8 8s-8-3.59-8-8c0-.5.05-1 .14-1.48Z"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M8.5 12a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3m7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3"/>
+                                    <path d="M12 22c5.51 0 10-4.49 10-10S17.51 2 12 2 2 6.49 2 12s4.49 10 10 10m7.7-12.13a7.06 7.06 0 0 1-4.83-3.51c.15-.28.3-.56.42-.85.09-.22.17-.44.24-.67 2.02 1 3.55 2.82 4.17 5.03M12 4c.57 0 1.12.06 1.65.17-.06.19-.13.37-.2.55-.15.35-.33.68-.53 1l-.04.06c-.31.48-.67.91-1.07 1.29-.05.05-.11.1-.16.14-.14.13-.29.25-.45.37-.07.05-.13.1-.2.15-.18.12-.36.24-.55.35-.04.02-.08.05-.11.07-.22.12-.45.23-.69.32-.08.03-.17.06-.25.09-.17.06-.34.12-.52.17-.09.02-.17.05-.26.07-.19.04-.38.08-.57.11-.08.01-.16.03-.24.04a6.8 6.8 0 0 1-3.05-.33C6.04 5.89 8.8 4 12 4m-7.86 6.52c.92.31 1.87.48 2.86.48.31 0 .62-.02.93-.05.11-.01.23-.04.34-.05.18-.03.37-.05.55-.08h.03c.12-.03.25-.06.37-.1.17-.04.33-.08.5-.13s.33-.12.49-.18c.1-.04.21-.07.31-.11.01 0 .02-.01.04-.02.16-.07.32-.15.48-.23.11-.05.21-.1.32-.16.15-.08.29-.17.44-.26.08-.05.17-.1.26-.16.03-.02.05-.04.07-.05.12-.08.24-.18.36-.27s.25-.19.37-.29l.28-.25c.09-.08.18-.15.26-.24.05-.05.1-.11.14-.16.03-.03.06-.06.09-.08a9.07 9.07 0 0 0 6.4 3.82v.06c0 4.41-3.59 8-8 8s-8-3.59-8-8c0-.5.05-1 .14-1.48Z"/>
                                 </svg>
                                 <span>ACCOUNT</span>
                             </a>
@@ -87,10 +91,316 @@
                     </ul>
                 </div>
             </div>
-        </nav> 
+        </nav>
     </aside>
 
-    <section> 
-        
-    </section>
+    <!-- ══ MAIN CONTENT ══════════════════════════════════════════════ -->
+    <main class="main-content">
+
+        <!-- Page Header -->
+        <div class="movies-header">
+            <h4>SALES DASHBOARD</h4>
+
+            <!-- KPI Cards -->
+            <div class="cards-container">
+                <div class="card">
+                    <h3>TOTAL REVENUE</h3>
+                    <p>₱{{ "{:,}".format(total_revenue) }}</p>
+                </div>
+                <div class="card">
+                    <h3>TOTAL TICKETS</h3>
+                    <p>{{ total_tickets }}</p>
+                </div>
+                <div class="card">
+                    <h3>STANDARD</h3>
+                    <p>{{ standard_count }}</p>
+                </div>
+                <div class="card">
+                    <h3>PREMIUM</h3>
+                    <p>{{ premium_count }}</p>
+                </div>
+                <div class="card">
+                    <h3>UNIQUE BUYERS</h3>
+                    <p>{{ unique_buyers }}</p>
+                </div>
+            </div>
+
+            <!-- Filter Form -->
+            <form method="GET" action="{{ url_for('view_sales') }}" class="search-container">
+                <input type="text" name="search" placeholder="Search movie or buyer..." value="{{ request.args.get('search', '') }}">
+                <button title="Search" type="submit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18 10c0-4.41-3.59-8-8-8s-8 3.59-8 8 3.59 8 8 8c1.85 0 3.54-.63 4.9-1.69l5.1 5.1L21.41 20l-5.1-5.1A8 8 0 0 0 18 10M4 10c0-3.31 2.69-6 6-6s6 2.69 6 6-2.69 6-6 6-6-2.69-6-6"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+
+        <!-- ── Chart Row ──────────────────────────────────────────── -->
+        <div class="charts-row">
+
+            <!-- Revenue Over Time -->
+            <div class="chart-card chart-wide">
+                <div class="chart-card-header">
+                    <span class="chart-title">Revenue Over Time</span>
+                    <div class="chart-tabs">
+                        <button class="ctab active" onclick="switchRevenueChart(this,'daily')">Daily</button>
+                        <button class="ctab" onclick="switchRevenueChart(this,'monthly')">Monthly</button>
+                    </div>
+                </div>
+                <canvas id="revenueChart" height="90"></canvas>
+            </div>
+
+            <!-- Ticket Type Donut -->
+            <div class="chart-card chart-narrow">
+                <div class="chart-card-header">
+                    <span class="chart-title">Ticket Types</span>
+                </div>
+                <canvas id="typeChart" height="190"></canvas>
+                <div class="donut-legend">
+                    <span class="dl-dot" style="background:#46e59d"></span> Standard &nbsp;
+                    <span class="dl-dot" style="background:#6366f1"></span> Premium
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── Second Chart Row ───────────────────────────────────── -->
+        <div class="charts-row">
+
+            <!-- Revenue per Movie -->
+            <div class="chart-card chart-wide">
+                <div class="chart-card-header">
+                    <span class="chart-title">Revenue by Movie</span>
+                </div>
+                <canvas id="movieRevenueChart" height="110"></canvas>
+            </div>
+
+            <!-- Venue Breakdown -->
+            <div class="chart-card chart-narrow">
+                <div class="chart-card-header">
+                    <span class="chart-title">Sales by Venue</span>
+                </div>
+                <canvas id="venueChart" height="190"></canvas>
+            </div>
+
+        </div>
+
+        <!-- ── Top Movies Table ───────────────────────────────────── -->
+        <div class="sales-section">
+            <div class="section-header">
+                <h5>🏆 Top Performing Movies</h5>
+            </div>
+            <table class="sales-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Movie</th>
+                        <th>Genre</th>
+                        <th>Tickets Sold</th>
+                        <th>Standard</th>
+                        <th>Premium</th>
+                        <th>Revenue</th>
+                        <th>Share</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in top_movies %}
+                    <tr>
+                        <td class="rank-cell">
+                            {% if loop.index == 1 %}<span class="rank gold">🥇</span>
+                            {% elif loop.index == 2 %}<span class="rank silver">🥈</span>
+                            {% elif loop.index == 3 %}<span class="rank bronze">🥉</span>
+                            {% else %}<span class="rank">{{ loop.index }}</span>{% endif %}
+                        </td>
+                        <td class="movie-name-cell">{{ m.movie_name }}</td>
+                        <td><span class="genre-pill">{{ m.genre }}</span></td>
+                        <td class="num">{{ m.ticket_count }}</td>
+                        <td class="num">{{ m.standard_count }}</td>
+                        <td class="num">{{ m.premium_count }}</td>
+                        <td class="num rev">₱{{ "{:,}".format(m.revenue) }}</td>
+                        <td>
+                            <div class="share-bar-bg">
+                                <div class="share-bar-fill" style="width:{{ m.share }}%"></div>
+                            </div>
+                            <span class="share-pct">{{ "%.1f"|format(m.share) }}%</span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="no-data">No sales data yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ── Recent Transactions Table ─────────────────────────── -->
+        <div class="sales-section">
+            <div class="section-header">
+                <h5>🧾 Recent Transactions</h5>
+                <span class="badge-count">{{ recent_tickets | length }} shown</span>
+            </div>
+            <table class="sales-table">
+                <thead>
+                    <tr>
+                        <th>Ref Code</th>
+                        <th>Buyer</th>
+                        <th>Movie</th>
+                        <th>Venue</th>
+                        <th>Date</th>
+                        <th>Seat</th>
+                        <th>Type</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in recent_tickets %}
+                    <tr>
+                        <td class="ref-code">{{ t.reference_code }}</td>
+                        <td>{{ t.buyer }}</td>
+                        <td>{{ t.movie }}</td>
+                        <td>{{ t.venue }}</td>
+                        <td>{{ t.date }}</td>
+                        <td class="num">{{ t.seat }}</td>
+                        <td>
+                            <span class="type-badge {{ t.ticket_type }}">{{ t.ticket_type | capitalize }}</span>
+                        </td>
+                        <td class="num rev">₱{{ "{:,}".format(t.price) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="no-data">No transactions found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+<script>
+    const dailyLabels   = {{ daily_labels   | tojson }};
+        const dailyRevenue  = {{ daily_revenue  | tojson }};
+        const monthlyLabels = {{ monthly_labels | tojson }};
+        const monthlyRevenue= {{ monthly_revenue| tojson }};
+        const movieNames    = {{ movie_chart_names   | tojson }};
+        const movieRevenues = {{ movie_chart_revenues| tojson }};
+        const venueNames    = {{ venue_chart_names   | tojson }};
+        const venueCounts   = {{ venue_chart_counts  | tojson }};
+        const standardCount = {{ standard_count }};
+        const premiumCount  = {{ premium_count  }};
+
+        /* ── shared chart defaults ── */
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+        Chart.defaults.font.family = 'Segoe UI, sans-serif';
+
+        /* ── Revenue Line Chart ── */
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const gradient = revenueCtx.createLinearGradient(0, 0, 0, 250);
+        gradient.addColorStop(0,   'rgba(70, 229, 157, 0.35)');
+        gradient.addColorStop(1,   'rgba(70, 229, 157, 0.00)');
+
+        let revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: 'Revenue (₱)',
+                    data: dailyRevenue,
+                    borderColor: '#46e59d',
+                    backgroundColor: gradient,
+                    borderWidth: 2.5,
+                    pointBackgroundColor: '#46e59d',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ₱' + ctx.parsed.y.toLocaleString() }}},
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.04)' }},
+                    y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => '₱' + v.toLocaleString() }}
+                }
+            }
+        });
+
+        function switchRevenueChart(btn, mode) {
+            document.querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            revenueChart.data.labels  = mode === 'daily' ? dailyLabels   : monthlyLabels;
+            revenueChart.data.datasets[0].data = mode === 'daily' ? dailyRevenue : monthlyRevenue;
+            revenueChart.update();
+        }
+
+        /* ── Ticket Type Donut ── */
+        new Chart(document.getElementById('typeChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Standard', 'Premium'],
+                datasets: [{
+                    data: [standardCount, premiumCount],
+                    backgroundColor: ['#46e59d', '#6366f1'],
+                    borderColor: ['#1e1e1e','#1e1e1e'],
+                    borderWidth: 3,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '68%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed }}
+                }
+            }
+        });
+
+        /* ── Movie Revenue Bar ── */
+        new Chart(document.getElementById('movieRevenueChart'), {
+            type: 'bar',
+            data: {
+                labels: movieNames,
+                datasets: [{
+                    label: 'Revenue (₱)',
+                    data: movieRevenues,
+                    backgroundColor: movieNames.map((_, i) =>
+                        `hsla(${160 + i * 22}, 70%, 55%, 0.8)`
+                    ),
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ₱' + ctx.parsed.y.toLocaleString() }}},
+                scales: {
+                    x: { grid: { display: false }},
+                    y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => '₱' + v.toLocaleString() }}
+                }
+            }
+        });
+
+        /* ── Venue Polar/Bar ── */
+        new Chart(document.getElementById('venueChart'), {
+            type: 'polarArea',
+            data: {
+                labels: venueNames,
+                datasets: [{
+                    data: venueCounts,
+                    backgroundColor: ['rgba(99,102,241,0.7)','rgba(70,229,157,0.7)','rgba(245,158,11,0.7)','rgba(239,68,68,0.7)'],
+                    borderColor: '#1e1e1e',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 }}}
+                },
+                scales: { r: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { display: false }}}
+            }
+        });
+</script>
+
 {% endblock %}

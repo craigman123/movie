@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/luma_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/library.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>My Library — LUMA</title>
+{% endblock %}
+
+{% block body %}
+<div id="app">
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="side">
+      <div class="slogo">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height:1.2em;margin-right:10px;">
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Discover</div>
+        <a class="ni" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Community</div>
+        <a class="ni" href="{{ url_for('view_ratings') }}"><span class="nico">⭐</span> Ratings</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Account</div>
+        <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Libraries</div>
+        <a class="ni on" href="{{ url_for('view_library') }}"><span class="nico">💼</span> Library</a>
+      </div>
+      <div class="sbot">
+        <a href="{{ url_for('view_profile') }}" class="uchip">
+          <div class="av"><img src="{{ profile_image }}" alt="Profile Image"></div>
+          <div class="uinf">
+            <div class="uname">{{ user.username }}</div>
+            <div class="urole">
+              {% if user.role == "user" %}
+                <span style="color:var(--gold)">User - Open Profile</span>
+              {% elif user.role == "verified" %}
+                <span style="color:var(--green)">Verified - Open Profile</span>
+              {% else %}
+                <span style="color:var(--text2)">{{ user.role }}</span>
+              {% endif %}
+              <span class="ulgo">↩</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <div class="pg on">
+
+        <div class="phead">
+          <div>
+            <div class="ptitle">My Library</div>
+            <div class="psub">
+              {% if movies %}
+                {{ movies | length }} saved film{% if movies | length != 1 %}s{% endif %}
+              {% else %}
+                No films saved yet
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {% if movies %}
+        <div class="lib-grid">
+          {% for movie in movies %}
+          <a class="lib-card" href="{{ url_for('view_movie', movie_id=movie.id) }}">
+
+            <!-- Poster -->
+            <div class="lib-poster-wrap">
+              {% if movie.movie_image %}
+                <img src="{{ url_for('static', filename='uploads/' + movie.movie_image) }}"
+                     class="lib-poster" alt="{{ movie.movie_name }}">
+              {% else %}
+                <div class="lib-poster-ph">🎬</div>
+              {% endif %}
+
+              <!-- Hover overlay -->
+              <div class="lib-overlay">
+                <span class="lib-view-btn">View Details</span>
+              </div>
+
+              <!-- Remove from library button -->
+              <button class="lib-remove-btn"
+                      data-movie-id="{{ movie.id }}"
+                      title="Remove from library"
+                      onclick="removeFromLibrary(event, {{ movie.id }}, this)">
+                Unlist
+              </button>
+            </div>
+
+            <!-- Info -->
+            <div class="lib-info">
+              <div class="lib-movie-name">{{ movie.movie_name }}</div>
+              <div class="lib-meta">
+                <span class="lib-genre-pill">{{ movie.genre }}</span>
+                <span class="lib-duration">{{ movie.duration }} min</span>
+              </div>
+              <div class="lib-lang">{{ movie.language }} · {{ movie.age_restrict }}</div>
+            </div>
+
+          </a>
+          {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- Empty state -->
+        <div class="lib-empty">
+          <div class="lib-empty-icon">💼</div>
+          <div class="lib-empty-title">Your library is empty</div>
+          <div class="lib-empty-sub">Save movies from the dashboard to build your collection.</div>
+          <a href="{{ url_for('user_dashboard') }}" class="lib-empty-btn">Browse Movies</a>
+        </div>
+        {% endif %}
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<script>
+async function removeFromLibrary(e, movieId, btn) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  try {
+    const res = await fetch(`/library/toggle/${movieId}`, { method: 'POST' });
+    const data = await res.json();
+
+    if (!data.in_library) {
+      // Animate card out then remove
+      const card = btn.closest('.lib-card');
+      card.style.transition = 'opacity 0.3s, transform 0.3s';
+      card.style.opacity = '0';
+      card.style.transform = 'scale(0.93)';
+      setTimeout(() => {
+        card.remove();
+        // Update subtitle count
+        const grid = document.querySelector('.lib-grid');
+        const remaining = grid ? grid.querySelectorAll('.lib-card').length : 0;
+        const sub = document.querySelector('.psub');
+        if (sub) sub.textContent = remaining
+          ? `${remaining} saved film${remaining !== 1 ? 's' : ''}`
+          : 'No films saved yet';
+        if (!remaining && grid) {
+          grid.remove();
+          document.querySelector('.pg.on').insertAdjacentHTML('beforeend', `
+            <div class="lib-empty">
+              <div class="lib-empty-icon">💼</div>
+              <div class="lib-empty-title">Your library is empty</div>
+              <div class="lib-empty-sub">Save movies from the dashboard to build your collection.</div>
+              <a href="/dashboard" class="lib-empty-btn">Browse Movies</a>
+            </div>
+          `);
+        }
+      }, 320);
+    }
+  } catch (err) {
+    console.error('Failed to remove from library:', err);
+  }
+}
+</script>
+{% endblock %}

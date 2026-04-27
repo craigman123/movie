@@ -175,3 +175,30 @@ function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 }
+
+async function toggleLibrary(movieId) {
+  const btn  = document.getElementById('libraryBtn');
+  const icon = document.getElementById('libraryIcon');
+  const text = document.getElementById('libraryText');
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch(`/library/toggle/${movieId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.in_library) {
+      icon.textContent = '🏷️';
+      text.textContent = 'In My List';
+      btn.style.opacity = '1';
+      btn.style.backgroundColor = 'orange';
+    } else {
+      icon.textContent = '➕';
+      text.textContent = 'Add to List';
+      btn.style.opacity = '0.85';
+      btn.style.backgroundColor = '#18a200bf';
+    }
+  } catch(e) {
+    console.error('Library toggle failed', e);
+  } finally {
+    btn.disabled = false;
+  }
+}

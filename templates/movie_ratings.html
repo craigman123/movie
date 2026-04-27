@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block head %}
+  <title>LUMA — Rate {{ movie.movie_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/luma_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movie_ratings.css') }}">
+    <script src="{{ url_for('static', filename='js/movie_ratings.js') }}"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+{% endblock %}
+
+{% block body %}
+<div id="app">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="side">
+      <div class="slogo">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height:1.2em;margin-right:10px;">
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Discover</div>
+        <a class="ni" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Community</div>
+        <a class="ni on" href="{{ url_for('view_ratings') }}"><span class="nico">⭐</span> Ratings</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Account</div>
+        <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Libraries</div>
+        <a class="ni" href="{{ url_for('view_library') }}"><span class="nico">💼</span> Library</a>
+      </div>
+      <div class="sbot">
+        <a href="{{ url_for('view_profile') }}" class="uchip">
+          <div class="av">
+            <img src="{{ profile_image }}" alt="Profile Image">
+          </div>
+          <div class="uinf">
+            <div class="uname">{{ user.username }}</div>
+            <div class="urole">
+              {% if user.role == "user" %}
+                <span style="color:var(--gold)">User · Open Profile</span>
+              {% elif user.role == "verified" %}
+                <span style="color:var(--green)">Verified · Open Profile</span>
+              {% else %}
+                <span style="color:var(--text2)">{{ user.role }}</span>
+              {% endif %}
+              <span class="ulgo">↩</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="rating-wrap">
+
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+          <a href="{{ url_for('user_dashboard') }}">Movies</a>
+          <span class="bsep">›</span>
+          <a href="{{ url_for('movie_detail', movie_id=movie.id) }}">{{ movie.movie_name }}</a>
+          <span class="bsep">›</span>
+          <span class="cur">Rate &amp; Review</span>
+        </nav>
+
+        <!-- Movie Hero -->
+        <div class="movie-hero-card">
+          <div class="movie-poster-sm">
+            <img src="{{ url_for('static', filename='uploads/' + movie.movie_image) }}" alt="{{ movie.movie_name }}">
+          </div>
+          <div class="movie-hero-info">
+            <p class="movie-hero-eyebrow">LUMA Cinema · Rate this film</p>
+            <h1 class="movie-hero-title">{{ movie.movie_name }}</h1>
+            <div class="movie-hero-chips">
+              <span class="hchip gold">{{ movie.genre | title }}</span>
+              <span class="hchip">{{ movie.language }}</span>
+              <span class="hchip">{{ movie.duration }} min</span>
+              <span class="hchip">{{ movie.age_restrict }}</span>
+            </div>
+            <p class="movie-hero-desc">{{ movie.description[:160] }}{% if movie.description|length > 160 %}…{% endif %}</p>
+            {% if user_rating %}
+            <div class="existing-badge">
+              <span>Your rating:</span>
+              <span>{% for i in range(1,6) %}{% if i <= user_rating.stars %}⭐{% else %}☆{% endif %}{% endfor %}</span>
+              <strong>{{ user_rating.stars }}/5</strong>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="inline-alert {{ 'success' if category == 'success' else 'error' }}">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        <!-- Rating Form -->
+        <div class="section-card">
+          <p class="section-label">Your Review</p>
+          <p class="section-title">{{ 'Edit Your Rating' if user_rating else 'Leave a Rating' }}</p>
+
+          {% if not can_rate %}
+          <div class="inline-alert error" style="display:block;">
+            You need a booked ticket for this movie before you can leave a rating.
+            <a href="{{ url_for('user_dashboard') }}" style="color:var(--gold);text-decoration:none;margin-left:6px;">Browse movies →</a>
+          </div>
+          {% else %}
+          <form method="POST" action="{{ url_for('submit_rating', movie_id=movie.id) }}" id="ratingForm">
+
+            <!-- Stars -->
+            <div class="star-widget">
+              <div class="stars-row" id="starsRow">
+                {% for i in range(1, 6) %}
+                <button type="button" class="star-btn {% if user_rating and i <= user_rating.stars %}sel{% endif %}"
+                        data-val="{{ i }}"
+                        onclick="selectStar({{ i }})"
+                        onmouseenter="hoverStar({{ i }})"
+                        onmouseleave="unhover()">★</button>
+                {% endfor %}
+              </div>
+              <div class="rating-lbl" id="ratingLbl">
+                {{ ['','Terrible','Poor','Average','Good','Excellent'][user_rating.stars] if user_rating else 'Select a rating' }}
+              </div>
+              <div class="rating-score" id="ratingScore">
+                {% if user_rating %}{{ user_rating.stars }}.0 / 5.0{% else %}— / 5.0{% endif %}
+              </div>
+            </div>
+
+            <input type="hidden" name="stars" id="starsInput" value="{{ user_rating.stars if user_rating else '' }}">
+
+            <div class="sep"></div>
+
+            <!-- Review Text -->
+            <label class="rlabel" for="reviewText">Written Review <span style="color:var(--text3)">(optional)</span></label>
+            <textarea class="rtextarea" id="reviewText" name="review" maxlength="500"
+                      placeholder="Share your thoughts about this film…">{{ user_rating.review if user_rating and user_rating.review else '' }}</textarea>
+            <div class="char-count"><span id="charCount">{{ user_rating.review|length if user_rating and user_rating.review else 0 }}</span> / 500</div>
+
+            <div class="submit-row">
+              <p class="submit-note">
+                {% if user_rating %}
+                  Updating your existing review. <span>Changes are visible to everyone.</span>
+                {% else %}
+                  Only ticket holders can rate. <span>Your name will appear publicly.</span>
+                {% endif %}
+              </p>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                {% if user_rating %}
+                <form method="POST" action="{{ url_for('delete_rating', movie_id=movie.id) }}"
+                      style="display:inline" onsubmit="return confirm('Remove your rating for this movie?')">
+                  <button type="submit" class="sbtn-del">🗑 Remove</button>
+                </form>
+                {% endif %}
+                <button type="submit" class="sbtn-primary" id="submitBtn"
+                        {% if not user_rating %}disabled{% endif %}>
+                  ⭐ {{ 'Update Rating' if user_rating else 'Submit Rating' }}
+                </button>
+              </div>
+            </div>
+
+          </form>
+          {% endif %}
+        </div>
+
+        <!-- Community Ratings -->
+        <div class="section-card">
+          <div class="community-top">
+            <div>
+              <p class="section-label">Community</p>
+              <p class="section-title" style="margin-bottom:0">What Others Think</p>
+            </div>
+            {% if avg_rating %}
+            <div style="text-align:right;">
+              <div style="display:flex;align-items:baseline;gap:8px;justify-content:flex-end;">
+                <div class="avg-number">{{ "%.1f"|format(avg_rating) }}</div>
+                <div class="avg-denom">/ 5</div>
+              </div>
+              <div class="avg-stars">{% for i in range(1,6) %}{% if i <= avg_rating|round %}⭐{% else %}☆{% endif %}{% endfor %}</div>
+              <div class="avg-count">{{ total_ratings }} rating{{ 's' if total_ratings != 1 }}</div>
+            </div>
+            {% else %}
+            <span style="font-size:12px;color:var(--text3);">No ratings yet</span>
+            {% endif %}
+          </div>
+
+          {% if total_ratings %}
+          <div class="breakdown-bars">
+            {% for star_val in [5, 4, 3, 2, 1] %}
+            {% set count = rating_breakdown.get(star_val, 0) %}
+            {% set pct = (count / total_ratings * 100)|round(1) if total_ratings else 0 %}
+            <div class="bar-row">
+              <span class="bar-label">{{ star_val }}</span>
+              <span>★</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:{{ pct }}%"></div>
+              </div>
+              <span class="bar-count">{{ count }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="sep"></div>
+          {% endif %}
+
+          <div class="review-list">
+            {% if all_ratings %}
+              {% for r in all_ratings %}
+              <div class="review-item {% if r.user_id == user.id %}is-mine{% endif %}">
+                <div class="review-top">
+                  <div class="reviewer-info">
+                    <div class="reviewer-av">
+                      {% if r.user.profile and r.user.profile.profile_image %}
+                        <img src="{{ url_for('static', filename='uploads/uploadedPictures/' + r.user.profile.profile_image) }}" alt="">
+                      {% else %}
+                        {{ r.user.username[0].upper() }}
+                      {% endif %}
+                    </div>
+                    <div>
+                      <div class="reviewer-name">
+                        {{ r.user.username }}
+                        {% if r.user_id == user.id %}<span class="you-tag">YOU</span>{% endif %}
+                      </div>
+                      <div class="reviewer-date">{{ r.created_at.strftime('%b %d, %Y') }}</div>
+                    </div>
+                  </div>
+                  <div class="review-stars">
+                    {% for i in range(1,6) %}{% if i <= r.stars %}⭐{% else %}☆{% endif %}{% endfor %}
+                  </div>
+                </div>
+                {% if r.review %}
+                  <p class="review-text">{{ r.review }}</p>
+                {% else %}
+                  <p class="review-text muted">No written review.</p>
+                {% endif %}
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty-reviews">
+                <div class="eico">🎬</div>
+                <div class="etit">No reviews yet</div>
+                <p>Be the first to share your thoughts!</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+    const LABELS = ['', 'Terrible', 'Poor', 'Average', 'Good', 'Excellent'];
+    let sel = {{ user_rating.stars if user_rating else 'null' }};
+
+    function render(upTo, cls) {
+    document.querySelectorAll('.star-btn').forEach(b => {
+      b.classList.remove('sel', 'lit');
+      if (parseInt(b.dataset.val) <= upTo) b.classList.add(cls);
+    });
+  }
+  function display(val) {
+    document.getElementById('ratingLbl').textContent   = val ? LABELS[val] : 'Select a rating';
+    document.getElementById('ratingScore').textContent = val ? val + '.0 / 5.0' : '— / 5.0';
+  }
+  function selectStar(v) {
+    sel = v;
+    document.getElementById('starsInput').value = v;
+    render(v, 'sel'); display(v);
+    document.getElementById('submitBtn').disabled = false;
+  }
+  function hoverStar(v)  { render(v, 'lit');  display(v);   }
+  function unhover()     { render(sel, 'sel'); display(sel); }
+
+  // Char counter
+  const ta = document.getElementById('reviewText');
+  if (ta) ta.addEventListener('input', () => {
+    document.getElementById('charCount').textContent = ta.value.length;
+  });
+</script>
+{% endblock %}

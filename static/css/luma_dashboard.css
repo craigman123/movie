@@ -172,7 +172,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     font-size:13px;
     font-weight:500;
     cursor:pointer;
-    transition:all .18s
+    transition:all .18s;
+    text-decoration: none;
 }
 .pbtn:hover{background:var(--gold-lt);transform:translateY(-1px)}
 .pbtnout {
