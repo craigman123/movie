@@ -58,7 +58,7 @@ app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['LAST_UPDATE'] = int(time.time())
 app.secret_key = "aries_vincent_secret"
-PAYMONGO_SECRET_KEY = os.getenv("PAYMONGO_SECRET_KEY")
+
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///luma.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
