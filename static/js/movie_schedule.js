@@ -12,17 +12,12 @@
   let allSchedules = [];
   let allVenues    = {};          // keyed by venue id
   let selectedDate = todayStr(); // "YYYY-MM-DD"
-  let weekOffset   = 0;          // weeks shifted from today
+  let calYear      = 0;          // currently displayed calendar year
+  let calMonth     = 0;          // currently displayed calendar month (0-11)
 
   /* ── Helpers ── */
   function todayStr() {
     return new Date().toISOString().slice(0, 10);
-  }
-
-  function addDays(dateStr, n) {
-    const d = new Date(dateStr + "T00:00:00");
-    d.setDate(d.getDate() + n);
-    return d.toISOString().slice(0, 10);
   }
 
   function fmtLabel(dateStr) {
@@ -40,24 +35,19 @@
 
   /* ── Schedule status helpers ── */
 
-  // Returns a Date for when a schedule slot ends (date + end_time)
   function slotEndDt(s) {
     return new Date(`${s.date}T${s.end_time}`);
   }
 
-  // Returns a Date for when a schedule slot starts
   function slotStartDt(s) {
     return new Date(`${s.date}T${s.start_time}`);
   }
 
-  // "ended"       — end_time is in the past
-  // "showing"     — start_time <= now <= end_time
-  // "coming_soon" — start_time is in the future
   function slotStatus(s) {
     const now   = new Date();
     const start = slotStartDt(s);
     const end   = slotEndDt(s);
-    if (now > end)               return "ended";
+    if (now > end)                  return "ended";
     if (now >= start && now <= end) return "showing";
     return "coming_soon";
   }
@@ -66,64 +56,79 @@
   //   • all "showing" and "coming_soon" slots
   //   • exactly ONE "ended" slot — the most recently ended one
   function visibleSchedules() {
-    const ended       = allSchedules.filter(s => slotStatus(s) === "ended");
-    const notEnded    = allSchedules.filter(s => slotStatus(s) !== "ended");
-
-    // Pick the single most-recently-ended slot
-    const lastEnded   = ended.sort((a, b) => slotEndDt(b) - slotEndDt(a))[0];
-
+    const ended    = allSchedules.filter(s => slotStatus(s) === "ended");
+    const notEnded = allSchedules.filter(s => slotStatus(s) !== "ended");
+    const lastEnded = ended.sort((a, b) => slotEndDt(b) - slotEndDt(a))[0];
     return lastEnded ? [lastEnded, ...notEnded] : notEnded;
   }
 
   function datesWithShows() {
-    const set = new Set(visibleSchedules().map(s => s.date));
-    return set;
+    return new Set(visibleSchedules().map(s => s.date));
   }
 
-  /* ── Date-strip rendering ── */
-  function renderDateStrip() {
-    const strip  = document.getElementById("dateStrip");
-    const today  = todayStr();
-    const base   = addDays(today, weekOffset * 7);
-    const days   = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
-    const hasSh  = datesWithShows();
+  /* ── Month Calendar rendering ── */
+  function renderCalendar() {
+    const grid  = document.getElementById("calGrid");
+    const label = document.getElementById("calMonthLabel");
+    const today = todayStr();
+    const hasSh = datesWithShows();
 
-    strip.innerHTML = "";
+    // Month name + year label
+    const monthNames = [
+      "January","February","March","April","May","June",
+      "July","August","September","October","November","December"
+    ];
+    label.textContent = `${monthNames[calMonth]} ${calYear}`;
 
-    for (let i = 0; i < 7; i++) {
-      const dateStr = addDays(base, i);
-      const d       = new Date(dateStr + "T00:00:00");
-      const pill    = document.createElement("div");
+    // First day of this month (0=Sun … 6=Sat) and total days
+    const firstDow  = new Date(calYear, calMonth, 1).getDay();
+    const daysInMon = new Date(calYear, calMonth + 1, 0).getDate();
 
-      pill.className = "date-pill";
-      if (dateStr === today)        pill.classList.add("today");
-      if (dateStr === selectedDate) pill.classList.add("active");
-      if (hasSh.has(dateStr))       pill.classList.add("has-shows");
+    grid.innerHTML = "";
 
-      pill.innerHTML = `
-        <div class="dp-day">${days[d.getDay()]}</div>
-        <div class="dp-num">${d.getDate()}</div>
-        <div class="dp-dot"></div>
-      `;
+    // Leading empty cells before the 1st
+    for (let i = 0; i < firstDow; i++) {
+      const blank = document.createElement("div");
+      blank.className = "cal-cell cal-cell--empty";
+      grid.appendChild(blank);
+    }
 
-      pill.addEventListener("click", () => selectDate(dateStr));
-      strip.appendChild(pill);
+    // One cell per day
+    for (let day = 1; day <= daysInMon; day++) {
+      const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const cell    = document.createElement("div");
+
+      cell.className = "cal-cell";
+      if (dateStr === today)        cell.classList.add("cal-cell--today");
+      if (dateStr === selectedDate) cell.classList.add("cal-cell--active");
+      if (hasSh.has(dateStr))       cell.classList.add("cal-cell--has-shows");
+
+      cell.innerHTML = `<span class="cal-day-num">${day}</span><span class="cal-dot"></span>`;
+      cell.addEventListener("click", () => selectDate(dateStr));
+      grid.appendChild(cell);
     }
   }
 
   function selectDate(dateStr) {
     selectedDate = dateStr;
-    renderDateStrip();
+    renderCalendar();
     document.getElementById("schedDateLabel").textContent = fmtLabel(dateStr);
     renderSchedule();
   }
+
+  /* ── Month navigation ── */
+  window.shiftMonth = function (dir) {
+    calMonth += dir;
+    if (calMonth > 11) { calMonth = 0;  calYear++; }
+    if (calMonth < 0)  { calMonth = 11; calYear--; }
+    renderCalendar();
+  };
 
   /* ── Schedule rendering ── */
   function renderSchedule() {
     const container = document.getElementById("schedContent");
     const title     = document.getElementById("schedTitle");
 
-    // Filter visible schedules for the selected date
     const daySchedules = visibleSchedules().filter(s => s.date === selectedDate);
 
     if (daySchedules.length === 0) {
@@ -132,7 +137,7 @@
         <div class="sched-empty">
           <div class="sched-empty-icon">🎬</div>
           <div>No showtimes available for this date.</div>
-          <div style="font-size:11px;margin-top:4px;opacity:.6;">Try another day using the date picker above.</div>
+          <div style="font-size:11px;margin-top:4px;opacity:.6;">Try another day using the calendar above.</div>
         </div>`;
       return;
     }
@@ -150,11 +155,11 @@
     let html = "";
 
     movieIds.forEach((mid, idx) => {
-      const movie    = allMovies.find(m => m.id === parseInt(mid));
+      const movie = allMovies.find(m => m.id === parseInt(mid));
       if (!movie) return;
 
-      const slots    = byMovie[mid].sort((a, b) => a.start_time.localeCompare(b.start_time));
-      const isLast   = idx === movieIds.length - 1;
+      const slots  = byMovie[mid].sort((a, b) => a.start_time.localeCompare(b.start_time));
+      const isLast = idx === movieIds.length - 1;
 
       html += `
         <div class="sched-movie-block">
@@ -230,12 +235,6 @@
       .replace(/"/g, "&quot;");
   }
 
-  /* ── Week navigation ── */
-  window.shiftWeek = function (dir) {
-    weekOffset += dir;
-    renderDateStrip();
-  };
-
   /* ── Data fetching ── */
   async function fetchAll() {
     try {
@@ -252,20 +251,23 @@
       allVenues = {};
       for (const v of venuesArr) allVenues[v.id] = v;
 
-      // Auto-select today (or first available date if today has no shows)
-      const today = todayStr();
+      // Initialise calendar to today's month (or first available show month)
+      const today    = todayStr();
+      const now      = new Date();
+      calYear        = now.getFullYear();
+      calMonth       = now.getMonth();
+
       const available = [...datesWithShows()].sort();
+
       if (!datesWithShows().has(today) && available.length) {
-        // shift weekOffset so the first available date is visible
-        const diff = Math.floor(
-          (new Date(available[0] + "T00:00:00") - new Date(today + "T00:00:00"))
-          / (7 * 24 * 3600 * 1000)
-        );
-        weekOffset = diff;
-        selectedDate = available[0];
+        // Jump to the month of the first available showdate
+        const firstAvail = new Date(available[0] + "T00:00:00");
+        calYear          = firstAvail.getFullYear();
+        calMonth         = firstAvail.getMonth();
+        selectedDate     = available[0];
       }
 
-      renderDateStrip();
+      renderCalendar();
       document.getElementById("schedDateLabel").textContent = fmtLabel(selectedDate);
       renderSchedule();
 

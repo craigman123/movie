@@ -449,6 +449,18 @@
     min-width: 240px;
 }
 
+.venue-add-border {
+    border: none;
+    padding: 15px;
+    border-radius: 8px;
+    background: transparent;
+}
+
+.costum-border {
+    width: 61vw;
+    height: 11.8vw;
+}
+
 /* ── GENERIC CARD ────────────────────────────────────────────── */
 .am-card {
     border-radius: var(--radius-md);
@@ -1283,3 +1295,102 @@ button.Btn,
     display: inline-flex !important;
     min-width: 220px;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Google Maps Venue Selector — add to admin_dashboard.css
+   ═══════════════════════════════════════════════════════════ */
+
+/* Search row */
+.map-search-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.map-search-wrapper .input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.map-search-btn {
+    flex-shrink: 0;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #46e59d, #2eb87a);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.map-search-btn:hover { opacity: 0.85; }
+
+/* Map preview wrapper */
+.map-preview-wrapper {
+    z-index: 9999;
+    display:none;
+    margin-top: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Actions bar below the map */
+.map-preview-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px 4px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.map-selected-label {
+    font-size: 13px;
+    color: #a0f0d0;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.map-preview-btns {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Directions button */
+.map-directions-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: linear-gradient(135deg, #4a9eff, #2563eb);
+    border: none;
+    border-radius: 7px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.map-directions-btn:hover { opacity: 0.85; }
+
+/* Clear button */
+.map-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    background: rgba(255, 80, 80, 0.2);
+    border: 1px solid rgba(255, 80, 80, 0.4);
+    border-radius: 7px;
+    color: #f87171;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.map-clear-btn:hover { background: rgba(255, 80, 80, 0.35); }

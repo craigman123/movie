@@ -361,12 +361,15 @@
 }
 
 .card h3 {
-  font-size: 9px;
-  font-weight: 500;
+  font-size: 1.1vw;
+  font-weight: bolder;
   color: var(--text3);
   letter-spacing: 1.4px;
   text-transform: uppercase;
   margin-bottom: 6px;
+}
+.sico {
+  top: 50%;
 }
 
 .card p {

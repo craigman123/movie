@@ -303,14 +303,192 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // ── Map border ────────────────────────────────────────────
     const mapBorder   = document.querySelector('.map-border');
-    const mapInputs   = mapBorder?.querySelectorAll('input.input') || [];
 
     function updateMapBorder() {
-        const all = Array.from(mapInputs).every(i => i.value.trim() !== '');
-        if (mapBorder) mapBorder.style.background = all ? GREEN_BG : CLEAR_BG;
+        const venueLink = document.getElementById('venue-link');
+        const filled = venueLink && venueLink.value.trim() !== '';
+        if (mapBorder) mapBorder.style.background = filled ? GREEN_BG : CLEAR_BG;
     }
 
-    mapInputs.forEach(i => i.addEventListener('input', updateMapBorder));
+    // ── Leaflet Pin-Point Map Modal ───────────────────────────
+    let leafletMap       = null;
+    let leafletMarker    = null;
+    let pendingLat       = null;
+    let pendingLng       = null;
+    let pendingLabel     = '';
+
+    const mapModal        = document.getElementById('map-picker-modal');
+    const mapModalClose   = document.getElementById('map-modal-close');
+    const mapModalCancel  = document.getElementById('map-modal-cancel');
+    const mapModalConfirm = document.getElementById('map-modal-confirm');
+    const mapModalStatus  = document.getElementById('map-modal-status');
+    const mapModalSearch  = document.getElementById('map-modal-search');
+    const mapModalSrchBtn = document.getElementById('map-modal-search-btn');
+
+    const mapOpenBtn      = document.getElementById('venue-map-open-btn');
+    const mapEditBtn      = document.getElementById('venue-map-open-btn-edit');
+    const mapClearBtn     = document.getElementById('venue-map-clear');
+    const pinnedResult    = document.getElementById('map-pinned-result');
+    const mapSelectedLbl  = document.getElementById('map-selected-label');
+    const mapCoordsLbl    = document.getElementById('map-coords-label');
+    const directionsBtn   = document.getElementById('venue-directions-btn');
+    const venueLinkHidden = document.getElementById('venue-link');
+    const venueLatHidden  = document.getElementById('venue-lat');
+    const venueLngHidden  = document.getElementById('venue-lng');
+
+    function openMapModal() {
+        mapModal.style.display = 'flex';
+
+        // Init Leaflet only once
+        if (!leafletMap) {
+            leafletMap = L.map('leaflet-map').setView([10.3157, 123.8854], 13); // default: Cebu City
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(leafletMap);
+
+            leafletMap.on('click', function(e) {
+                placePin(e.latlng.lat, e.latlng.lng);
+            });
+        } else {
+            // Force re-render in case modal was hidden
+            setTimeout(() => leafletMap.invalidateSize(), 50);
+        }
+
+        // If there's already a confirmed pin, pre-load it
+        if (venueLinkHidden.value && venueLatHidden.value && venueLngHidden.value) {
+            const lat = parseFloat(venueLatHidden.value);
+            const lng = parseFloat(venueLngHidden.value);
+            placePin(lat, lng, mapSelectedLbl.textContent);
+        }
+    }
+
+    function placePin(lat, lng, label) {
+        pendingLat = lat;
+        pendingLng = lng;
+
+        if (leafletMarker) {
+            leafletMarker.setLatLng([lat, lng]);
+        } else {
+            leafletMarker = L.marker([lat, lng], { draggable: true }).addTo(leafletMap);
+            leafletMarker.on('dragend', function() {
+                const pos = leafletMarker.getLatLng();
+                placePin(pos.lat, pos.lng);
+            });
+        }
+
+        leafletMap.setView([lat, lng], 16);
+
+        if (label) {
+            pendingLabel = label;
+            mapModalStatus.textContent = `📍 ${label}`;
+        } else {
+            mapModalStatus.textContent = `Fetching address…`;
+            reverseGeocode(lat, lng).then(name => {
+                pendingLabel = name;
+                mapModalStatus.textContent = `📍 ${name}`;
+            });
+        }
+
+        mapModalConfirm.disabled = false;
+        mapModalConfirm.style.opacity = '1';
+    }
+
+    async function reverseGeocode(lat, lng) {
+        try {
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+                { headers: { 'Accept-Language': 'en' } }
+            );
+            const data = await res.json();
+            return data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        } catch {
+            return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        }
+    }
+
+    async function modalSearchPlace() {
+        const query = mapModalSearch?.value.trim();
+        if (!query) return;
+        mapModalStatus.textContent = `Searching "${query}"…`;
+        try {
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`,
+                { headers: { 'Accept-Language': 'en' } }
+            );
+            const data = await res.json();
+            if (!data.length) { mapModalStatus.textContent = 'Location not found. Try a more specific name.'; return; }
+            placePin(parseFloat(data[0].lat), parseFloat(data[0].lon), data[0].display_name);
+        } catch {
+            mapModalStatus.textContent = 'Search failed. Check your connection.';
+        }
+    }
+
+    function confirmPin() {
+        if (pendingLat === null || pendingLng === null) return;
+
+        const mapsUrl = `https://www.google.com/maps?q=${pendingLat},${pendingLng}`;
+
+        venueLinkHidden.value = mapsUrl;
+        venueLatHidden.value  = pendingLat;
+        venueLngHidden.value  = pendingLng;
+
+        mapSelectedLbl.textContent = pendingLabel || `${pendingLat.toFixed(6)}, ${pendingLng.toFixed(6)}`;
+        mapCoordsLbl.textContent   = `${pendingLat.toFixed(6)}, ${pendingLng.toFixed(6)}`;
+
+        directionsBtn.style.display = 'inline-flex';
+        directionsBtn.onclick = () => window.open(mapsUrl, '_blank');
+
+        pinnedResult.style.display = 'flex';
+        mapOpenBtn.style.display   = 'none';
+
+        closeMapModal();
+        updateMapBorder();
+        updateSectionLocks();
+    }
+
+    function closeMapModal() {
+        mapModal.style.display = 'none';
+    }
+
+    // Event bindings
+    mapOpenBtn?.addEventListener('click', openMapModal);
+    mapEditBtn?.addEventListener('click', openMapModal);
+    mapModalClose?.addEventListener('click', closeMapModal);
+    mapModalCancel?.addEventListener('click', closeMapModal);
+    mapModal?.addEventListener('click', (e) => {
+        if (e.target === mapModal) closeMapModal();
+    });
+    mapModalConfirm?.addEventListener('click', confirmPin);
+    mapModalSrchBtn?.addEventListener('click', modalSearchPlace);
+    mapModalSearch?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); modalSearchPlace(); }
+    });
+
+    // Clear map selection
+    mapClearBtn?.addEventListener('click', () => {
+        venueLinkHidden.value = '';
+        if (venueLatHidden)  venueLatHidden.value  = '';
+        if (venueLngHidden)  venueLngHidden.value  = '';
+        if (mapSelectedLbl)  mapSelectedLbl.textContent = '';
+        if (mapCoordsLbl)    mapCoordsLbl.textContent   = '';
+        if (directionsBtn)   directionsBtn.style.display = 'none';
+        if (pinnedResult)    pinnedResult.style.display  = 'none';
+        if (mapOpenBtn)      mapOpenBtn.style.display    = '';
+        pendingLat = null; pendingLng = null; pendingLabel = '';
+        if (leafletMarker && leafletMap) { leafletMap.removeLayer(leafletMarker); leafletMarker = null; }
+        if (mapModalConfirm) { mapModalConfirm.disabled = true; mapModalConfirm.style.opacity = '.4'; }
+        updateMapBorder();
+        updateSectionLocks();
+    });
+
+    // Auto-suggest venue name into search when venue name is typed
+    document.getElementById('venue-name')?.addEventListener('change', function () {
+        const name = this.value.trim();
+        if (name && mapModalSearch && !mapModalSearch.value.trim()) {
+            mapModalSearch.value = name;
+        }
+    });
 
     // ── Hidden input for venue_date_input ─────────────────────
     const hiddenVenueDate = document.getElementById('venue_date_input');

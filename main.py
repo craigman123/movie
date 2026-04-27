@@ -59,7 +59,6 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['LAST_UPDATE'] = int(time.time())
 app.secret_key = "aries_vincent_secret"
 
-
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///luma.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
@@ -709,6 +708,7 @@ def movieViewAdmin():
             movie.schedule_data.append({
                 "id": s.id,
                 "venue": s.venue.venue_name,
+                "venue_link": s.venue.venue_linkMap,
                 "date": s.date.strftime("%Y-%m-%d"),
                 "start": s.start_time.strftime("%H:%M"),
                 "end": s.end_time.strftime("%H:%M"),
@@ -2069,20 +2069,19 @@ def add_movie():
                     try:
                         schedule_date_obj = datetime.datetime.strptime(date_str, "%b %d, %Y").date()
 
-                        # Parse start time
+                        # Parse start time (HH:MM format)
                         if ':' in start_time_str:
-                            start_hour = int(start_time_str.split(':')[0])
+                            sh, sm = start_time_str.split(':', 1)
+                            start_time_input = dt_time(int(sh), int(sm))
                         else:
-                            start_hour = int(start_time_str)
+                            start_time_input = dt_time(int(start_time_str), 0)
 
-                        # Parse end time
+                        # Parse end time (HH:MM format)
                         if ':' in end_time_str:
-                            end_hour = int(end_time_str.split(':')[0])
+                            eh, em = end_time_str.split(':', 1)
+                            end_time_input = dt_time(int(eh), int(em))
                         else:
-                            end_hour = int(end_time_str)
-
-                        start_time_input = dt_time(start_hour, 0)
-                        end_time_input = dt_time(end_hour, 0)
+                            end_time_input = dt_time(int(end_time_str), 0)
 
                     except Exception as e:
                         print(f"Error parsing schedule '{sched}': {e}")

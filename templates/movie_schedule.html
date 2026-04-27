@@ -3,6 +3,7 @@
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-user-pack.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/movie_schedule.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movie_schedule_calendar.css') }}">
     <script src="{{ url_for('static', filename='js/movie_schedule.js') }}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <title>Schedule — LUMA</title>
@@ -67,14 +68,33 @@
             <div class="psub">Browse showtimes and book your seat</div>
           </div>
         </div>
- 
-        <!-- Date Picker Strip -->
-        <div class="sched-datebar">
-          <button class="date-nav" id="prevWeek" onclick="shiftWeek(-1)">‹</button>
-          <div class="date-strip" id="dateStrip"></div>
-          <button class="date-nav" id="nextWeek" onclick="shiftWeek(1)">›</button>
+
+        <!-- Month Calendar -->
+        <div class="sched-calendar-container">
+          <div class="sched-calendar">
+            <!-- Month navigation header -->
+            <div class="cal-header">
+              <button class="cal-nav" id="prevMonth" onclick="shiftMonth(-1)">‹</button>
+              <div class="cal-month-label" id="calMonthLabel"></div>
+              <button class="cal-nav" id="nextMonth" onclick="shiftMonth(1)">›</button>
+            </div>
+
+            <!-- Day-of-week headers -->
+            <div class="cal-dow-row">
+              <div class="cal-dow">SUN</div>
+              <div class="cal-dow">MON</div>
+              <div class="cal-dow">TUE</div>
+              <div class="cal-dow">WED</div>
+              <div class="cal-dow">THU</div>
+              <div class="cal-dow">FRI</div>
+              <div class="cal-dow">SAT</div>
+            </div>
+
+            <!-- Day cells (filled by JS) -->
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
         </div>
- 
+
         <!-- Selected date label -->
         <div class="sched-datelabel" id="schedDateLabel"></div>
  
