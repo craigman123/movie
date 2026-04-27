@@ -277,15 +277,23 @@
                     </div>
                 </div>
 
-                <!-- Danger Zone -->
                 <div class="danger-zone">
                     <h5>⚠ Danger Zone</h5>
                     <p>These actions are irreversible. Proceed with caution.</p>
                     <div class="danger-actions">
-                        <form method="POST" action="{{ url_for('gotologin') }}"
-                              onsubmit="return confirm('Log out of the admin panel?')">
+                        
+                        <!-- Logout -->
+                        <form method="POST" action="{{ url_for('logout') }}"
+                            onsubmit="return confirm('Log out of the admin panel?')">
                             <button type="submit" class="btn-danger">🚪 Log Out</button>
                         </form>
+
+                        <!-- Force Delete Account -->
+                        <form method="POST" action="{{ url_for('delete_account') }}"
+                            onsubmit="return confirmDelete()">
+                            <button type="submit" class="btn-danger">🗑 Delete Account</button>
+                        </form>
+
                     </div>
                 </div>
 

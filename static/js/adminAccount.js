@@ -28,3 +28,8 @@ function checkStrength(pw) {
     label.textContent    = pw.length ? (labels[score - 1] || '') : '';
     label.style.color    = colors[score - 1] || '#64748b';
 }
+
+function confirmDelete() {
+    let confirmText = prompt("Type DELETE to permanently remove your account:");
+    return confirmText === "DELETE";
+}

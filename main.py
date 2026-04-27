@@ -1036,11 +1036,9 @@ def about():
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    actor = session.get('username', 'unknown')
-    log_event(actor=actor, action='Logged out')
-    session.clear()
-    flash("You have been logged out.", "success")
-    return '', 200 
+    session.clear()  # removes all session data
+    flash("You have been logged out.", "info")
+    return redirect(url_for('gotologin'))
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -2697,6 +2695,32 @@ def view_ratings():
         profile_image = profile_image,
         movies_data   = movies_data,
     )
+
+@app.route('/delete_account', methods=['POST'])
+def delete_account():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+
+    try:
+        # delete user from database
+        user = User.query.get(user_id)
+        if user:
+            db.session.delete(user)
+            db.session.commit()
+
+        # clear session
+        session.clear()
+
+        flash("Account deleted successfully.", "success")
+        return redirect(url_for('gotologin'))
+
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        flash("Error deleting account.", "danger")
+        return redirect(url_for('settings'))
 
 if __name__ == '__main__':
 
