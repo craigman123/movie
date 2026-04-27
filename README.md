@@ -1,6 +1,8 @@
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Cinzel+Decorative&size=40&duration=3000&pause=1000&color=E8B86D&center=true&vCenter=true&width=600&lines=🎬+LUMA+CINEMAS" alt="Luma Cinemas" />
+<p align="center">
+  <img src="assets/logo-removebg-preview.png" width="180"/>
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white" />
