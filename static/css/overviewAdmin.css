@@ -1,81 +1,158 @@
 body {
-    overflow: hidden;
+    overflow-y: hidden;
+    background: #000;
 }
 
-.cards-container {
-    display: flex;
-    gap: 30px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-bottom: 40px;
+.main-content {
+    padding: 40px 50px;
+    background: #1e1e1e;
+    min-height: 100vh;
+    height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
-.cards-container {
-    display: flex;
-    gap: 30px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-bottom: 40px;
+.main-content::-webkit-scrollbar {
+    width: 1vw;
 }
 
-.card {
-    background: #1e3b20; /* same dark color as movie cards */
-    border-radius: 16px;
-    padding: 30px 40px;
-    min-width: 180px;
-    flex: 1 1 180px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    color: #e0e7ff;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: default;
+.main-content::-webkit-scrollbar-track {
+    background: none;
 }
 
-.card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-    cursor: pointer;
+.main-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 40px;
 }
 
-.card h3 {
-    font-size: 1.4rem;
-    margin-bottom: 15px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: #94a3b8; /* lighter text for heading */
+.main-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
-.card p {
-    font-size: 3.5rem;
-    font-weight: 800;
-    color: #63f163; /* accent color (same as buttons) */
-    margin: 0;
-    line-height: 1;
+.content {
+    width: 100%;
 }
 
-.cards-header {
+.movies-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 30px;
     flex-wrap: wrap;
     gap: 15px;
 }
 
-.cards-header h4 {
+.movies-header h4 {
     font-size: 2.5vw;
     letter-spacing: 2px;
     color: #e0e7ff;
     font-weight: 700;
     text-transform: uppercase;
+    margin: 0;
 }
 
-main {
-    padding: 20px;
-    overflow: hidden;
-    background: linear-gradient(to bottom, #0f0f0f, #1a1a1a);
-    color: rgb(255, 255, 255);
-    height: 100vh;
+.active-menu {
+    background: #1a3a2a !important;
+    border-left: 3px solid #46e59d;
+}
+
+.overview-header {
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.header-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 560px;
+}
+
+.header-subtext {
+    color: #94a3b8;
+    font-size: 0.98rem;
+    line-height: 1.6;
+}
+
+.overview-cards,
+.summary-strip {
+    margin-bottom: 22px;
+}
+
+.cards-container {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.card {
+    background: #2a2a2a;
+    border: 1px solid #383838;
+    border-radius: 12px;
+    padding: 14px 20px;
+    min-width: 150px;
+    text-align: center;
+    transition: transform .2s, border-color .2s, background .2s;
+}
+
+.nav-card {
+    appearance: none;
+    cursor: pointer;
+    color: inherit;
+    flex: 1 1 170px;
+    font: inherit;
+}
+
+.nav-card:hover,
+.nav-card.active-card {
+    transform: translateY(-3px);
+    border-color: #46e59d55;
+}
+
+.nav-card.active-card {
+    background: #213429;
+}
+
+.card h3 {
+    font-size: 9px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.card p {
+    font-size: clamp(1.6rem, 2vw, 2.2rem);
+    font-weight: 700;
+    color: #46e59d;
+    line-height: 1.1;
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+}
+
+.info-card {
+    flex: 1 1 200px;
+    text-align: left;
+}
+
+.info-card p {
+    font-size: clamp(1.25rem, 1.6vw, 1.8rem);
+}
+
+.info-card small {
+    display: block;
+    margin-top: 10px;
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.insight-grid {
+    position: relative;
+    min-height: 560px;
+    margin-bottom: 22px;
 }
 
 .tab-section {
@@ -83,8 +160,8 @@ main {
     transform: translateY(10px);
     pointer-events: none;
     position: absolute;
-    width: 100%;
-    transition: all 0.3s ease;
+    inset: 0;
+    transition: all .25s ease;
 }
 
 .tab-section.active {
@@ -94,114 +171,269 @@ main {
     position: relative;
 }
 
-/* ===== TABLE WRAPPER ===== */
-.tab-section {
-    padding: 20px;
+.sales-section,
+.chart-card {
+    background: #262626;
+    border: 1px solid #333;
+    border-radius: 14px;
 }
 
-/* ===== TABLE BASE ===== */
-table {
+.sales-section {
+    padding: 20px 24px;
     width: 100%;
-    height: 100%;
-    border-collapse: collapse;
-    background: #333333;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-/* ===== SCROLL CONTAINER ===== */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.section-header h5 {
+    font-size: clamp(1rem, 1vw, 1.15rem);
+    font-weight: 600;
+    color: #e0e7ff;
+    letter-spacing: .5px;
+    margin: 0;
+}
+
+.badge-count {
+    font-size: 11px;
+    color: #64748b;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.status-grid,
+.board-grid,
+.highlight-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.highlight-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 16px;
+}
+
+.status-tile,
+.board-card,
+.chart-card {
+    margin-bottom: 10px;
+    background: #2a2a2a;
+    border: 1px solid #383838;
+    border-radius: 12px;
+    padding: 16px 18px;
+}
+
+.status-tile span,
+.board-card span,
+.chart-card p {
+    display: block;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.status-tile strong,
+.board-card strong {
+    display: block;
+    color: #f8fafc;
+    font-size: clamp(1.4rem, 1.8vw, 2rem);
+    margin-bottom: 6px;
+}
+
+.status-tile small,
+.board-card small,
+.chart-card span {
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.status-tile.alert {
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+.chart-card h5 {
+    margin: 0 0 8px;
+    color: #e0e7ff;
+    font-size: 1.08rem;
+}
+
 .table-wrapper {
-    max-height: 60vh;        /* fixed height */
-    overflow-y: auto; 
-    overflow-x: hidden;        /* vertical scroll */
-    border-radius: 10px;
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 12px;
 }
 
 .table-wrapper::-webkit-scrollbar {
-    width: 1vw;
-}
-
-.table-wrapper::-webkit-scrollbar-track {
-    background: none;
+    width: 10px;
+    height: 10px;
 }
 
 .table-wrapper::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 40px;
-    cursor: pointer;
-}
-
-.table-wrapper::-webkit-scrollbar-thumb:hover {
     background: #555;
+    border-radius: 20px;
 }
 
-/* ===== TABLE ===== */
-.table-wrapper table {
+.sales-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: .92rem;
 }
 
-/* ===== STICKY HEADER ===== */
-.table-wrapper th {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: #515151;
-    color: #fff;
+.sales-table thead tr,
+.sales-table > tbody > tr:first-child,
+.sales-table > tr:first-child {
+    background: #1e293b;
 }
 
-/* optional: smooth scrolling */
-.table-wrapper {
-    scroll-behavior: smooth;
-}
-
-/* ===== HEADER ===== */
-table th {
-    background: #515151;
-    color: #ffffff;
+.sales-table th {
+    padding: 11px 14px;
     text-align: left;
-    padding: 12px 15px;
-    font-size: 14px;
-    letter-spacing: 0.5px;
-}
-
-/* ===== CELLS ===== */
-table td {
-    padding: 12px 15px;
-    font-size: 14px;
-    color: #ffffff;
-}
-
-table tr:nth-child(even) {
-    background: #2d2d2d;
-}
-
-/* ===== ROW HOVER EFFECT ===== */
-table tr:hover {
-    transform: scaleX(1.01);
-    transition: 0.2s ease;
-}
-
-/* ===== STATUS BADGES (optional upgrade) ===== */
-.status-active {
-    color: #00ff6a;
-    background: #005806;
+    font-size: .76rem;
     font-weight: 600;
+    color: #64748b;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.sales-table td {
+    padding: 11px 14px;
+    color: #cbd5e1;
+    border-bottom: 1px solid #2a2a2a;
+    white-space: nowrap;
+}
+
+.sales-table tbody tr:hover {
+    background: #2c2c2c;
+}
+
+.sales-table tbody tr:last-child td.no-data {
+    text-align: center;
+}
+
+.no-data {
+    text-align: center;
+    color: #4a5568;
+    padding: 28px !important;
+    font-style: italic;
+}
+
+.status-active,
+.status-verified {
+    background: rgba(70, 229, 157, .12);
+    color: #46e59d;
+    border: 1px solid rgba(70, 229, 157, .2);
 }
 
 .status-inactive {
-    color: #e74c3c;
-    background: #740000;
-    font-weight: 600;
+    background: rgba(245, 158, 11, .12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, .18);
 }
 
 .status-banned {
-    color: #c0000086;
-    background: #210000;
-    font-weight: 600;
+    background: rgba(239, 68, 68, .12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, .2);
 }
 
-.stat {
-    padding: 5px;
+.stat,
+.log-level {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
     border-radius: 10px;
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.log-level {
+    min-width: 72px;
+    text-transform: uppercase;
+}
+
+.level-info {
+    background: rgba(59, 130, 246, .12);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, .18);
+}
+
+.level-warning {
+    background: rgba(245, 158, 11, .12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, .18);
+}
+
+.level-error {
+    background: rgba(239, 68, 68, .12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, .18);
+}
+
+.quick-board {
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+    .status-grid,
+    .board-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    body {
+        overflow-y: auto;
+    }
+
+    .main-content {
+        height: auto;
+        min-height: 100vh;
+        padding: 24px 20px;
+        overflow-y: visible;
+    }
+
+    .insight-grid {
+        min-height: 0;
+    }
+
+    .tab-section,
+    .tab-section.active {
+        position: relative;
+        inset: auto;
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+        margin-bottom: 18px;
+    }
+}
+
+@media (max-width: 640px) {
+    .status-grid,
+    .board-grid,
+    .highlight-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .main-content {
+        padding: 18px 14px;
+    }
+
+    .sales-section {
+        padding: 16px;
+    }
 }

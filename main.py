@@ -32,8 +32,8 @@ PROFILE_PICTURE_FOLDER = os.path.join(UPLOAD_FOLDER, 'uploadedPictures')
 DEFAULT_PICTURE_FOLDER = os.path.join(UPLOAD_FOLDER, 'defaultPictures')
 QR_TICKET_CODES = os.path.join(UPLOAD_FOLDER, 'ticketCodes')
 
-ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
-ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv', 'gif'}
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'jfif', 'gif', 'webp'}
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv'}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROFILE_PICTURE_FOLDER, exist_ok=True)
@@ -47,10 +47,17 @@ app.config['QR_TICKET_CODES'] = QR_TICKET_CODES
 
 db = SQLAlchemy(app)
 
+class AdminActions(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    action = db.Column(db.String(200), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+
 class SystemLog(db.Model):
     __tablename__ = 'system_log'
  
     id        = db.Column(db.Integer, primary_key=True)
+    user_id   = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) # can be null for system events
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     level     = db.Column(db.String(10),  nullable=False, default='INFO')   # INFO | WARNING | ERROR
     actor     = db.Column(db.String(150), nullable=False)                   # username or 'system'
@@ -180,10 +187,11 @@ app.context_processor(inject_now)
 
 # ======== LOG HELPER =================
 def log_event(actor: str, action: str, target: str = None,
-               details: str = None, level: str = 'INFO'):
+               details: str = None, level: str = 'INFO', user_id: int = None):
     """Append one row to SystemLog. Only the backend calls this."""
     try:
         entry = SystemLog(
+            user_id=user_id,
             level=level.upper(),
             actor=actor,
             action=action,
@@ -195,12 +203,63 @@ def log_event(actor: str, action: str, target: str = None,
     except Exception:
         db.session.rollback()
 
+# ======== ADMIN ACTION LOGGER =================
+def log_admin_action(action: str):
+    """Record a permanent danger-zone action performed by the current admin."""
+    try:
+        entry = AdminActions(
+            admin_id=session.get('user_id'),
+            action=action,
+        )
+        db.session.add(entry)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+# ======== AUTH DECORATORS =================
+from functools import wraps
+
+def login_required(f):
+    """Redirect to login if there is no active session."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            flash("Please log in first.", "danger")
+            return redirect(url_for('gotologin'))
+        return f(*args, **kwargs)
+    return decorated
+
+def admin_required(f):
+    """Must be logged in AND have role == 'admin'."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            flash("Please log in first.", "danger")
+            return redirect(url_for('gotologin'))
+        if session.get('role') != 'admin':
+            flash("Unauthorized access.", "danger")
+            return redirect(url_for('user_dashboard'))
+        return f(*args, **kwargs)
+    return decorated
+
+def user_required(f):
+    """Must be logged in AND have role == 'user' (blocks admins from user-only pages)."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            flash("Please log in first.", "danger")
+            return redirect(url_for('gotologin'))
+        if session.get('role') == 'admin':
+            return redirect(url_for('admin_dashboard'))
+        return f(*args, **kwargs)
+    return decorated
+
 # ======== ROUTES =================       
 @app.route('/gotologin')
 def gotologin():
     if 'user_id' in session:
         if session.get('role') == 'admin':
-            return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('overviewAdmin'))
         else:
             return redirect(url_for('user_dashboard'))
 
@@ -246,15 +305,8 @@ def api_schedules():
 def dashboard():
     return render_template('luma_dashboard.html')
 @app.route('/users')
+@admin_required
 def view_users():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
-
-    if session.get('role') != 'admin':
-        flash("Unauthorized access", "danger")
-        return redirect(url_for('user_dashboard'))
-
     user = User.query.get(session['user_id'])
     search_query = request.args.get('search', '').strip()
     count_users = User.query.count()
@@ -309,15 +361,8 @@ def view_users():
     )
 
 @app.route('/moviewView')
+@admin_required
 def movieViewAdmin():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
-
-    if session.get('role') != 'admin':
-        flash("Unauthorized access", "danger")
-        return redirect(url_for('user_dashboard'))
-
     user = User.query.get(session['user_id'])
     # movies = Movies.query.all()
     
@@ -446,15 +491,8 @@ def movieViewAdmin():
     )
 
 @app.route('/adminAccount')
+@admin_required
 def AdminAccount():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
-
-    if session.get('role') != 'admin':
-        flash("Unauthorized access", "danger")
-        return redirect(url_for('user_dashboard'))
-
     user    = User.query.get(session['user_id'])
     profile = Profiles.query.filter_by(user_id=user.id).first()
 
@@ -487,6 +525,14 @@ def AdminAccount():
         .limit(8).all()
     )
 
+    # permanent danger-zone action history for this admin
+    admin_actions = (
+        AdminActions.query
+        .filter_by(admin_id=user.id)
+        .order_by(AdminActions.timestamp.desc())
+        .all()
+    )
+
     return render_template(
         'AdminAccount.html',
         user          = user,
@@ -497,14 +543,12 @@ def AdminAccount():
         total_tickets = total_tickets,
         total_logs    = total_logs,
         recent_logs   = recent_logs,
+        admin_actions = admin_actions,
     )
 
-
 @app.route('/admin/update_account', methods=['POST'])
+@admin_required
 def admin_update_account():
-    if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect(url_for('gotologin'))
-
     user    = User.query.get(session['user_id'])
     profile = Profiles.query.filter_by(user_id=user.id).first()
     if not profile:
@@ -535,7 +579,7 @@ def admin_update_account():
             pic.save(os.path.join(app.config['PROFILE_PICTURE_FOLDER'], filename))
             profile.profile_image = filename
         db.session.commit()
-        log_event(actor=user.username, action='Updated admin account info', target=f'Admin #{user.id}')
+        log_event(actor=user.username, action='Updated admin account info', target=f'Admin #{user.id}', user_id=user.id)
         flash('Account info updated!', 'success')
 
     elif action == 'change_password':
@@ -551,21 +595,14 @@ def admin_update_account():
         else:
             user.set_password(new_pw)
             db.session.commit()
-            log_event(actor=user.username, action='Changed password', target=f'Admin #{user.id}', level='WARNING')
+            log_event(actor=user.username, action='Changed password', target=f'Admin #{user.id}', level='WARNING', user_id=user.id)
             flash('Password changed successfully!', 'success')
 
     return redirect(url_for('AdminAccount'))
 
 @app.route('/sales')
+@admin_required
 def view_sales():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
- 
-    if session.get('role') != 'admin':
-        flash("Unauthorized access", "danger")
-        return redirect(url_for('user_dashboard'))
- 
     user = User.query.get(session['user_id'])
     search = request.args.get('search', '').strip().lower()
  
@@ -709,15 +746,8 @@ def view_sales():
     )
 
 @app.route('/logs')
+@admin_required
 def view_logs():
-    if 'user_id' not in session:
-        flash("Please log in first.", "danger")
-        return redirect(url_for('gotologin'))
- 
-    if session.get('role') != 'admin':
-        flash("Unauthorized access.", "danger")
-        return redirect(url_for('user_dashboard'))
- 
     user   = User.query.get(session['user_id'])
     search = request.args.get('search', '').strip().lower()
     level  = request.args.get('level', '').strip().upper()
@@ -770,10 +800,8 @@ def allowed_file(filename, allowed_ext):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_ext
 
 @app.route('/view_movie/<int:movie_id>')
+@login_required
 def view_movie(movie_id):
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
 
     movie = Movies.query.get_or_404(movie_id)
     schedule = Schedule.query.filter_by(movie_id=movie.id).first()
@@ -805,10 +833,8 @@ def view_movie(movie_id):
     )
 
 @app.route('/library/toggle/<int:movie_id>', methods=['POST'])
+@login_required
 def toggle_library(movie_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
     existing = Libraries.query.filter_by(
         user_id=session['user_id'],
         movie_id=movie_id
@@ -818,22 +844,19 @@ def toggle_library(movie_id):
         db.session.delete(existing)
         db.session.commit()
         log_event(actor=session.get('username', 'user'), action='Removed movie from library',
-                  target=f'Movie #{movie_id}')
+                  target=f'Movie #{movie_id}', user_id=session.get('user_id'))
         return jsonify({'in_library': False})
     else:
         entry = Libraries(user_id=session['user_id'], movie_id=movie_id)
         db.session.add(entry)
         db.session.commit()
         log_event(actor=session.get('username', 'user'), action='Added movie to library',
-                  target=f'Movie #{movie_id}')
+                  target=f'Movie #{movie_id}', user_id=session.get('user_id'))
         return jsonify({'in_library': True})
 
 @app.route('/admin_dashboard')
+@admin_required
 def admin_dashboard():
-    if 'user_id' not in session or session.get('role') != 'admin':
-        flash("Unauthorized access", "danger")
-        return redirect(url_for('login'))
-
     today = datetime.datetime.today().strftime('%B %d, %Y')
 
     user = User.query.get(session['user_id'])
@@ -885,37 +908,181 @@ def get_venues():
     return jsonify(venue_data)
 
 @app.route('/overview')
+@admin_required
 def overview():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
-    
-    if session.get('role') == 'user':
-        flash("Unauthorized access", "danger")
-        return redirect(url_for('user_dashboard'))
-    
     user = User.query.get(session['user_id'])
-    
+
+    total_users = User.query.count()
+    total_movies = Movies.query.count()
+    total_tickets = UserTickets.query.count()
+    total_schedules = Schedule.query.count()
+    total_venues = Venue.query.count()
+    total_logs = SystemLog.query.count()
+
+    admins_count = User.query.filter_by(role='admin').count()
+    regular_users_count = User.query.filter_by(role='user').count()
+    active_users_count = User.query.filter_by(access='active').count()
+    verified_users_count = User.query.filter_by(access='verified').count()
+    inactive_users_count = User.query.filter_by(access='inactive').count()
+    banned_users_count = User.query.filter_by(access='banned').count()
+
+    today = datetime.date.today()
+    now = datetime.datetime.now()
+    month_start = today.replace(day=1)
+
+    schedules = Schedule.query.all()
+    active_schedules_count = sum(1 for s in schedules if str(s.active) == "True")
+    inactive_schedules_count = total_schedules - active_schedules_count
+    schedules_today_count = sum(1 for s in schedules if s.date == today)
+    upcoming_schedules_count = sum(1 for s in schedules if s.date >= today and str(s.active) == "True")
+
+    movies = Movies.query.all()
+    movies_with_schedules_count = sum(1 for movie in movies if movie.schedules)
+    movies_without_schedules_count = total_movies - movies_with_schedules_count
+
+    showing_now_count = 0
+    coming_soon_count = 0
+    ended_movies_count = 0
+
+    for movie in movies:
+        if not movie.schedules:
+            continue
+
+        is_showing = False
+        has_upcoming = False
+        has_finished = False
+
+        for sched in movie.schedules:
+            schedule_date = sched.date.date() if isinstance(sched.date, datetime.datetime) else sched.date
+            start_dt = datetime.datetime.combine(schedule_date, sched.start_time)
+            end_dt = datetime.datetime.combine(schedule_date, sched.end_time)
+
+            if str(sched.active) == "True" and start_dt <= now <= end_dt:
+                is_showing = True
+            if str(sched.active) == "True" and start_dt > now:
+                has_upcoming = True
+            if end_dt < now:
+                has_finished = True
+
+        if is_showing:
+            showing_now_count += 1
+        elif has_upcoming:
+            coming_soon_count += 1
+        elif has_finished:
+            ended_movies_count += 1
+
+    all_tickets = (
+        UserTickets.query
+        .join(Schedule, UserTickets.schedule_id == Schedule.id)
+        .join(Movies, Schedule.movie_id == Movies.id)
+        .join(Venue, Schedule.venue_id == Venue.id)
+        .join(User, UserTickets.user_id == User.id)
+        .order_by(UserTickets.booking_time.desc())
+        .all()
+    )
+
+    STANDARD_PRICE = 350
+    PREMIUM_PRICE = 500
+
+    total_revenue = 0
+    revenue_today = 0
+    revenue_this_month = 0
+    premium_tickets_count = 0
+    standard_tickets_count = 0
+    unique_buyers_count = len({ticket.user_id for ticket in all_tickets})
+
+    movie_sales_map = {}
+    venue_sales_map = {}
+
+    for ticket in all_tickets:
+        price = PREMIUM_PRICE if ticket.ticket_type == 'premium' else STANDARD_PRICE
+        total_revenue += price
+
+        booking_date = ticket.booking_time.date()
+        if booking_date == today:
+            revenue_today += price
+        if booking_date >= month_start:
+            revenue_this_month += price
+
+        if ticket.ticket_type == 'premium':
+            premium_tickets_count += 1
+        else:
+            standard_tickets_count += 1
+
+        movie_name = ticket.schedule.movie.movie_name
+        venue_name = ticket.schedule.venue.venue_name
+
+        if movie_name not in movie_sales_map:
+            movie_sales_map[movie_name] = {"tickets": 0, "revenue": 0}
+        movie_sales_map[movie_name]["tickets"] += 1
+        movie_sales_map[movie_name]["revenue"] += price
+
+        if venue_name not in venue_sales_map:
+            venue_sales_map[venue_name] = 0
+        venue_sales_map[venue_name] += 1
+
+    top_movie = None
+    if movie_sales_map:
+        top_movie_name, top_movie_stats = max(movie_sales_map.items(), key=lambda item: item[1]["revenue"])
+        top_movie = {
+            "name": top_movie_name,
+            "tickets": top_movie_stats["tickets"],
+            "revenue": top_movie_stats["revenue"],
+        }
+
+    top_venue = None
+    if venue_sales_map:
+        top_venue_name, top_venue_tickets = max(venue_sales_map.items(), key=lambda item: item[1])
+        top_venue = {
+            "name": top_venue_name,
+            "tickets": top_venue_tickets,
+        }
+
+    recent_users = User.query.order_by(User.created_at.desc()).limit(6).all()
+    recent_movies = Movies.query.order_by(Movies.movie_date_created.desc()).limit(6).all()
+    recent_logs = SystemLog.query.order_by(SystemLog.timestamp.desc()).limit(8).all()
+
     return render_template(
-        'overviewAdmin.html', 
+        'overviewAdmin.html',
         user=user,
-        users=User.query.all(),
-        movies=Movies.query.all(),
-        count_users=User.query.count(),
-        count_movies=Movies.query.count()
-        )
+        users=recent_users,
+        movies=recent_movies,
+        count_users=total_users,
+        count_movies=total_movies,
+        total_tickets=total_tickets,
+        total_schedules=total_schedules,
+        total_venues=total_venues,
+        total_logs=total_logs,
+        admins_count=admins_count,
+        regular_users_count=regular_users_count,
+        active_users_count=active_users_count,
+        verified_users_count=verified_users_count,
+        inactive_users_count=inactive_users_count,
+        banned_users_count=banned_users_count,
+        active_schedules_count=active_schedules_count,
+        inactive_schedules_count=inactive_schedules_count,
+        schedules_today_count=schedules_today_count,
+        upcoming_schedules_count=upcoming_schedules_count,
+        movies_with_schedules_count=movies_with_schedules_count,
+        movies_without_schedules_count=movies_without_schedules_count,
+        showing_now_count=showing_now_count,
+        coming_soon_count=coming_soon_count,
+        ended_movies_count=ended_movies_count,
+        total_revenue=total_revenue,
+        revenue_today=revenue_today,
+        revenue_this_month=revenue_this_month,
+        premium_tickets_count=premium_tickets_count,
+        standard_tickets_count=standard_tickets_count,
+        unique_buyers_count=unique_buyers_count,
+        top_movie=top_movie,
+        top_venue=top_venue,
+        recent_logs=recent_logs
+    )
 
 
 @app.route('/user_dashboard')
+@user_required
 def user_dashboard():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
-    
-    if session.get('role') == 'admin':
-        flash("Unauthorized access", "danger")
-        return redirect(url_for('admin_dashboard'))
-    
     user = User.query.get(session['user_id'])
     movies = Movies.query.all()
     profile =Profiles.query.filter_by(user_id=user.id).first()
@@ -1023,11 +1190,8 @@ def user_dashboard():
     )
 
 @app.route('/settings')
+@login_required
 def settings():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
-    
     return render_template('settings.html')
 
 @app.route('/about')
@@ -1049,19 +1213,19 @@ def login():
 
     if not user:
         log_event(actor='system', action='Failed login attempt', target=f'Email: {email}',
-                  details='Account does not exist', level='WARNING')
+                  details='Account does not exist', level='WARNING', user_id=None)
         flash("Account does not exist!.", "danger")
         return redirect(url_for('gotologin'))
 
     if user.access == "Inactive":
         log_event(actor='system', action='Failed login attempt', target=f'User: {user.username}',
-                  details='Account is inactive', level='WARNING')
+                  details='Account is inactive', level='WARNING', user_id=user.id)
         flash("Account disable contact support, or make a new account!", "danger")
         return redirect(url_for('gotologin'))
 
     if not user.check_password(password):
         log_event(actor='system', action='Failed login attempt', target=f'User: {user.username}',
-                  details='Incorrect password', level='WARNING')
+                  details='Incorrect password', level='WARNING', user_id=user.id)
         flash("Incorrect password or email!", "danger")
         return redirect(url_for('gotologin'))
 
@@ -1071,11 +1235,11 @@ def login():
     session['username'] = user.username
 
     if user.role == "admin" and user.access == "active":
-        log_event(actor=user.username, action='Admin logged in', target=f'User #{user.id}')
+        log_event(actor=user.username, action='Admin logged in', target=f'User #{user.id}', user_id=user.id)
         flash(f"Welcome back {user.username}, you have been logged in successfully!", "success")
         return redirect(url_for('overview'))
     elif user.role == "user" or user.role == "verified" and user.access == "active":
-        log_event(actor=user.username, action='User logged in', target=f'User #{user.id}')
+        log_event(actor=user.username, action='User logged in', target=f'User #{user.id}', user_id=user.id)
         flash(f"Welcome back {user.username}, you have been logged in successfully!", "success")
         return redirect(url_for('user_dashboard'))
     elif user.role == "user" or user.role == "verified" and user.access == "inactive":
@@ -1125,7 +1289,7 @@ def register():
     db.session.commit()
 
     log_event(actor=new_user.username, action='New user registered',
-              target=f'User #{new_user.id}', details=f'Email: {email}')
+              target=f'User #{new_user.id}', details=f'Email: {email}', user_id=new_user.id)
 
     # ✅ Session
     session['user_id'] = new_user.id
@@ -1139,6 +1303,7 @@ def register():
 
 # ======================= CRUD FOR MOVIE =======================
 @app.route('/add_movie', methods=['POST'])
+@admin_required
 def add_movie():
     try:
         
@@ -1216,15 +1381,10 @@ def add_movie():
 
         # --- Save Files: only store filename in DB ---
         poster_filename = None
-        venue_filename = None
 
         if allowed_file(poster_file.filename, ALLOWED_IMAGE_EXTENSIONS):
             poster_filename = secure_filename(poster_file.filename)
             poster_file.save(os.path.join(app.config['UPLOAD_FOLDER'], poster_filename))
-
-        if allowed_file(venue_image_file.filename, ALLOWED_IMAGE_EXTENSIONS):
-            venue_filename = secure_filename(venue_image_file.filename)
-            venue_image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], venue_filename))
 
         genre_string = ", ".join(genres)
         
@@ -1373,7 +1533,8 @@ def add_movie():
             actor=session.get('username', 'admin'),
             action='Added movie',
             target=f'Movie: {movie_name}',
-            details=f'{schedule_count if "schedule_count" in locals() else 0} schedule(s) created'
+            details=f'{schedule_count if "schedule_count" in locals() else 0} schedule(s) created',
+            user_id=session.get('user_id')
         )
 
         flash(f"Movies added successfully! Schedules: {schedule_count if 'schedule_count' in locals() else 0}", "success")
@@ -1385,11 +1546,12 @@ def add_movie():
         traceback.print_exc()
 
         log_event(actor=session.get('username', 'admin'), action='Failed to add movie',
-                  details=str(e), level='ERROR')
+                  details=str(e), level='ERROR', user_id=session.get('user_id'))
         flash("Something went wrong while adding the movie.", "danger")
         return redirect(url_for('admin_dashboard'))
 
 @app.route('/delete_movie/<int:movie_id>', methods=['DELETE'])
+@admin_required
 def delete_movie(movie_id):
     try:
         movie = Movies.query.get_or_404(movie_id)
@@ -1402,16 +1564,18 @@ def delete_movie(movie_id):
         db.session.commit()
 
         log_event(actor=session.get('username', 'admin'), action='Deleted movie',
-                  target=f'Movie #{movie_id}: {movie_name}', level='WARNING')
+                  target=f'Movie #{movie_id}: {movie_name}', level='WARNING', user_id=session.get('user_id'))
         return jsonify({"success": True})
 
     except Exception as e:
         print("DELETE ERROR:", e)
         log_event(actor=session.get('username', 'admin'), action='Failed to delete movie',
-                  target=f'Movie #{movie_id}', details=str(e), level='ERROR')
+                  target=f'Movie #{movie_id}', details=str(e), level='ERROR', user_id=session.get('user_id'))
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/delete_schedule/<int:schedule_id>', methods=['DELETE'])
+@app.route('/delete_schedule/<int:schedule_id>', methods=['DELETE'])
+@admin_required
 def delete_schedule(schedule_id):
 
     schedule = Schedule.query.get_or_404(schedule_id)
@@ -1421,10 +1585,11 @@ def delete_schedule(schedule_id):
     db.session.commit()
 
     log_event(actor=session.get('username', 'admin'), action='Deleted schedule',
-              target=f'Schedule #{schedule_id} ({movie_name})', level='WARNING')
+              target=f'Schedule #{schedule_id} ({movie_name})', level='WARNING', user_id=session.get('user_id'))
     return jsonify({"success": True})
 
 @app.route("/create_schedule", methods=["POST"])
+@admin_required
 def create_schedule():
     data = request.get_json()
 
@@ -1441,6 +1606,7 @@ def create_schedule():
     })
     
 @app.route("/update_schedule/<int:schedule_id>", methods=["PUT"])
+@admin_required
 def update_schedule(schedule_id):
     data = request.get_json(silent=True)
     print("DATA:", data)
@@ -1472,13 +1638,15 @@ def update_schedule(schedule_id):
 
     log_event(actor=session.get('username', 'admin'), action='Updated schedule',
               target=f'Schedule #{schedule_id}',
-              details=f'Date: {data["date"]} | {data["start"]}–{data["end"]} | Status: {stat}')
+              details=f'Date: {data["date"]} | {data["start"]}–{data["end"]} | Status: {stat}',
+              user_id=session.get('user_id'))
 
     return jsonify({
         "success": True,
         "message": "Schedule updated"
     })
 @app.route('/update_movie/<int:movie_id>', methods=['POST'])
+@admin_required
 def update_movie(movie_id):
 
     movie = Movies.query.get_or_404(movie_id)
@@ -1513,11 +1681,12 @@ def update_movie(movie_id):
     print("✅ UPDATED:", movie.movie_name, movie.genre)
 
     log_event(actor=session.get('username', 'admin'), action='Updated movie',
-              target=f'Movie #{movie_id}: {movie.movie_name}')
+              target=f'Movie #{movie_id}: {movie.movie_name}', user_id=session.get('user_id'))
     flash("Movie updated successfully", "success")
     return redirect(url_for('movieViewAdmin'))
 
 @app.route("/api/venue/create", methods=["POST"])
+@admin_required
 def create_venue():
     try:
         data = request.get_json()
@@ -1555,7 +1724,7 @@ def create_venue():
         print("🔥 ERROR:", e)
         traceback.print_exc()
         log_event(actor=session.get('username', 'admin'), action='Failed to create venue/schedule',
-                  details=str(e), level='ERROR')
+                  details=str(e), level='ERROR', user_id=session.get('user_id'))
         return jsonify({"success": False, "error": str(e)}), 500
     
 def insert_schedule(venue_id, date, start, end, movie_id):
@@ -1616,8 +1785,14 @@ def insert_venue(venue):
 
 # ===================================== CRUD FOR USERS ======================================
 @app.route('/edit_user/<int:user_id>', methods=['POST'])
+@admin_required
 def edit_user(user_id):
     user = User.query.get_or_404(user_id)
+
+    if user.id == session.get('user_id'):
+        flash("You cannot edit your own account from Users Management. Use the Account page instead.", "warning")
+        return redirect(url_for('view_users'))
+
     profile = Profiles.query.filter_by(user_id=user.id).first()
 
     if not profile:
@@ -1662,19 +1837,18 @@ def edit_user(user_id):
 
     log_event(actor=session.get('username', 'admin'), action='Edited user',
               target=f'User #{user_id}: {user.username}',
-              details=f'Role: {user.role} | Access: {user.access}')
+              details=f'Role: {user.role} | Access: {user.access}',
+              user_id=session.get('user_id'))
+    flash(f"User '{user.username}' updated successfully.", "success")
     return redirect(url_for('view_users'))
 
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
+@admin_required
 def delete_user(user_id):
-    if 'user_id' not in session:
-        flash("You must be logged in.", "danger")
-        return redirect(url_for('login'))
-
     userSession = User.query.get(session['user_id'])
 
     if userSession and user_id == userSession.id:
-        flash("You cannot delete your own account.", "error")
+        flash("You cannot delete your own account from Users Management.", "warning")
         return redirect(url_for('view_users'))
 
     user = User.query.get_or_404(user_id)
@@ -1688,11 +1862,52 @@ def delete_user(user_id):
     db.session.commit()
 
     log_event(actor=session.get('username', 'admin'), action='Deleted user',
-              target=f'User #{user_id}', level='WARNING')
+              target=f'User #{user_id}', level='WARNING', user_id=session.get('user_id'))
     flash("User deleted successfully.", "success")
     return redirect(url_for('view_users'))
 
+@app.route('/add_user', methods=['POST'])
+@admin_required
+def add_user():
+    username = request.form.get('username', '').strip()
+    email    = request.form.get('email', '').strip()
+    password = request.form.get('password', '').strip()
+    role     = request.form.get('role', 'user')
+    access   = request.form.get('access', 'active')
+
+    if not username or not email or not password:
+        flash("All fields are required.", "error")
+        return redirect(url_for('view_users'))
+
+    if User.query.filter_by(email=email).first():
+        flash("A user with that email already exists.", "error")
+        return redirect(url_for('view_users'))
+
+    new_user = User(username=username, email=email, role=role, access=access)
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.flush()
+
+    first_letter = username[0].lower() if username else "default"
+    new_profile = Profiles(
+        user_id=new_user.id,
+        profile_image=f"{first_letter}.jpg",
+        bio="", nationality="", gender="Male",
+        dob=datetime.date.today(),
+        preffered_genre=""
+    )
+    db.session.add(new_profile)
+    db.session.commit()
+
+    log_event(actor=session.get('username', 'admin'), action='Admin created user',
+              target=f'User #{new_user.id}', details=f'Email: {email}',
+              user_id=session.get('user_id'))
+
+    flash(f"User '{username}' created successfully.", "success")
+    return redirect(url_for('view_users'))
+
 @app.route('/get_profile/<int:user_id>')
+@admin_required
 def get_profile(user_id):
     user = User.query.get(user_id)
     profile = Profiles.query.filter_by(user_id=user_id).first()
@@ -1721,10 +1936,8 @@ def get_profile(user_id):
     }
     
 @app.route('/movie_detail/<int:movie_id>')
+@login_required
 def movie_detail(movie_id):
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
 
     movie = Movies.query.get_or_404(movie_id)
     user = User.query.get(session['user_id'])
@@ -1766,10 +1979,8 @@ def movie_detail(movie_id):
         )
 
 @app.route('/movie_schedule')
+@login_required
 def view_schedule():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
 
     user = User.query.get(session['user_id'])
     
@@ -1816,10 +2027,8 @@ def view_schedule():
         )
 
 @app.route('/view_venues')
+@login_required
 def view_venues():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
 
     venues = Venue.query.all()
     user = User.query.get(session['user_id'])
@@ -1853,10 +2062,8 @@ def view_venues():
         )
 
 @app.route('/view_tickets')
+@login_required
 def view_tickets():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
 
     user = User.query.get(session['user_id'])
 
@@ -1927,10 +2134,8 @@ def view_tickets():
     )
 
 @app.route('/library')
+@login_required
 def view_library():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
 
     user = User.query.get(session['user_id'])
 
@@ -1964,10 +2169,8 @@ def view_library():
     )
 
 @app.route('/ticket_info/<int:user_id>/<int:schedule_id>')
+@login_required
 def ticket_info(user_id, schedule_id):
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
 
     user     = User.query.get_or_404(user_id)
     schedule = Schedule.query.get_or_404(schedule_id)
@@ -2026,12 +2229,9 @@ def ticket_info(user_id, schedule_id):
         profile_image=profile_image,
     )
 
-
 @app.route('/book/<int:schedule_id>')
+@login_required
 def book_seat(schedule_id):
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
  
     schedule = Schedule.query.get_or_404(schedule_id)
     movie    = Movies.query.get_or_404(schedule.movie_id)
@@ -2086,10 +2286,8 @@ def api_booked_seats(schedule_id):
  
  
 @app.route('/api/book', methods=['POST'])
+@login_required
 def api_book():
-    if 'user_id' not in session:
-        return jsonify({"success": False, "error": "Not logged in"}), 401
- 
     data        = request.get_json()
     schedule_id = data.get('schedule_id')
     seat_label  = data.get('seat')
@@ -2122,14 +2320,8 @@ def api_book():
     return jsonify({"success": True, "booking_id": booking.id})
 
 @app.route('/profile')
+@user_required
 def view_profile():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
- 
-    if session.get('role') == 'admin':
-        return redirect(url_for('admin_dashboard'))
- 
     user    = User.query.get(session['user_id'])
     profile = Profiles.query.filter_by(user_id=user.id).first()
  
@@ -2199,11 +2391,8 @@ def view_profile():
  
  
 @app.route('/update_profile', methods=['POST'])
+@login_required
 def update_profile():
-    if 'user_id' not in session:
-        flash("Please log in first", "danger")
-        return redirect(url_for('gotologin'))
- 
     user    = User.query.get(session['user_id'])
     profile = Profiles.query.filter_by(user_id=user.id).first()
  
@@ -2237,15 +2426,13 @@ def update_profile():
             return redirect(url_for('view_profile'))
  
     db.session.commit()
-    log_event(actor=user.username, action='Updated profile', target=f'User #{user.id}')
+    log_event(actor=user.username, action='Updated profile', target=f'User #{user.id}', user_id=user.id)
     flash("Profile updated successfully!", "success")
     return redirect(url_for('view_profile'))
 
 @app.route('/api/create-payment', methods=['POST'])
+@login_required
 def create_payment():
-    if 'user_id' not in session:
-        return jsonify({"error": "Not logged in"}), 401
-
     data            = request.get_json()
     schedule_id     = data.get('schedule_id')
     seats           = data.get('seats', [])
@@ -2309,10 +2496,8 @@ def create_payment():
         return jsonify({"error": resp.get("errors", [{}])[0].get("detail", "Payment failed")}), 400
 
 @app.route('/payment/success')
+@login_required
 def payment_success():
-    if 'user_id' not in session:
-        return redirect(url_for('gotologin'))
-
     session_id = request.args.get('session_id')
     pending    = session.get('pending_booking')
 
@@ -2430,7 +2615,8 @@ def payment_success():
         actor=user.username,
         action='Booked ticket(s)',
         target=f'Schedule #{schedule_id} — {movie.movie_name} @ {venue.venue_name}',
-        details=f'Seats: {", ".join(saved)} | Type: {ticket_type} | Count: {len(saved)}'
+        details=f'Seats: {", ".join(saved)} | Type: {ticket_type} | Count: {len(saved)}',
+        user_id=user.id
     )
 
     flash(f"Booking confirmed! Seats: {', '.join(saved)}", "success")
@@ -2484,17 +2670,14 @@ def view_ticket(user_id, schedule_id):
 @app.route('/payment/failed')
 def payment_failed():
     log_event(actor=session.get('username', 'system'), action='Payment cancelled or failed',
-              level='WARNING')
+              level='WARNING', user_id=session.get('user_id'))
     flash("Payment was cancelled or failed. Please try again.", "danger")
     return redirect(url_for('user_dashboard'))
 
 @app.route('/movie/<int:movie_id>/rate')
+@login_required
 def movie_rating_page(movie_id):
     """Show the rate-and-review page for a movie."""
-    if 'user_id' not in session:
-        flash("Please log in first.", "danger")
-        return redirect(url_for('gotologin'))
- 
     user  = User.query.get_or_404(session['user_id'])
     movie = Movies.query.get_or_404(movie_id)
     profile = Profiles.query.filter_by(user_id=user.id).first()
@@ -2550,11 +2733,9 @@ def movie_rating_page(movie_id):
  
  
 @app.route('/movie/<int:movie_id>/rate', methods=['POST'])
+@login_required
 def submit_rating(movie_id):
     """Create or update a rating."""
-    if 'user_id' not in session:
-        return redirect(url_for('gotologin'))
- 
     stars_raw = request.form.get('stars', '').strip()
     if not stars_raw or not stars_raw.isdigit() or not (1 <= int(stars_raw) <= 5):
         flash("Please select a star rating (1–5).", "danger")
@@ -2572,7 +2753,7 @@ def submit_rating(movie_id):
         existing.review     = review or None
         existing.updated_at = datetime.datetime.now()
         log_event(actor=session.get('username', 'user'), action='Updated movie rating',
-                  target=f'Movie #{movie_id}', details=f'Stars: {stars}')
+                  target=f'Movie #{movie_id}', details=f'Stars: {stars}', user_id=session.get('user_id'))
         flash("Your rating has been updated!", "success")
     else:
         db.session.add(MovieRating(
@@ -2582,7 +2763,7 @@ def submit_rating(movie_id):
             review   = review or None,
         ))
         log_event(actor=session.get('username', 'user'), action='Submitted movie rating',
-                  target=f'Movie #{movie_id}', details=f'Stars: {stars}')
+                  target=f'Movie #{movie_id}', details=f'Stars: {stars}', user_id=session.get('user_id'))
         flash("Thanks for your rating!", "success")
  
     db.session.commit()
@@ -2590,11 +2771,9 @@ def submit_rating(movie_id):
  
  
 @app.route('/movie/<int:movie_id>/rate/delete', methods=['POST'])
+@login_required
 def delete_rating(movie_id):
     """Remove a user's rating."""
-    if 'user_id' not in session:
-        return redirect(url_for('gotologin'))
- 
     rating = MovieRating.query.filter_by(
         user_id=session['user_id'], movie_id=movie_id
     ).first()
@@ -2603,20 +2782,14 @@ def delete_rating(movie_id):
         db.session.delete(rating)
         db.session.commit()
         log_event(actor=session.get('username', 'user'), action='Deleted movie rating',
-                  target=f'Movie #{movie_id}', level='WARNING')
+                  target=f'Movie #{movie_id}', level='WARNING', user_id=session.get('user_id'))
         flash("Your rating has been removed.", "success")
  
     return redirect(url_for('movie_rating_page', movie_id=movie_id))
 
 @app.route('/ratings')
+@user_required
 def view_ratings():
-    if 'user_id' not in session:
-        flash("Please log in first.", "danger")
-        return redirect(url_for('gotologin'))
- 
-    if session.get('role') == 'admin':
-        return redirect(url_for('admin_dashboard'))
- 
     user    = User.query.get_or_404(session['user_id'])
     profile = Profiles.query.filter_by(user_id=user.id).first()
     movies  = Movies.query.all()
@@ -2697,16 +2870,15 @@ def view_ratings():
     )
 
 @app.route('/delete_account', methods=['POST'])
+@login_required
 def delete_account():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
     user_id = session['user_id']
 
     try:
         # delete user from database
         user = User.query.get(user_id)
         if user:
+            log_admin_action(f'Deleted own admin account (username: {user.username})')
             db.session.delete(user)
             db.session.commit()
 
@@ -2721,6 +2893,98 @@ def delete_account():
         print(e)
         flash("Error deleting account.", "danger")
         return redirect(url_for('settings'))
+    
+@app.route("/reset_system", methods=["POST"])
+@admin_required
+def reset_system():
+    try:
+        log_admin_action('Triggered full system reset — all data wiped')
+        # 🚨 Drop ALL tables
+        db.drop_all()
+
+        # 🔄 Recreate ALL tables from models
+        db.create_all()
+
+        admin = User(
+            username="admin",
+            email="admin@luma.com",
+            role="admin",
+            access="active"
+        )
+        admin.set_password("12345")
+        db.session.add(admin)
+        db.session.commit()
+
+        flash("System successfully reset.", "success")
+        return redirect(url_for("logout"))
+
+    except Exception as e:
+        flash(f"Reset failed: {str(e)}", "danger")
+        return redirect(url_for("admin_dashboard"))
+    
+@app.route("/alter_all_roles", methods=["POST"])
+@admin_required
+def alter_all_roles():
+    new_role = request.form.get("new_role")
+    
+    print(f"DEBUG: Requested new role for all users: {new_role}")
+
+    if new_role not in ["user", "admin"]:
+        return "Invalid role", 400
+    
+
+    # Example SQLAlchemy usage
+    users = User.query.all()
+
+    for user in users:
+        user.role = new_role
+
+    db.session.commit()
+
+    log_admin_action(f'Changed ALL user roles to "{new_role}"')
+
+    # Sync the session role so the current user's role matches what was just set
+    session['role'] = new_role
+
+    if new_role == "admin":
+        flash("All users have been promoted to admin.", "success")
+        return redirect(url_for("AdminAccount"))
+    else:
+        flash("All users have been demoted to user.", "success")
+        return redirect(url_for("user_dashboard"))
+    
+@app.route("/api/verify-admin", methods=["POST"])
+@admin_required
+def verify_admin():
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"valid": False, "error": "No data received"}), 400
+
+    password = data.get("password", "")
+    if not password:
+        return jsonify({"valid": False, "error": "Missing password"}), 400
+
+    admin = User.query.get(session["user_id"])
+    if not admin:
+        return jsonify({"valid": False, "error": "Admin not found"}), 404
+
+    if admin.check_password(password):
+        return jsonify({"valid": True}), 200
+
+    return jsonify({"valid": False, "error": "Incorrect password"}), 401
+
+
+@app.route("/api/system-stats", methods=["GET"])
+@admin_required
+def system_stats():
+    return jsonify({
+        "users":     User.query.count(),
+        "movies":    Movies.query.count(),
+        "tickets":   UserTickets.query.count(),
+        "schedules": Schedule.query.count(),
+        "venues":    Venue.query.count(),
+        "logs":      SystemLog.query.count(),
+    })
 
 if __name__ == '__main__':
 

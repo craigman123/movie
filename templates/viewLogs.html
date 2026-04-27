@@ -166,6 +166,7 @@
                         <th>Action</th>
                         <th>Target</th>
                         <th>Details</th>
+                        <th>User ID</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -184,6 +185,7 @@
                         <td style="color:#f1f5f9; font-weight:500;">{{ log.action }}</td>
                         <td style="color:#8892a4; font-style:italic; font-size:.85vw;">{{ log.target or '—' }}</td>
                         <td class="details-cell">{{ log.details or '—' }}</td>
+                        <td style="color:#cbd5e1; font-weight:500;">{{ log.user_id or '—' }}</td>
                     </tr>
                     {% else %}
                     <tr><td colspan="7" class="no-data">No logs found.</td></tr>

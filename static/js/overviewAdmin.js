@@ -1,19 +1,30 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const cards = document.querySelectorAll('.nav-card');
-    const sections = document.querySelectorAll('.tab-section');
+    const cards = document.querySelectorAll(".nav-card");
+    const sections = document.querySelectorAll(".tab-section");
+    const mobileView = window.matchMedia("(max-width: 900px)");
 
     cards.forEach(card => {
-        card.addEventListener('click', () => {
+        card.addEventListener("click", () => {
+            const target = card.getAttribute("data-target");
+            const targetSection = document.getElementById(target);
 
-            const target = card.getAttribute('data-target');
+            cards.forEach(item => item.classList.remove("active-card"));
+            card.classList.add("active-card");
 
-            // remove active from all
+            if (mobileView.matches) {
+                if (targetSection) {
+                    targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+                return;
+            }
+
             sections.forEach(section => {
-                section.classList.remove('active');
+                section.classList.remove("active");
             });
 
-            // add active to target
-            document.getElementById(target).classList.add('active');
+            if (targetSection) {
+                targetSection.classList.add("active");
+            }
         });
     });
 });

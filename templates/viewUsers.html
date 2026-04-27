@@ -9,6 +9,19 @@
 {% endblock %}
 
 {% block body %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <aside class="sidebar" id="sidebar">
         <nav class="nav">
             <div class="logoandname">
@@ -95,7 +108,13 @@
 <main class="main-content">
     <section class="user-section"> 
         <div class="users-header">
-            <h4>USERS MANAGEMENT</h4>
+            <div style="display:flex; align-items:center; gap:16px; justify-content: space-between;width: 100%;">
+                <h4>USERS MANAGEMENT</h4>
+                <button class="add-user-btn" onclick="openAddUserModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"/></svg>
+                    Add User
+                </button>
+            </div>
             <div class="cards-container">
                 <div class="card">
                     <h3>TOTAL USERS</h3>
@@ -189,29 +208,41 @@
                             {% endif %}
                         </td>
                         <td>
-                            <button class="edit-btn" type="button"
-                                onclick="openEditUserModal(this)"
-                                data-id="{{ user.id }}"
-                                data-name="{{ user.username }}"
-                                data-email="{{ user.email }}"
-                                data-role="{{ user.role }}"
-                                data-status="{{ user.access }}"
-                                data-image="{{ user.profile.profile_image if user.profile else '' }}"
-                                data-bio="{{ user.profile.bio if user.profile else '' }}"
-                                data-nationality="{{ user.profile.nationality if user.profile else '' }}"
-                                data-gender="{{ user.profile.gender if user.profile else '' }}"
-                                data-dob="{{ user.profile.dob if user.profile else '' }}"
-                                data-genre="{{ user.profile.preffered_genre if user.profile else '' }}">
-                                Edit
-                            </button>
-                            <form 
-                                action="{{ url_for('delete_user', user_id=user.id) }}" 
-                                method="POST"
-                                class="delete-form">
-                                <button type="submit" class="delete-btn" data-user-id="{{ user.id }}" onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.');">
-                                    Delete
+                            {% if user.id == session['user_id'] %}
+                                <div class="action-lock">
+                                    <button class="edit-btn disabled-action" type="button" disabled>
+                                        Edit
+                                    </button>
+                                    <button type="button" class="delete-btn disabled-action" disabled>
+                                        Delete
+                                    </button>
+                                    <span class="action-note">Current admin account</span>
+                                </div>
+                            {% else %}
+                                <button class="edit-btn" type="button"
+                                    onclick="openEditUserModal(this)"
+                                    data-id="{{ user.id }}"
+                                    data-name="{{ user.username }}"
+                                    data-email="{{ user.email }}"
+                                    data-role="{{ user.role }}"
+                                    data-status="{{ user.access }}"
+                                    data-image="{{ user.profile.profile_image if user.profile else '' }}"
+                                    data-bio="{{ user.profile.bio if user.profile else '' }}"
+                                    data-nationality="{{ user.profile.nationality if user.profile else '' }}"
+                                    data-gender="{{ user.profile.gender if user.profile else '' }}"
+                                    data-dob="{{ user.profile.dob if user.profile else '' }}"
+                                    data-genre="{{ user.profile.preffered_genre if user.profile else '' }}">
+                                    Edit
                                 </button>
-                            </form>
+                                <form 
+                                    action="{{ url_for('delete_user', user_id=user.id) }}" 
+                                    method="POST"
+                                    class="delete-form">
+                                    <button type="submit" class="delete-btn" data-user-id="{{ user.id }}">
+                                        Delete
+                                    </button>
+                                </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -333,6 +364,44 @@
             </div>
         </form>
 
+    </div>
+</div>
+
+<!-- ── ADD USER MODAL ── -->
+<div id="addUserModal" class="editUserModal">
+    <div class="modal-box" style="height:auto; max-height:90vh;">
+        <div class="modal-header">
+            <h3>Add New User</h3>
+            <span class="close-btn" onclick="closeAddUserModal()" style="left:unset; position:relative; font-size:1.6rem;">×</span>
+        </div>
+        <form action="{{ url_for('add_user') }}" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+            <label>Full Name</label>
+            <input class="add-input" type="text" name="username" placeholder="Full name" required>
+
+            <label>Email</label>
+            <input class="add-input" type="email" name="email" placeholder="Email address" required>
+
+            <label>Password</label>
+            <input class="add-input" type="password" name="password" placeholder="Password" required>
+
+            <label>Role</label>
+            <select class="add-input" name="role">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+                <option value="verified">Verified</option>
+            </select>
+
+            <label>Status</label>
+            <select class="add-input" name="access">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="banned">Banned</option>
+            </select>
+
+            <button type="submit" class="save-btn" style="margin-top:10px;">
+                Create User
+            </button>
+        </form>
     </div>
 </div>
 

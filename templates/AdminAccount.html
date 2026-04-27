@@ -239,6 +239,49 @@
                     </form>
                 </div>
 
+                <!-- Admin Actions (Permanent Danger Zone Record) -->
+                <div class="acc-card admin-actions-card">
+                    <div class="acc-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#ef4444" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <h5>Admin Actions — Permanent Record</h5>
+                    </div>
+                    <p class="admin-actions-desc">Every danger zone action you perform is permanently logged here.</p>
+                    <table class="activity-log-table">
+                        <thead>
+                            <tr>
+                                <th>Admin ID</th>
+                                <th>Timestamp</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for entry in admin_actions %}
+                            <tr>
+                                <td style="white-space:nowrap;color:#64748b;font-variant-numeric:tabular-nums;">
+                                    {{ entry.admin_id }}
+                                </td>
+
+                                <td style="white-space:nowrap;color:#64748b;font-variant-numeric:tabular-nums;">
+                                    {{ entry.timestamp.strftime('%b %d, %Y %H:%M') }}
+                                </td>
+
+                                <td class="admin-action-text">
+                                    {{ entry.action }}
+                                </td>
+                            </tr>
+
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="no-data">
+                                    No danger zone actions recorded yet.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
                 <!-- Recent Activity -->
                 <div class="acc-card">
                     <div class="acc-card-header">
@@ -280,25 +323,70 @@
                 <div class="danger-zone">
                     <h5>⚠ Danger Zone</h5>
                     <p>These actions are irreversible. Proceed with caution.</p>
+
                     <div class="danger-actions">
-                        
+
                         <!-- Logout -->
-                        <form method="POST" action="{{ url_for('logout') }}"
-                            onsubmit="return confirm('Log out of the admin panel?')">
-                            <button type="submit" class="btn-danger">🚪 Log Out</button>
+                        <form id="logoutForm" method="POST" action="{{ url_for('logout') }}">
+                            <button type="button" class="btn-danger"
+                                onclick="confirmAction('Logout', 'Log out of the admin panel?', () => document.getElementById('logoutForm').submit())">
+                                🚪 Log Out
+                            </button>
                         </form>
 
-                        <!-- Force Delete Account -->
-                        <form method="POST" action="{{ url_for('delete_account') }}"
-                            onsubmit="return confirmDelete()">
-                            <button type="submit" class="btn-danger">🗑 Delete Account</button>
+                        <!-- Delete Account -->
+                        <form id="deleteForm" method="POST" action="{{ url_for('delete_account') }}">
+                            <button type="button" class="btn-danger"
+                                onclick="confirmDeleteAccount()">
+                                🗑 Delete Account
+                            </button>
                         </form>
 
+                        <!-- Reset System -->
+                        <form id="resetForm" method="POST" action="{{ url_for('reset_system') }}">
+                            <button type="button" class="btn-danger"
+                                onclick="confirmResetSystem()">
+                                ⚡ Reset System
+                            </button>
+                        </form>
+
+                        <div>
+                            <form id="roleForm" method="POST" action="{{ url_for('alter_all_roles') }}">
+                                <div class="danger-role-box">
+
+                                    <label for="roleSelect">Change ALL user roles:</label>
+
+                                    <select id="roleSelect" name="new_role" required>
+                                        <option value="" disabled selected>Select role...</option>
+                                        {% for r in ['user', 'admin'] %}
+                                        <option value="{{ r }}">{{ r.capitalize() }}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <button type="button" class="btn-danger"
+                                        onclick="confirmBulkRoleChange()">
+                                        ⚠ Update All Roles
+                                    </button>
+
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </main>
+
+    <div id="sysModal" class="sysModal_hidden sysModal_overlay">
+        <div class="sysModal_box">
+            <h3 id="sysModal_title">Title</h3>
+            <p id="sysModal_message">Message</p>
+
+            <div class="sysModal_actions">
+                <button id="sysModal_cancelBtn">Cancel</button>
+                <button id="sysModal_confirmBtn">OK</button>
+            </div>
+        </div>
+    </div>
 
 {% endblock %}

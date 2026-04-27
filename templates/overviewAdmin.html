@@ -107,79 +107,275 @@
         </nav> 
     </aside>
 
-    <main class="main">
-        <!-- CONTENT -->
+    <main class="main-content">
         <section class="content">
-            <div class="cards-header">
-            <h4>OVERVIEW</h4>
-                <div class="cards-container">
-                    <div class="card nav-card" data-target="movies-section">
-                        <h3>TOTAL MOVIES</h3>
-                        <p>{{ count_movies }}</p>
-                    </div>
-                    <div class="card nav-card" data-target="users-section">
+            <div class="movies-header overview-header">
+                <div class="header-copy">
+                    <h4>OVERVIEW</h4>
+                    <p class="header-subtext">A summarization of the system so you can quickly see users, sales, movies, schedules, and recent activity.</p>
+                </div>
+
+                <div class="cards-container overview-cards">
+                    <button class="card nav-card active-card" type="button" data-target="performance-section">
+                        <h3>TOTAL REVENUE</h3>
+                        <p>PHP {{ "{:,}".format(total_revenue) }}</p>
+                    </button>
+                    <button class="card nav-card" type="button" data-target="users-section">
                         <h3>USERS</h3>
                         <p>{{ count_users }}</p>
+                    </button>
+                    <button class="card nav-card" type="button" data-target="movies-section">
+                        <h3>MOVIES</h3>
+                        <p>{{ count_movies }}</p>
+                    </button>
+                    <button class="card nav-card" type="button" data-target="activity-section">
+                        <h3>ACTIVITY</h3>
+                        <p>{{ total_logs }}</p>
+                    </button>
+                </div>
+            </div>
+
+            <div class="cards-container summary-strip">
+                <article class="card info-card">
+                    <h3>TODAY REVENUE</h3>
+                    <p>PHP {{ "{:,}".format(revenue_today) }}</p>
+                    <small>Sales recorded today</small>
+                </article>
+                <article class="card info-card">
+                    <h3>THIS MONTH</h3>
+                    <p>PHP {{ "{:,}".format(revenue_this_month) }}</p>
+                    <small>Revenue since month start</small>
+                </article>
+                <article class="card info-card">
+                    <h3>BUYERS</h3>
+                    <p>{{ unique_buyers_count }}</p>
+                    <small>Users with ticket purchases</small>
+                </article>
+                <article class="card info-card">
+                    <h3>SCHEDULES TODAY</h3>
+                    <p>{{ schedules_today_count }}</p>
+                    <small>{{ active_schedules_count }} active in total</small>
+                </article>
+            </div>
+
+            <div class="insight-grid">
+                <section id="performance-section" class="sales-section tab-section active">
+                    <div class="section-header">
+                        <h5>Performance Snapshot</h5>
+                        <span class="badge-count">{{ total_tickets }} tickets tracked</span>
                     </div>
-                </div>
-            </div>
 
-            <div id="users-section" class="tab-section">
-                <h4>Recent Users</h4>
+                    <div class="status-grid">
+                        <div class="status-tile">
+                            <span>Total Tickets</span>
+                            <strong>{{ total_tickets }}</strong>
+                            <small>{{ standard_tickets_count }} standard and {{ premium_tickets_count }} premium</small>
+                        </div>
+                        <div class="status-tile">
+                            <span>Schedule Coverage</span>
+                            <strong>{{ movies_with_schedules_count }}/{{ count_movies }}</strong>
+                            <small>{{ movies_without_schedules_count }} movies still need schedules</small>
+                        </div>
+                        <div class="status-tile">
+                            <span>Now Showing</span>
+                            <strong>{{ showing_now_count }}</strong>
+                            <small>{{ coming_soon_count }} coming soon, {{ ended_movies_count }} ended</small>
+                        </div>
+                        <div class="status-tile">
+                            <span>Venues</span>
+                            <strong>{{ total_venues }}</strong>
+                            <small>{{ upcoming_schedules_count }} active upcoming schedules</small>
+                        </div>
+                    </div>
 
-                <div class="table-wrapper">
-                    <table>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Created Date</th>
-                        </tr>
+                    <div class="highlight-grid">
+                        <article class="chart-card">
+                            <p>Top Movie</p>
+                            {% if top_movie %}
+                                <h5>{{ top_movie.name }}</h5>
+                                <span>PHP {{ "{:,}".format(top_movie.revenue) }} from {{ top_movie.tickets }} tickets</span>
+                            {% else %}
+                                <h5>No sales yet</h5>
+                                <span>Top-performing movie will appear here after ticket sales.</span>
+                            {% endif %}
+                        </article>
+                        <article class="chart-card">
+                            <p>Top Venue</p>
+                            {% if top_venue %}
+                                <h5>{{ top_venue.name }}</h5>
+                                <span>{{ top_venue.tickets }} tickets booked in this venue</span>
+                            {% else %}
+                                <h5>No venue activity yet</h5>
+                                <span>Venue performance will appear once bookings are made.</span>
+                            {% endif %}
+                        </article>
+                    </div>
+                </section>
 
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user.id }}</td>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ user.role }}</td>
-                            <td>
-                                <span class="status-{{ user.access }} stat">
-                                    {{ user.access }}
-                                </span>
-                            </td>
-                            <td>{{ user.created_at }}</td>
-                        </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-            </div>
+                <section id="users-section" class="sales-section tab-section">
+                    <div class="section-header">
+                        <h5>User Status Snapshot</h5>
+                        <span class="badge-count">{{ admins_count }} admins / {{ regular_users_count }} users</span>
+                    </div>
 
-            <div id="movies-section" class="tab-section active">
-                <h4>Movies</h4>
+                    <div class="status-grid">
+                        <div class="status-tile">
+                            <span>Active</span>
+                            <strong>{{ active_users_count }}</strong>
+                        </div>
+                        <div class="status-tile">
+                            <span>Verified</span>
+                            <strong>{{ verified_users_count }}</strong>
+                        </div>
+                        <div class="status-tile">
+                            <span>Inactive</span>
+                            <strong>{{ inactive_users_count }}</strong>
+                        </div>
+                        <div class="status-tile alert">
+                            <span>Banned</span>
+                            <strong>{{ banned_users_count }}</strong>
+                        </div>
+                    </div>
+
                     <div class="table-wrapper">
-                        <table>
-                        <tr>
-                            <th>ID</th>
-                            <th>Movie Name</th>
-                            <th>Age Restriction</th>
-                            <th>Genre</th>
-                            <th>Created Date</th>
-                        </tr>
+                        <table class="sales-table">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Created Date</th>
+                            </tr>
 
-                        {% for movie in movies %}
-                        <tr>
-                            <td>{{ movie.id }}</td>
-                            <td>{{ movie.movie_name }}</td>
-                            <td>{{ movie.age_restrict }}</td>
-                            <td>{{ movie.genre }}</td>
-                            <td>{{ movie.movie_date_created }}</td>
-                        </tr>
-                        {% endfor %}
-                    </table>
-                </div>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.role }}</td>
+                                <td>
+                                    <span class="status-{{ user.access }} stat">
+                                        {{ user.access }}
+                                    </span>
+                                </td>
+                                <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </section>
+
+                <section id="movies-section" class="sales-section tab-section">
+                    <div class="section-header">
+                        <h5>Movie Pipeline Summary</h5>
+                        <span class="badge-count">{{ movies_with_schedules_count }} with schedules</span>
+                    </div>
+
+                    <div class="status-grid movie-grid">
+                        <div class="status-tile">
+                            <span>Now Showing</span>
+                            <strong>{{ showing_now_count }}</strong>
+                        </div>
+                        <div class="status-tile">
+                            <span>Coming Soon</span>
+                            <strong>{{ coming_soon_count }}</strong>
+                        </div>
+                        <div class="status-tile">
+                            <span>Ended</span>
+                            <strong>{{ ended_movies_count }}</strong>
+                        </div>
+                        <div class="status-tile">
+                            <span>No Schedules</span>
+                            <strong>{{ movies_without_schedules_count }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="sales-table">
+                            <tr>
+                                <th>ID</th>
+                                <th>Movie Name</th>
+                                <th>Age Restriction</th>
+                                <th>Genre</th>
+                                <th>Created Date</th>
+                            </tr>
+
+                            {% for movie in movies %}
+                            <tr>
+                                <td>{{ movie.id }}</td>
+                                <td>{{ movie.movie_name }}</td>
+                                <td>{{ movie.age_restrict }}</td>
+                                <td>{{ movie.genre }}</td>
+                                <td>{{ movie.movie_date_created.strftime('%Y-%m-%d') if movie.movie_date_created else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </section>
+
+                <section id="activity-section" class="sales-section tab-section">
+                    <div class="section-header">
+                        <h5>Latest System Events</h5>
+                        <span class="badge-count">{{ recent_logs|length }} shown</span>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="sales-table">
+                            <tr>
+                                <th>Level</th>
+                                <th>Actor</th>
+                                <th>Action</th>
+                                <th>Target</th>
+                                <th>Timestamp</th>
+                            </tr>
+                            {% for log in recent_logs %}
+                            <tr>
+                                <td><span class="log-level level-{{ log.level|lower }}">{{ log.level }}</span></td>
+                                <td>{{ log.actor }}</td>
+                                <td>{{ log.action }}</td>
+                                <td>{{ log.target or 'System event' }}</td>
+                                <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M') if log.timestamp else '-' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="no-data">No recent logs yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </section>
             </div>
+
+            <section class="sales-section quick-board">
+                <div class="section-header">
+                    <h5>Quick System Board</h5>
+                    <span class="badge-count">{{ total_schedules }} schedules total</span>
+                </div>
+
+                <div class="board-grid">
+                    <article class="board-card">
+                        <span>Schedules</span>
+                        <strong>{{ total_schedules }}</strong>
+                        <small>{{ active_schedules_count }} active, {{ inactive_schedules_count }} inactive</small>
+                    </article>
+                    <article class="board-card">
+                        <span>Movies</span>
+                        <strong>{{ count_movies }}</strong>
+                        <small>{{ movies_with_schedules_count }} already assigned to schedules</small>
+                    </article>
+                    <article class="board-card">
+                        <span>Users</span>
+                        <strong>{{ count_users }}</strong>
+                        <small>{{ verified_users_count }} verified accounts</small>
+                    </article>
+                    <article class="board-card">
+                        <span>Logs</span>
+                        <strong>{{ total_logs }}</strong>
+                        <small>Track changes and recent events</small>
+                    </article>
+                </div>
+            </section>
         </section>
 
     </main>

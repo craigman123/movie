@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-    <title>LUMA Admin</title>
+    <title>LUMA Admin — Add Movie</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-pack.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -14,80 +14,78 @@
 
 {% block body %}
 
-
+    <!-- ═══════════════ SIDEBAR (untouched) ═══════════════ -->
     <aside class="sidebar" id="sidebar">
         <nav class="nav">
             <div class="logoandname">
                 <header class="head">
                     <div class="image">
-                        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" class="logo" alt="Luma"></img>
+                        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" class="logo" alt="Luma">
                         <span class="AdminName">WELCOME ADMIN,<br> {{ user.username }} </span>
                     </div>
                 </header>
             </div>
-
             <div class="menu-container">
                 <div class="button-container">
                     <ul class="menu">
                         <li class="menu-btn">
                             <a href="{{ url_for('overview') }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"]
-                                fill="#ffffff" viewBox="0 0 24 24" style="fill: rgb(255, 255, 255);transform: ;msFilter:;">
-                                <path d="M4.626 8.878a7.937 7.937 0 0 1 1.71-2.541 7.92 7.92 0 0 1 2.542-1.71 8.12 8.12 0 0 1 6.13-.041A2.49 2.49 0 0 0 17.5 7C18.886 7 20 5.886 20 4.5S18.886 2 17.5 2c-.689 0-1.312.276-1.763.725-2.431-.973-5.223-.958-7.635.059-1.19.5-2.26 1.22-3.18 2.139A9.98 9.98 0 0 0 2 12h2c0-1.086.211-2.136.626-3.122zm14.747 6.244c-.401.952-.977 1.808-1.71 2.541s-1.589 1.309-2.542 1.71a8.12 8.12 0 0 1-6.13.041A2.488 2.488 0 0 0 6.5 17C5.114 17 4 18.114 4 19.5S5.114 22 6.5 22c.689 0 1.312-.276 1.763-.725A9.973 9.973 0 0 0 12 22a9.983 9.983 0 0 0 9.217-6.102A9.992 9.992 0 0 0 22 12h-2a7.993 7.993 0 0 1-.627 3.122z">
-                                </path><path d="M12 7.462c-2.502 0-4.538 2.036-4.538 4.538S9.498 16.538 12 16.538c2.502 0 4.538-2.036 4.538-4.538S14.502 7.462 12 7.462z"></path></svg>
-                            <span>OVERVIEW</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="0 0 24 24">
+                                    <path d="M4.626 8.878a7.937 7.937 0 0 1 1.71-2.541 7.92 7.92 0 0 1 2.542-1.71 8.12 8.12 0 0 1 6.13-.041A2.49 2.49 0 0 0 17.5 7C18.886 7 20 5.886 20 4.5S18.886 2 17.5 2c-.689 0-1.312.276-1.763.725-2.431-.973-5.223-.958-7.635.059-1.19.5-2.26 1.22-3.18 2.139A9.98 9.98 0 0 0 2 12h2c0-1.086.211-2.136.626-3.122zm14.747 6.244c-.401.952-.977 1.808-1.71 2.541s-1.589 1.309-2.542 1.71a8.12 8.12 0 0 1-6.13.041A2.488 2.488 0 0 0 6.5 17C5.114 17 4 18.114 4 19.5S5.114 22 6.5 22c.689 0 1.312-.276 1.763-.725A9.973 9.973 0 0 0 12 22a9.983 9.983 0 0 0 9.217-6.102A9.992 9.992 0 0 0 22 12h-2a7.993 7.993 0 0 1-.627 3.122z"/>
+                                    <path d="M12 7.462c-2.502 0-4.538 2.036-4.538 4.538S9.498 16.538 12 16.538c2.502 0 4.538-2.036 4.538-4.538S14.502 7.462 12 7.462z"/>
+                                </svg>
+                                <span>OVERVIEW</span>
                             </a>
                         </li>
                         <li class="menu-btn active-menu">
                             <a href="{{ url_for('admin_dashboard') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"  
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M18 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.33L22 17V7l-4 3.33zm-2 12H4V6h12z"></path><path d="M11 8H9v3H6v2h3v3h2v-3h3v-2h-3z"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M18 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.33L22 17V7l-4 3.33zm-2 12H4V6h12z"/>
+                                    <path d="M11 8H9v3H6v2h3v3h2v-3h3v-2h-3z"/>
                                 </svg>
                                 <span>ADD MOVIES</span>
                             </a>
                         </li>
                         <li class="menu-btn">
                             <a href="{{ url_for('view_users') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M8.5 10.5c0 2 1.5 3.5 3.5 3.5s3.5-1.5 3.5-3.5S14 7 12 7s-3.5 1.5-3.5 3.5m5 0c0 .88-.62 1.5-1.5 1.5s-1.5-.62-1.5-1.5S11.12 9 12 9s1.5.62 1.5 1.5"></path><path d="m20.53 7.15-8-5c-.32-.2-.74-.2-1.06 0l-8 5c-.29.18-.47.5-.47.85v8c0 .34.18.67.47.85l8 5a1.01 1.01 0 0 0 1.06 0l8-5c.29-.18.47-.5.47-.85V8c0-.34-.18-.67-.47-.85M12 19.82l-3.1-1.94c.55-.56 1.29-.88 2.1-.88h2c.8 0 1.55.32 2.1.88zm7-4.38-2.19 1.37A4.97 4.97 0 0 0 13 15h-2c-1.48 0-2.87.68-3.81 1.81L5 15.44V8.55l7-4.38 7 4.38z"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M8.5 10.5c0 2 1.5 3.5 3.5 3.5s3.5-1.5 3.5-3.5S14 7 12 7s-3.5 1.5-3.5 3.5m5 0c0 .88-.62 1.5-1.5 1.5s-1.5-.62-1.5-1.5S11.12 9 12 9s1.5.62 1.5 1.5"/>
+                                    <path d="m20.53 7.15-8-5c-.32-.2-.74-.2-1.06 0l-8 5c-.29.18-.47.5-.47.85v8c0 .34.18.67.47.85l8 5a1.01 1.01 0 0 0 1.06 0l8-5c.29-.18.47-.5.47-.85V8c0-.34-.18-.67-.47-.85M12 19.82l-3.1-1.94c.55-.56 1.29-.88 2.1-.88h2c.8 0 1.55.32 2.1.88zm7-4.38-2.19 1.37A4.97 4.97 0 0 0 13 15h-2c-1.48 0-2.87.68-3.81 1.81L5 15.44V8.55l7-4.38 7 4.38z"/>
                                 </svg>
-                                <span>USERS</span>  
-                            </a>  
+                                <span>USERS</span>
+                            </a>
                         </li>
                         <li class="menu-btn">
                             <a href="{{ url_for('view_sales') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh" 
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path><path d="M12 11c-2 0-2-.63-2-1 0-.48.7-1 2-1 1.18 0 1.39.64 1.4 1.02l1-.02h1c0-1.03-.67-2.47-2.4-2.88V6h-2v1.09C9.03 7.42 8 8.72 8 10c0 1.12.52 3 4 3 2 0 2 .68 2 1 0 .42-.62 1-2 1-1.84 0-1.99-.86-2-1H8c0 .92.66 2.55 3 2.92V18h2v-1.09c1.97-.33 3-1.63 3-2.91 0-1.12-.52-3-4-3"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"/>
+                                    <path d="M12 11c-2 0-2-.63-2-1 0-.48.7-1 2-1 1.18 0 1.39.64 1.4 1.02l1-.02h1c0-1.03-.67-2.47-2.4-2.88V6h-2v1.09C9.03 7.42 8 8.72 8 10c0 1.12.52 3 4 3 2 0 2 .68 2 1 0 .42-.62 1-2 1-1.84 0-1.99-.86-2-1H8c0 .92.66 2.55 3 2.92V18h2v-1.09c1.97-.33 3-1.63 3-2.91 0-1.12-.52-3-4-3"/>
                                 </svg>
                                 <span>SALES</span>
                             </a>
                         </li>
                         <li class="menu-btn">
                             <a href="{{ url_for('movieViewAdmin') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2M9.54 9 6.87 5h2.6l2.67 4zm5 0-2.67-4h2.6l2.67 4zM4 5h.46l2.67 4H4zm0 14v-8h16V9h-.46l-2.67-4H20v14z"></path><path d="m10 18 5-3-5-3z"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2M9.54 9 6.87 5h2.6l2.67 4zm5 0-2.67-4h2.6l2.67 4zM4 5h.46l2.67 4H4zm0 14v-8h16V9h-.46l-2.67-4H20v14z"/>
+                                    <path d="m10 18 5-3-5-3z"/>
                                 </svg>
                                 <span>MOVIES</span>
                             </a>
                         </li>
                         <li class="menu-btn">
                             <a href="{{ url_for('view_logs') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M4 11h16v2H4zm0-5h16v2H4zm0 10h16v2H4z"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M4 11h16v2H4zm0-5h16v2H4zm0 10h16v2H4z"/>
                                 </svg>
                                 <span>LOGS</span>
                             </a>
                         </li>
                         <li class="menu-btn">
                             <a href="{{ url_for('AdminAccount') }}">
-                                <svg  xmlns="http://www.w3.org/2000/svg" width="2.65vw" height= "5vh"
-                                    fill="#ffffff" viewBox="2 2 20 20" >
-                                    <path d="M8.5 12a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3m7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3"></path><path d="M12 22c5.51 0 10-4.49 10-10S17.51 2 12 2 2 6.49 2 12s4.49 10 10 10m7.7-12.13a7.06 7.06 0 0 1-4.83-3.51c.15-.28.3-.56.42-.85.09-.22.17-.44.24-.67 2.02 1 3.55 2.82 4.17 5.03M12 4c.57 0 1.12.06 1.65.17-.06.19-.13.37-.2.55-.15.35-.33.68-.53 1l-.04.06c-.31.48-.67.91-1.07 1.29-.05.05-.11.1-.16.14-.14.13-.29.25-.45.37-.07.05-.13.1-.2.15-.18.12-.36.24-.55.35-.04.02-.08.05-.11.07-.22.12-.45.23-.69.32-.08.03-.17.06-.25.09-.17.06-.34.12-.52.17-.09.02-.17.05-.26.07-.19.04-.38.08-.57.11-.08.01-.16.03-.24.04a6.8 6.8 0 0 1-3.05-.33C6.04 5.89 8.8 4 12 4m-7.86 6.52c.92.31 1.87.48 2.86.48.31 0 .62-.02.93-.05.11-.01.23-.04.34-.05.18-.03.37-.05.55-.08h.03c.12-.03.25-.06.37-.1.17-.04.33-.08.5-.13s.33-.12.49-.18c.1-.04.21-.07.31-.11.01 0 .02-.01.04-.02.16-.07.32-.15.48-.23.11-.05.21-.1.32-.16.15-.08.29-.17.44-.26.08-.05.17-.1.26-.16.03-.02.05-.04.07-.05.12-.08.24-.18.36-.27s.25-.19.37-.29l.28-.25c.09-.08.18-.15.26-.24.05-.05.1-.11.14-.16.03-.03.06-.06.09-.08a9.07 9.07 0 0 0 6.4 3.82v.06c0 4.41-3.59 8-8 8s-8-3.59-8-8c0-.5.05-1 .14-1.48Z"></path>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2.65vw" height="5vh" fill="#ffffff" viewBox="2 2 20 20">
+                                    <path d="M8.5 12a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3m7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 1 0 0-3"/>
+                                    <path d="M12 22c5.51 0 10-4.49 10-10S17.51 2 12 2 2 6.49 2 12s4.49 10 10 10m7.7-12.13a7.06 7.06 0 0 1-4.83-3.51c.15-.28.3-.56.42-.85.09-.22.17-.44.24-.67 2.02 1 3.55 2.82 4.17 5.03M12 4c.57 0 1.12.06 1.65.17-.06.19-.13.37-.2.55-.15.35-.33.68-.53 1l-.04.06c-.31.48-.67.91-1.07 1.29-.05.05-.11.1-.16.14-.14.13-.29.25-.45.37-.07.05-.13.1-.2.15-.18.12-.36.24-.55.35-.04.02-.08.05-.11.07-.22.12-.45.23-.69.32-.08.03-.17.06-.25.09-.17.06-.34.12-.52.17-.09.02-.17.05-.26.07-.19.04-.38.08-.57.11-.08.01-.16.03-.24.04a6.8 6.8 0 0 1-3.05-.33C6.04 5.89 8.8 4 12 4m-7.86 6.52c.92.31 1.87.48 2.86.48.31 0 .62-.02.93-.05.11-.01.23-.04.34-.05.18-.03.37-.05.55-.08h.03c.12-.03.25-.06.37-.1.17-.04.33-.08.5-.13s.33-.12.49-.18c.1-.04.21-.07.31-.11.01 0 .02-.01.04-.02.16-.07.32-.15.48-.23.11-.05.21-.1.32-.16.15-.08.29-.17.44-.26.08-.05.17-.1.26-.16.03-.02.05-.04.07-.05.12-.08.24-.18.36-.27s.25-.19.37-.29l.28-.25c.09-.08.18-.15.26-.24.05-.05.1-.11.14-.16.03-.03.06-.06.09-.08a9.07 9.07 0 0 0 6.4 3.82v.06c0 4.41-3.59 8-8 8s-8-3.59-8-8c0-.5.05-1 .14-1.48Z"/>
                                 </svg>
                                 <span>ACCOUNT</span>
                             </a>
@@ -95,138 +93,166 @@
                     </ul>
                 </div>
             </div>
-        </nav> 
+        </nav>
     </aside>
 
-    <!-- ----------- mian content starts here ------------ -->
-
+    <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
     <main class="main-content hidden">
-
-        <form id="addForm" action="/add_movie" method="POST" enctype="multipart/form-data"> 
+        <form id="addForm" action="/add_movie" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="venue_date" id="venue_date_input">
             <input type="hidden" name="movie_schedule" id="movie_schedule_input">
-            <div class="main-sub-container">
 
-    <!-- ---------------- image uploader starts here ---------------- -->
-
-            <div class="image-container">
-                <div class="borderposter" id="borderposter">    
-                    <div class="file-container"> 
-                        <div class="file-header"> 
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
-                            <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg> <p>UPLOAD MOVIE POSTER</p>
-                        </div> 
-                        <label for="fileposter" class="file-footer"> 
-                            <svg fill="#000000" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z"></path></g></svg> 
-                            <p>Select file</p> 
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="#000000" stroke-width="2"></path> <path d="M19.5 5H4.5" stroke="#000000" stroke-width="2" stroke-linecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="#000000" stroke-width="2"></path> </g></svg>
-                        </label> 
-                        <input id="fileposter" name="poster" type="file" accept="image/*" required> 
-                    </div>
+            <!-- ── PAGE HEADER ── -->
+            <div class="am-page-header">
+                <div class="am-header-left">
+                    <span class="am-breadcrumb">Admin / Movies</span>
+                    <h1 class="am-page-title">ADD NEW MOVIE</h1>
                 </div>
-                <div class="bordertrial" id="bordertrial">
-                    <div class="file-container"> 
-                        <div class="file-header"> 
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
-                            <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg> <p>UPLOAD VIDEO TRAILER</p>
-                        </div> 
-                        <label for="filetrailer" class="file-footer"> 
-                            <svg fill="#000000" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z"></path></g></svg> 
-                            <p>Select file</p> 
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="#000000" stroke-width="2"></path> <path d="M19.5 5H4.5" stroke="#000000" stroke-width="2" stroke-linecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="#000000" stroke-width="2"></path> </g></svg>
-                        </label> 
-                        <input id="filetrailer" name="trailer" type="file" accept="video/*" required> 
+                <!-- Progress steps indicator -->
+                <div class="am-steps">
+                    <div class="am-step active" id="step-movie">
+                        <div class="am-step-dot"><i class="fas fa-film"></i></div>
+                        <span>Movie</span>
+                    </div>
+                    <div class="am-step-line" id="line-1"></div>
+                    <div class="am-step locked" id="step-venue">
+                        <div class="am-step-dot"><i class="fas fa-map-marker-alt"></i></div>
+                        <span>Venue</span>
+                    </div>
+                    <div class="am-step-line" id="line-2"></div>
+                    <div class="am-step locked" id="step-schedule">
+                        <div class="am-step-dot"><i class="fas fa-calendar-alt"></i></div>
+                        <span>Schedule</span>
                     </div>
                 </div>
             </div>
 
-            <!-- -------------- image uploade end -------------- -->
-
-            <!-- ----------- details section start -------------- -->
-
-            <div class="details-section">
-                <div class="genre-border">
-                    <div class="genre-section"> 
-                        <h2>GENRE</h2>
-                        <label class="custom-checkbox action">
-                            <input id="genre" type="checkbox" name="genres[]" value="Action">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Action</span>
-                        </label>
-                        <label class="custom-checkbox adventure">
-                            <input id="genre" type="checkbox" name="genres[]" value="Adventure">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Adventure</span>
-                        </label>
-                        <label class="custom-checkbox animation">
-                            <input id="genre" type="checkbox" name="genres[]" value="Animation">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Animation</span>
-                        </label>
-                        <label class="custom-checkbox comedy">
-                            <input id="genre" type="checkbox" name="genres[]" value="Comedy">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Comedy</span>
-                        </label>
-                        <label class="custom-checkbox drama">
-                            <input id="genre" type="checkbox" name="genres[]" value="Drama">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Drama</span>
-                        </label>
-                        <label class="custom-checkbox family">
-                            <input id="genre" type="checkbox" name="genres[]" value="Family">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Family</span>
-                        </label>
-                        <label class="custom-checkbox fantasy">
-                            <input id="genre" type="checkbox" name="genres[]" value="Fantasy">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Fantasy</span>
-                        </label>
-                        <label class="custom-checkbox horror">
-                            <input id="genre" type="checkbox" name="genres[]" value="Horror">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Horror</span>
-                        </label>
-                        <label class="custom-checkbox romance">
-                            <input id="genre" type="checkbox" name="genres[]" value="Romance">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Romance</span>
-                        </label>
-                        <label class="custom-checkbox sci-fi">
-                            <input id="genre" type="checkbox" name="genres[]" value="Sci-Fi">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Sci-fi</span>
-                        </label>
-                        <label class="custom-checkbox thriller">
-                            <input id="genre" type="checkbox" name="genres[]" value="Thriller">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Thriller</span>
-                        </label>
-                        <label class="custom-checkbox musical">
-                            <input id="genre" type="checkbox" name="genres[]" value="Musical">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Musical</span>
-                        </label>
-                        <label class="custom-checkbox historical">
-                            <input id="genre" type="checkbox" name="genres[]" value="Historical">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Historical</span>
-                        </label>
-                        <label class="custom-checkbox mistery">
-                            <input id="genre" type="checkbox" name="genres[]" value="Mistery">
-                            <div class="checkbox-box"></div>
-                            <span class="checkbox-text">Mistery</span>
-                        </label>
-                    </div>
+            <!-- ── SECTION 1: MOVIE INFO (always visible) ── -->
+            <div class="am-section" id="section-movie">
+                <div class="am-section-header">
+                    <div class="am-section-badge required">REQUIRED</div>
+                    <h2 class="am-section-title"><i class="fas fa-film"></i> Movie Details</h2>
+                    <p class="am-section-hint">Fill in the movie information to unlock the venue section.</p>
                 </div>
 
-                <div class="availandInfo">
-                    <div class="info-border">
-                        <div class="movie-info"> 
-                            <h4>MOVIE INFORMATION</h4>
-                            <input class="input" name="movie_name" placeholder="Movie Name" type="text" required>
-                            <input class="input" name="duration" placeholder="Duration" type="text" required> 
+                <div class="am-section-body">
+                    <!-- Left: Upload cards -->
+                    <div class="am-upload-col">
+                        <!-- Poster -->
+                        <div class="am-upload-card" id="borderposter">
+                            <div class="am-upload-inner file-container">
+                                <div class="file-header am-upload-preview">
+                                    <i class="fas fa-image am-upload-icon"></i>
+                                    <p class="am-upload-label">MOVIE POSTER</p>
+                                    <p class="am-upload-sub">JPG, JPEG, PNG, WEBP, JFIF up to 10MB</p>
+                                </div>
+                                <label for="fileposter" class="am-upload-btn">
+                                    <i class="fas fa-upload"></i> Select Poster
+                                </label>
+                                <input id="fileposter" name="poster" type="file" accept="image/*" required>
+                            </div>
+                        </div>
+                        <!-- Trailer -->
+                        <div class="am-upload-card" id="bordertrial">
+                            <div class="am-upload-inner file-container">
+                                <div class="file-header am-upload-preview">
+                                    <i class="fas fa-video am-upload-icon"></i>
+                                    <p class="am-upload-label">MOVIE TRAILER</p>
+                                    <p class="am-upload-sub">MP4, MOV up to 100MB</p>
+                                </div>
+                                <label for="filetrailer" class="am-upload-btn">
+                                    <i class="fas fa-upload"></i> Select Trailer
+                                </label>
+                                <input id="filetrailer" name="trailer" type="file" accept="video/*" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center: Genre -->
+                    <div class="am-genre-col genre-border">
+                        <div class="genre-section">
+                            <h2>GENRE</h2>
+                            <label class="custom-checkbox action">
+                                <input type="checkbox" name="genres[]" value="Action">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Action</span>
+                            </label>
+                            <label class="custom-checkbox adventure">
+                                <input type="checkbox" name="genres[]" value="Adventure">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Adventure</span>
+                            </label>
+                            <label class="custom-checkbox animation">
+                                <input type="checkbox" name="genres[]" value="Animation">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Animation</span>
+                            </label>
+                            <label class="custom-checkbox comedy">
+                                <input type="checkbox" name="genres[]" value="Comedy">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Comedy</span>
+                            </label>
+                            <label class="custom-checkbox drama">
+                                <input type="checkbox" name="genres[]" value="Drama">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Drama</span>
+                            </label>
+                            <label class="custom-checkbox family">
+                                <input type="checkbox" name="genres[]" value="Family">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Family</span>
+                            </label>
+                            <label class="custom-checkbox fantasy">
+                                <input type="checkbox" name="genres[]" value="Fantasy">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Fantasy</span>
+                            </label>
+                            <label class="custom-checkbox horror">
+                                <input type="checkbox" name="genres[]" value="Horror">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Horror</span>
+                            </label>
+                            <label class="custom-checkbox romance">
+                                <input type="checkbox" name="genres[]" value="Romance">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Romance</span>
+                            </label>
+                            <label class="custom-checkbox sci-fi">
+                                <input type="checkbox" name="genres[]" value="Sci-Fi">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Sci-fi</span>
+                            </label>
+                            <label class="custom-checkbox thriller">
+                                <input type="checkbox" name="genres[]" value="Thriller">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Thriller</span>
+                            </label>
+                            <label class="custom-checkbox musical">
+                                <input type="checkbox" name="genres[]" value="Musical">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Musical</span>
+                            </label>
+                            <label class="custom-checkbox historical">
+                                <input type="checkbox" name="genres[]" value="Historical">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Historical</span>
+                            </label>
+                            <label class="custom-checkbox mistery">
+                                <input type="checkbox" name="genres[]" value="Mistery">
+                                <div class="checkbox-box"></div>
+                                <span class="checkbox-text">Mystery</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Right: Fields -->
+                    <div class="am-fields-col">
+                        <!-- Movie Info card -->
+                        <div class="am-card info-border">
+                            <div class="am-card-inner movie-info">
+                                <h4>MOVIE INFORMATION</h4>
+                                <input class="input" id="movie_name_input" name="movie_name" placeholder="Movie Title" type="text" required>
+                                <input class="input" name="duration" placeholder="Duration (e.g. 2h 15m)" type="text" required>
                                 <select title="Language" id="movie-language" name="language" class="input" required>
                                     <option value="english" selected>English</option>
                                     <option value="filipino">Filipino / Tagalog</option>
@@ -248,266 +274,309 @@
                                     <option value="vietnamese">Vietnamese</option>
                                     <option value="indonesian">Indonesian</option>
                                     <option value="malay">Malay</option>
-                                    <option value="swahili">Swahili</option>
-                                    <option value="dutch">Dutch</option>
-                                    <option value="polish">Polish</option>
-                                    <option value="swedish">Swedish</option>
-                                    <option value="norwegian">Norwegian</option>
-                                    <option value="danish">Danish</option>
-                                    <option value="finnish">Finnish</option>
-                                    <option value="greek">Greek</option>
-                                    <option value="hebrew">Hebrew</option>
-                                    <option value="persian">Persian / Farsi</option>
-                                    <option value="bengali">Bengali</option>
-                                    <option value="tamil">Tamil</option>
-                                    <option value="telugu">Telugu</option>
-                                    <option value="marathi">Marathi</option>
-                                    <option value="gujarati">Gujarati</option>
-                                    <option value="punjabi">Punjabi</option>
                                     <option value="other">Other</option>
                                 </select>
-                            <input class="input" name="release_date" placeholder="Date Released" type="date" required>
+                                <input class="input" name="release_date" placeholder="Date Released" type="date" required>
+                            </div>
                         </div>
-                    </div>
 
-                        <div class="avail-border">
+                        <!-- Status card -->
+                        <div class="am-card avail-border">
                             <div class="availability">
-                                <h4>STATUS</h4>
-                                    <select title="Age Restriction" id="age_restrict" name="age_restrict" class="input" required>
-                                        <option value="G" selected>G — General Audiences (All Ages)</option>
-                                        <option value="PG">PG — Parental Guidance Suggested</option>
-                                        <option value="PG-13">PG-13 — Parents Strongly Cautioned (13+)</option>
-                                        <option value="R">R — Restricted (17+)</option>
-                                        <option value="NC-17">NC-17 — Adults Only (18+)</option>
-                                        <option value="18+">18+ — Explicit Content</option>
-                                    </select>
+                                <h4>AGE RESTRICTION</h4>
+                                <select title="Age Restriction" id="age_restrict" name="age_restrict" class="input" required>
+                                    <option value="G" selected>G — General Audiences</option>
+                                    <option value="PG">PG — Parental Guidance</option>
+                                    <option value="PG-13">PG-13 — Parents Cautioned (13+)</option>
+                                    <option value="R">R — Restricted (17+)</option>
+                                    <option value="NC-17">NC-17 — Adults Only (18+)</option>
+                                    <option value="18+">18+ — Explicit Content</option>
+                                </select>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="description-border">
-                        <textarea name="description" placeholder="MOVIE DESCRIPTION..." required></textarea>
-                    </div>
-                </div>
-
-                <!-- --------- details section end ------------ -->
-                 
-                <!-- ---------------- venue section start ---------------- -->
-
-            <div class="venue-section">
-                <!-- Modal -->
-                <div id="availability-modal">
-                    <div class="modal-content">
-                        <h4>Set Movie Availability</h4>
-                        <div class="calendar-container">
-
-                            <!-- Single Calendar -->
-                            <div class="calendar">
-                                <div class="header">
-                                    <div id="prev" class="btn"><i class="fa-solid fa-arrow-left"></i></div>
-                                    <svg id="prev-year" class="btn2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12.71 16.29 8.41 12l4.3-4.29-1.42-1.42L5.59 12l5.7 5.71z"></path><path d="M16.29 6.29 10.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"></path></svg>
-                                    <div id="month-year"></div>
-                                    <svg id="next-year" class="btn2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="m7.71 17.71 5.7-5.71-5.7-5.71-1.42 1.42 4.3 4.29-4.3 4.29z"></path><path d="m11.29 7.71 4.3 4.29-4.3 4.29 1.42 1.42 5.7-5.71-5.7-5.71z"></path></svg>
-                                    <div id="next" class="btn"><i class="fa-solid fa-arrow-right"></i></div>
-                                </div>
-                                <div class="weekdays">
-                                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                                </div>
-                                <div class="days" id="days"></div>
-                                <input type="hidden" name="venue_date" id="selected-date-input">
-                            </div>
-                            <div class="time-container">
-                                <label class="time-label">Starting Time</label>
-                                <input type="time" title="Time" class="time-size" id="time1" name="time_avail">
-                                <label class="time-label">Ending Time</label>
-                                <input type="time" title="Time" class="time-size" id="time2" name="time_avail2">
-                            </div>
-
-                            <span class="selected-date-time">
-                                <p><strong>Date and Time:</strong> <span id="start-date">none</span></p>
-                            </span>
-                        
+                        <!-- Description -->
+                        <div class="am-card description-border">
+                            <textarea name="description" placeholder="Write the movie synopsis / description here..." required></textarea>
                         </div>
-                    <div class="ActionBtns">
-                        <button type="button" class="done-btn" id="done-btn">Done</button>
-                        <button type="button" class="cancel-btn" id="cancel-btn">Cancel</button>
                     </div>
                 </div>
             </div>
 
-                <div class="venue-modal">
-                    <div class="venue-modal-content">
-                        <h3>Venue Availability</h3>
-                        <div class="venue-border">
-                            <div class="venue-info"> 
-                                <h4>VENUE INFORMATION</h4>
-                                <input class="input" id="venue-name" name="venue_name" placeholder="Venue Name" type="text">
-                                    <select title="Availability" id="venue_availability" class="input" name="venue_availability">
-                                            <option value="Everyday">Everyday</option>
+            <!-- ── SECTION 2: VENUE (unlocks after movie is filled) ── -->
+            <div class="am-section am-section-lockable" id="section-venue">
+                <!-- Lock overlay -->
+                <div class="am-lock-overlay" id="venue-lock">
+                    <div class="am-lock-content">
+                        <i class="fas fa-lock am-lock-icon"></i>
+                        <p class="am-lock-title">Venue Locked</p>
+                        <p class="am-lock-hint">Fill in the Movie Details above to unlock the Venue section.</p>
+                    </div>
+                </div>
 
-                                            <option value="M">M</option>
-                                            <option value="T">T</option>
-                                            <option value="W">W</option>
-                                            <option value="TH">TH</option>
-                                            <option value="F">F</option>
-                                            <option value="S">S</option>
-                                            <option value="SU">SU</option>
+                <div class="am-section-header">
+                    <div class="am-section-badge optional">OPTIONAL</div>
+                    <h2 class="am-section-title"><i class="fas fa-map-marker-alt"></i> Venue Information</h2>
+                    <p class="am-section-hint">Adding a venue will require a schedule. Leave empty to save the movie without a venue.</p>
+                </div>
 
-                                            <option value="MW">MW</option>
-                                            <option value="MWF">MWF</option>
-                                            <option value="TTH">TTH</option>
+                <div class="am-section-body am-venue-body">
+                    <!-- Venue name + availability -->
+                    <div class="am-card venue-border">
+                        <div class="venue-info">
+                            <h4>VENUE DETAILS</h4>
+                            <input class="input" id="venue-name" name="venue_name" placeholder="Venue Name" type="text">
+                            <select title="Availability" id="venue_availability" class="input" name="venue_availability">
+                                <option value="Everyday">Everyday</option>
+                                <option value="M">Monday</option>
+                                <option value="T">Tuesday</option>
+                                <option value="W">Wednesday</option>
+                                <option value="TH">Thursday</option>
+                                <option value="F">Friday</option>
+                                <option value="S">Saturday</option>
+                                <option value="SU">Sunday</option>
+                                <option value="MW">Mon &amp; Wed</option>
+                                <option value="MWF">Mon, Wed &amp; Fri</option>
+                                <option value="TTH">Tue &amp; Thu</option>
+                                <option value="MTWTHF">Weekdays</option>
+                                <option value="SSU">Weekends</option>
+                            </select>
+                        </div>
+                    </div>
 
-                                            <option value="MTW">MTW</option>
-                                            <option value="MTWF">MTWF</option>
-                                            <option value="TWTH">TWTH</option>
+                    <!-- Map link -->
+                    <div class="am-card map-border">
+                        <div class="map-link">
+                            <h4>MAP LINK</h4>
+                            <input class="input" id="venue-link" name="venue_link" placeholder="Google Maps URL" type="text">
+                        </div>
+                    </div>
 
-                                            <option value="WF">WF</option>
-                                            <option value="MT">MT</option>
-                                            <option value="MTH">MTH</option>
-
-                                            <option value="FS">FS</option>
-                                            <option value="SSU">SSU</option>
-
-                                            <option value="MTWTHF">Weekdays</option>
-                                            <option value="SSU">Weekends</option>
-                                    </select>
-                                </div>
+                    <!-- Venue image -->
+                    <div class="am-upload-card am-upload-card--venue bordervenue" id="bordervenue">
+                        <div class="am-upload-inner file-container">
+                            <div class="file-header-venue am-upload-preview">
+                                <i class="fas fa-building am-upload-icon"></i>
+                                <p class="am-upload-label">VENUE IMAGE</p>
+                                <p class="am-upload-sub">JPG, JPEG, PNG, WEBP, JFIF up to 10MB</p>
                             </div>
-                            <div class="venue-information-container">
-                                <div class="map-border">
-                                    <div class="map-link"> 
-                                        <h4>MAP LINK</h4>
-                                        <input class="input" id="venue-link" name="venue_link" placeholder="Venue Link" type="text">
-                                    </div>
-                                    <div class="logoandname">
-                                    <header class="head">
-                                        <div class="image">
-                                            <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" class="logo" alt="Luma"></img>
-                                        </div>
-                                    </header>
-                                    </div>
-                                </div>
+                            <label for="filevenue" class="am-upload-btn am-upload-btn--venue">
+                                <i class="fas fa-upload"></i> Select Image
+                            </label>
+                            <input id="filevenue" name="venue_image" type="file" accept="image/*">
+                        </div>
+                    </div>
+
+                    <!-- Venue library + seat plan -->
+                    <div class="am-card am-seat-card">
+                        <div class="seat-plan-generator">
+                            <h4>SEAT PLAN GENERATOR</h4>
+                            <input class="input" id="room" name="room" placeholder="Room / Hall Name" type="text">
+                            <div class="seat-controls">
+                                <label for="rows">Rows (1–26):</label>
+                                <input name="rows" type="number" id="rows" min="1" max="26" value="10">
+                                <label for="cols">Columns (1–30):</label>
+                                <input name="cols" type="number" id="cols" min="1" max="30" value="16">
+                                <label for="col-gap">Column Gap every N cols (0 = none):</label>
+                                <input name="col-gap" type="number" id="col-gap" min="0" max="10" value="4">
+                                <label for="row-gap">Row Gap every N rows (0 = none):</label>
+                                <input name="row-gap" type="number" id="row-gap" min="0" max="10" value="0">
+                                <button type="button" id="generate">Generate Seat Plan</button>
                             </div>
-                            <div class="bordervenue" id="bordervenue">
-                                <div class="file-container"> 
-                                    <div class="file-header-venue"> 
-                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
-                                        <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg> <p>UPLOAD VENUE IMAGE</p>
-                                    </div> 
-                                        <label for="filevenue" class="file-footer"> 
-                                        <svg fill="#000000" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z"></path></g></svg> 
-                                        <p>Select file</p> 
-                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="#000000" stroke-width="2"></path> <path d="M19.5 5H4.5" stroke="#000000" stroke-width="2" stroke-linecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="#000000" stroke-width="2"></path> </g></svg>
-                                    </label> 
-                                    <input id="filevenue" name="venue_image" type="file" accept="image/*"> 
-                                </div>
+                            <div id="capacity-info"></div>
+                            <div id="selected-info"></div>
+                            <div>
+                                <label for="zoom">Zoom (%): </label>
+                                <input type="range" id="zoom" min="50" max="200" value="100">
+                                <span id="zoom-value">100%</span>
                             </div>
-                            <div class="seat-plan-generator">
-                                <h4>SEAT PLAN GENERATOR</h4>
-                                <input class="input" id="room" name="room" placeholder="Room" type="text">
-                                
-                                <div class="seat-controls">
-                                    <label for="rows">Rows (1-26):</label>
-                                    <input name="rows" type="number" id="rows" min="1" max="26" value="10">
-
-                                    <label for="cols">Columns (1-30):</label>
-                                    <input name="cols" type="number" id="cols" min="1" max="30" value="16">
-
-                                    <label for="col-gap">Column Gap every N columns (0 for none):</label>
-                                    <input name="col-gap" type="number" id="col-gap" min="0" max="10" value="4">
-
-                                    <label for="row-gap">Row Gap every N rows (0 for none):</label>
-                                    <input name="row-gap" type="number" id="row-gap" min="0" max="10" value="0">
-
-                                    <button type="button" id="generate">Generate Seat Plan</button>
-                                </div>
-
-                                    <div id="capacity-info"></div>
-                                    <div id="selected-info"></div>
-
-                                    <div>
-                                    <label for="zoom">Zoom (%): </label>
-                                    <input type="range" id="zoom" min="50" max="200" value="100" /> <span id="zoom-value">100%</span>
-                                    </div>
-
-                                    <div id="seat-wrapper">
-                                    <div class="seat-box">
-                                        <div id="zoom-container">
+                            <div id="seat-wrapper">
+                                <div class="seat-box">
+                                    <div id="zoom-container">
                                         <div class="cinema-screen">CINEMA SCREEN</div>
                                         <div id="seat-container"></div>
-                                        </div>
-                                    </div>
-                                    </div>
-
-                                    <div class="legend">
-                                        <div class="legend-item"><div class="legend-color available-color"></div>Available</div>
-                                        <div class="legend-item"><div class="legend-color selected-color"></div>Selected</div>
                                     </div>
                                 </div>
-
-                            <div class="prefillvenues">
-                                <label>Venue Libraries</label>
-                                <select title="Venue" class="input" name="venue_name" id="venue-select">
-                                    <option value="">Select Venue</option>
-                                </select>
                             </div>
-                        <div>
-                            <button type="button" class="done-btn venue" id="done-btn-venue">Done</button>
-                            <button type="button" class="cancel-btn venue" id="cancel-btn-venue">Cancel</button>
+                            <div class="legend">
+                                <div class="legend-item"><div class="legend-color available-color"></div>Available</div>
+                                <div class="legend-item"><div class="legend-color selected-color"></div>Selected</div>
+                            </div>
+                        </div>
+
+                        <div class="prefillvenues">
+                            <label>Venue Libraries</label>
+                            <select title="Venue" class="input" name="venue_name" id="venue-select">
+                                <option value="">Select Saved Venue</option>
+                            </select>
+                        </div>
+
+                        <div class="am-venue-modal-btns">
+                            <button type="button" class="done-btn venue" id="done-btn-venue">
+                                <i class="fas fa-check"></i> Save Venue
+                            </button>
+                            <button type="button" class="cancel-btn venue" id="cancel-btn-venue">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
                         </div>
                     </div>
                 </div>
 
-            <div class="movie_avilability">
-                <div class="movie-border">
-                    <div class="movie-schedule">
-                        <h4>MOVIE AVAILABILITY</h4>
+                <!-- Venue unlock notice (when movie filled but venue empty) -->
+                <div class="am-optional-notice" id="venue-optional-notice">
+                    <i class="fas fa-info-circle"></i>
+                    You can submit the movie <strong>without a venue</strong>. A venue is only needed if you want to sell tickets for a specific location.
+                </div>
+            </div>
+
+            <!-- ── SECTION 3: SCHEDULE (unlocks only when venue name is filled) ── -->
+            <div class="am-section am-section-lockable" id="section-schedule">
+                <!-- Lock overlay -->
+                <div class="am-lock-overlay" id="schedule-lock">
+                    <div class="am-lock-content">
+                        <i class="fas fa-calendar-times am-lock-icon"></i>
+                        <p class="am-lock-title">Schedule Locked</p>
+                        <p class="am-lock-hint" id="schedule-lock-hint">Add a Venue above to unlock the Schedule section (required when venue is set).</p>
+                    </div>
+                </div>
+
+                <div class="am-section-header">
+                    <div class="am-section-badge required-conditional" id="schedule-badge">REQUIRED WITH VENUE</div>
+                    <h2 class="am-section-title"><i class="fas fa-calendar-alt"></i> Movie Schedule</h2>
+                    <p class="am-section-hint">A schedule is required when a venue is assigned. You can add multiple screening dates.</p>
+                </div>
+
+                <div class="am-section-body">
+                    <div class="am-schedule-panel">
+                        <!-- Add schedule button -->
                         <button type="button" class="Btn" id="add-movie-btn">
                             <div class="sign">+</div>
                             <div class="text">Add Movie Schedule</div>
                         </button>
-                        <div id="availability-data"></div>
-                        <div style="display: none;" id="displayDate" class="displayDate">Add Schedule</div>
+
+                        <!-- Schedule list -->
+                        <div class="am-schedule-list" id="availability-data">
+                            <div class="am-schedule-empty" id="schedule-empty-msg">
+                                <i class="fas fa-calendar-plus"></i>
+                                <p>No schedules added yet. Click the button above to add a screening date.</p>
+                            </div>
+                        </div>
+                        <div style="display:none;" id="displayDate" class="displayDate">Add Schedule</div>
                     </div>
                 </div>
             </div>
 
-            <div class="venue-availability">
-                <div class="venue-border-schedule">
-                    <div class="venue-schedule">
-                        <h4>VENUE AVAILABILITY</h4>
-                        <button type="button" class="Btn-venue" id="check-venue-btn">
-                            <div class="sign">+</div>
-                            <div class="text">Check Venue Availability</div>
+            <!-- ── CALENDAR / SCHEDULE MODAL ── -->
+            <div id="availability-modal">
+                <div class="modal-content">
+                    <h4>Set Screening Schedule</h4>
+                    <div class="calendar-container">
+                        <div class="calendar">
+                            <div class="header">
+                                <div id="prev" class="btn"><i class="fa-solid fa-arrow-left"></i></div>
+                                <svg id="prev-year" class="btn2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12.71 16.29 8.41 12l4.3-4.29-1.42-1.42L5.59 12l5.7 5.71z"/><path d="M16.29 6.29 10.59 12l5.7 5.71 1.42-1.42-4.3-4.29 4.3-4.29z"/></svg>
+                                <div id="month-year"></div>
+                                <svg id="next-year" class="btn2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="m7.71 17.71 5.7-5.71-5.7-5.71-1.42 1.42 4.3 4.29-4.3 4.29z"/><path d="m11.29 7.71 4.3 4.29-4.3 4.29 1.42 1.42 5.7-5.71-5.7-5.71z"/></svg>
+                                <div id="next" class="btn"><i class="fa-solid fa-arrow-right"></i></div>
+                            </div>
+                            <div class="weekdays">
+                                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                            </div>
+                            <div class="days" id="days"></div>
+                            <input type="hidden" name="venue_date" id="selected-date-input">
+                        </div>
+                        <div class="time-container">
+                            <label class="time-label">Starting Time</label>
+                            <input type="time" title="Time" class="time-size" id="time1" name="time_avail">
+                            <label class="time-label">Ending Time</label>
+                            <input type="time" title="Time" class="time-size" id="time2" name="time_avail2">
+                        </div>
+                        <span class="selected-date-time">
+                            <p><strong>Selected:</strong> <span id="start-date">none</span></p>
+                        </span>
+                    </div>
+                    <div class="ActionBtns">
+                        <button type="button" class="done-btn" id="done-btn">
+                            <i class="fas fa-check"></i> Confirm
                         </button>
-                        <div id="venue-data"></div>
+                        <button type="button" class="cancel-btn" id="cancel-btn">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
                     </div>
                 </div>
             </div>
 
-        </div>
-
-            <div class="validation-container">
-                <div class="bottom-validation">
-                    <h3>VALIDATION CHECKLIST (required)</h3>
-                    <span id="check-poster">Poster Photo </span> <br>
-                    <span id="check-venue">Venue Selection <em style="font-size:0.85em; color:#888">(optional)</em></span> <br>
-                    <span id="check-trailer">Movie Trailer</span> <br>
-                    <span id="check-schedule" style="color:#aaa">Movie Schedule <em style="font-size:0.85em">(optional)</em></span> <br>
-                    <span id="check-genre">Genre Selection</span><br>
+            <!-- ── VENUE MODAL (keep existing) ── -->
+            <div class="venue-section" style="display:none;">
+                <div id="venue-data"></div>
+                <div class="venue-availability">
+                    <div class="venue-border-schedule">
+                        <div class="venue-schedule">
+                            <h4>VENUE AVAILABILITY</h4>
+                            <button type="button" class="Btn-venue" id="check-venue-btn">
+                                <div class="sign">+</div>
+                                <div class="text">Check Venue Availability</div>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="submit-container">
-                    <button type="submit" class="submit-btn" id="submit-btn"> ADD MOVIE
+            </div>
+
+            <!-- ── VALIDATION + SUBMIT ── -->
+            <div class="am-submit-section">
+                <!-- Checklist -->
+                <div class="am-checklist">
+                    <h3 class="am-checklist-title">Submission Checklist</h3>
+                    <div class="am-checklist-items">
+                        <div class="am-check-item" id="check-poster-row">
+                            <div class="am-check-icon" id="check-poster-icon"><i class="fas fa-circle"></i></div>
+                            <div class="am-check-text">
+                                <span id="check-poster">Movie Poster</span>
+                                <em class="am-check-tag required-tag">Required</em>
+                            </div>
+                        </div>
+                        <div class="am-check-item" id="check-trailer-row">
+                            <div class="am-check-icon" id="check-trailer-icon"><i class="fas fa-circle"></i></div>
+                            <div class="am-check-text">
+                                <span id="check-trailer">Movie Trailer</span>
+                                <em class="am-check-tag required-tag">Required</em>
+                            </div>
+                        </div>
+                        <div class="am-check-item" id="check-genre-row">
+                            <div class="am-check-icon" id="check-genre-icon"><i class="fas fa-circle"></i></div>
+                            <div class="am-check-text">
+                                <span id="check-genre">Genre Selection</span>
+                                <em class="am-check-tag required-tag">Required</em>
+                            </div>
+                        </div>
+                        <div class="am-check-item" id="check-venue-row">
+                            <div class="am-check-icon" id="check-venue-icon"><i class="fas fa-circle"></i></div>
+                            <div class="am-check-text">
+                                <span id="check-venue">Venue</span>
+                                <em class="am-check-tag optional-tag" id="venue-tag">Optional</em>
+                            </div>
+                        </div>
+                        <div class="am-check-item" id="check-schedule-row">
+                            <div class="am-check-icon" id="check-schedule-icon"><i class="fas fa-circle"></i></div>
+                            <div class="am-check-text">
+                                <span id="check-schedule">Movie Schedule</span>
+                                <em class="am-check-tag optional-tag" id="schedule-tag">Optional</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="am-submit-block">
+                    <p class="am-submit-note" id="am-submit-note">Complete the required fields to enable submission.</p>
+                    <button type="submit" class="am-submit-btn" id="submit-btn" disabled>
+                        <i class="fas fa-plus-circle"></i>
+                        <span>ADD MOVIE</span>
                     </button>
                 </div>
             </div>
 
-            <!-- ---------------------- venue section end here --------------------- -->
-
-        </div>
-    </form>
-</main>
-
-<!-- --------------------- mian content end here -------------------------- -->
+        </form>
+    </main>
 
 {% endblock %}

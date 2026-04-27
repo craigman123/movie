@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 document.addEventListener("DOMContentLoaded", () => {
-    const venueModal = document.querySelector(".venue-modal");
+    const venueModal = document.querySelector(".am-seat-card");
     const openVenueBtn = document.getElementById("check-venue-btn");
     const cancelVenueBtn = document.querySelector("#cancel-btn-venue");
     const doneVenueBtn = document.querySelector("#done-btn-venue");
@@ -220,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.style.cursor = 'pointer';
     });
 
-    const venueModalRepuires = document.querySelector(".venue-modal");
+    const venueModalRepuires = document.querySelector(".am-seat-card");
     const venueInputs = [
         document.getElementById("venue-name"),
         document.getElementById("venue-link"),
@@ -269,27 +269,19 @@ document.addEventListener("DOMContentLoaded", () => {
     
     checkVenueBtnStatus();
 
-    openVenueBtn.addEventListener("click", () => {
-        venueModal.style.display = "flex";
-        setVenueRequired(true);
-    });
-
-    cancelVenueBtn.addEventListener("click", () => {
-        setVenueRequired(false);
-        venueModal.style.display = "none";
-    });
-
     doneVenueBtn.addEventListener("click", () => {
 
         const venueName = document.querySelector('[name="venue_name"]').value.trim();
         const venueRoom = document.querySelector('[name="room"]').value.trim();
         const venueLink = document.querySelector('[name="venue_link"]').value.trim();
-        const venueAvail = document.querySelector('[name="venue_availability"]').value;
+        const venueAvailEl = document.getElementById('venue_availability') 
+                  || document.querySelector('[name="venue_availability"]');
+        const venueAvail = venueAvailEl ? venueAvailEl.value : '';
         const venueImage = document.getElementById('filevenue').files.length > 0;
         const rows = document.getElementById('rows').value;
         const cols = document.getElementById('cols').value;
 
-        if (!venueName || !venueRoom || !venueLink || !venueAvail) {
+        if (!venueName || !venueRoom || !venueAvail) {
             alert('Please fill venue name, room, link, availability!');
             return;
         }
@@ -328,14 +320,6 @@ document.addEventListener("DOMContentLoaded", () => {
         checkVenueBtnStatus(); // Hide button after adding venue
 
         setVenueRequired(false);
-        venueModal.style.display = "none";
-    });
-
-    venueModal.addEventListener("click", function(e){
-        if(e.target === venueModal){
-            setVenueRequired(false);
-            venueModal.style.display = "none";
-        }
     });
 
     // Render Venue Entry

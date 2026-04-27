@@ -1,603 +1,480 @@
-// Store movie schedules globally for management
-let movieSchedules = [];
-let scheduleCounter = 0;
+// ═══════════════════════════════════════════════════════════════
+//  admin_dashboard.js  —  Add Movie page logic
+//  Logic:
+//    Movie (always required)
+//    Venue (optional — unlocks once movie info is filled)
+//    Schedule (required only when venue is set, locked otherwise)
+// ═══════════════════════════════════════════════════════════════
 
+let movieSchedules   = [];
+let scheduleCounter  = 0;
+
+// ── Helpers ──────────────────────────────────────────────────────
+const GREEN_BG  = "linear-gradient(120deg, rgba(98,255,0,.52), rgba(57,67,55,.2))";
+const RED_BG    = "linear-gradient(135deg, rgba(255,0,0,.4), rgba(255,0,0,.24))";
+const CLEAR_BG  = "";
+
+// ── isMovieFilled: returns true when the movie section is complete
+function isMovieFilled() {
+    const name     = document.getElementById('movie_name_input');
+    const poster   = document.getElementById('fileposter');
+    const trailer  = document.getElementById('filetrailer');
+    const genre    = document.querySelectorAll('input[name="genres[]"]');
+    const duration = document.querySelector('input[name="duration"]');
+    const release  = document.querySelector('input[name="release_date"]');
+
+    const nameOk     = name     && name.value.trim() !== '';
+    const posterOk   = poster   && poster.files.length > 0;
+    const trailerOk  = trailer  && trailer.files.length > 0;
+    const genreOk    = Array.from(genre).some(c => c.checked);
+    const durationOk = duration && duration.value.trim() !== '';
+    const releaseOk  = release  && release.value.trim() !== '';
+
+    return nameOk && posterOk && trailerOk && genreOk && durationOk && releaseOk;
+}
+
+// ── isVenueFilled: returns true when venue name is entered
+function isVenueFilled() {
+    const venueName = document.getElementById('venue-name');
+    return venueName && venueName.value.trim() !== '';
+}
+
+// ── isScheduleFilled
+function isScheduleFilled() {
+    return movieSchedules.length > 0;
+}
+
+// ── updateSectionLocks: show/hide lock overlays & step indicators
+function updateSectionLocks() {
+    const movieFilled   = isMovieFilled();
+    const venueFilled   = isVenueFilled();
+    const scheduleFilled = isScheduleFilled();
+
+    const venueLock     = document.getElementById('venue-lock');
+    const scheduleLock  = document.getElementById('schedule-lock');
+    const stepVenue     = document.getElementById('step-venue');
+    const stepSchedule  = document.getElementById('step-schedule');
+    const stepMovie     = document.getElementById('step-movie');
+    const line1         = document.getElementById('line-1');
+    const line2         = document.getElementById('line-2');
+
+    // Movie step
+    if (movieFilled) {
+        stepMovie.className = 'am-step done';
+    } else {
+        stepMovie.className = 'am-step active';
+    }
+
+    // Venue lock
+    if (movieFilled) {
+        venueLock.classList.add('unlocked');
+        stepVenue.className = venueFilled ? 'am-step done' : 'am-step active';
+        line1.classList.add('lit');
+    } else {
+        venueLock.classList.remove('unlocked');
+        stepVenue.className = 'am-step locked';
+        line1.classList.remove('lit');
+    }
+
+    // Schedule lock
+    if (venueFilled) {
+        scheduleLock.classList.add('unlocked');
+        stepSchedule.className = scheduleFilled ? 'am-step done' : 'am-step active';
+        line2.classList.add('lit');
+    } else {
+        scheduleLock.classList.remove('unlocked');
+        stepSchedule.className = 'am-step locked';
+        line2.classList.remove('lit');
+    }
+
+    // Update schedule badge & tags based on venue presence
+    const scheduleBadge = document.getElementById('schedule-badge');
+    const scheduleTag   = document.getElementById('schedule-tag');
+    const venueTag      = document.getElementById('venue-tag');
+
+    if (venueFilled) {
+        if (scheduleBadge) { scheduleBadge.textContent = 'REQUIRED'; scheduleBadge.className = 'am-section-badge required'; }
+        if (scheduleTag)   { scheduleTag.textContent = 'Required'; scheduleTag.className = 'am-check-tag conditional-tag'; }
+    } else {
+        if (scheduleBadge) { scheduleBadge.textContent = 'REQUIRED WITH VENUE'; scheduleBadge.className = 'am-section-badge required-conditional'; }
+        if (scheduleTag)   { scheduleTag.textContent = 'Optional'; scheduleTag.className = 'am-check-tag optional-tag'; }
+    }
+
+    updateChecklist();
+    updateSubmitButton();
+}
+
+// ── updateChecklist: visual tick state for each item
+function updateChecklist() {
+    const posterOk   = document.getElementById('fileposter')?.files.length > 0;
+    const trailerOk  = document.getElementById('filetrailer')?.files.length > 0;
+    const genreOk    = Array.from(document.querySelectorAll('input[name="genres[]"]')).some(c => c.checked);
+    const venueOk    = isVenueFilled();
+    const scheduleOk = isScheduleFilled();
+
+    setCheckIcon('check-poster-icon',   posterOk   ? 'done' : 'error',  posterOk   ? 'fa-check-circle' : 'fa-circle');
+    setCheckIcon('check-trailer-icon',  trailerOk  ? 'done' : 'error',  trailerOk  ? 'fa-check-circle' : 'fa-circle');
+    setCheckIcon('check-genre-icon',    genreOk    ? 'done' : 'error',  genreOk    ? 'fa-check-circle' : 'fa-circle');
+    setCheckIcon('check-venue-icon',    venueOk    ? 'done' : '',        venueOk    ? 'fa-check-circle' : 'fa-circle');
+
+    // Schedule icon depends on venue
+    if (scheduleOk) {
+        setCheckIcon('check-schedule-icon', 'done', 'fa-check-circle');
+    } else if (venueOk) {
+        setCheckIcon('check-schedule-icon', 'warn', 'fa-exclamation-circle');
+    } else {
+        setCheckIcon('check-schedule-icon', '', 'fa-circle');
+    }
+}
+
+function setCheckIcon(id, state, iconClass) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'am-check-icon' + (state ? ' ' + state : '');
+    el.innerHTML = `<i class="fas ${iconClass}"></i>`;
+}
+
+// ── updateSubmitButton: enable/disable & feedback text
+function updateSubmitButton() {
+    const btn      = document.getElementById('submit-btn');
+    const noteEl   = document.getElementById('am-submit-note');
+    if (!btn) return;
+
+    const posterOk   = document.getElementById('fileposter')?.files.length > 0;
+    const trailerOk  = document.getElementById('filetrailer')?.files.length > 0;
+    const genreOk    = Array.from(document.querySelectorAll('input[name="genres[]"]')).some(c => c.checked);
+    const venueOk    = isVenueFilled();
+    const scheduleOk = isScheduleFilled();
+
+    // If venue is filled, schedule is required
+    const scheduleBlock = venueOk && !scheduleOk;
+
+    const canSubmit = posterOk && trailerOk && genreOk && !scheduleBlock;
+
+    btn.disabled = !canSubmit;
+    btn.classList.toggle('ready', canSubmit);
+
+    if (noteEl) {
+        if (canSubmit) {
+            noteEl.textContent = venueOk
+                ? 'Movie, venue and schedule are set — ready to submit!'
+                : 'Movie details complete — ready to submit without a venue.';
+            noteEl.style.color = '#46e59d';
+        } else if (scheduleBlock) {
+            noteEl.textContent = 'You added a venue — a schedule is now required.';
+            noteEl.style.color = '#fbbf24';
+        } else {
+            const missing = [];
+            if (!posterOk)  missing.push('poster');
+            if (!trailerOk) missing.push('trailer');
+            if (!genreOk)   missing.push('genre');
+            noteEl.textContent = `Still needed: ${missing.join(', ')}.`;
+            noteEl.style.color = '#f87171';
+        }
+    }
+
+    // Expose globally for schedule add/delete callbacks
+    window.updateScheduleCheck = function() {
+        updateSectionLocks();
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DOM READY
+// ═══════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
 
-    // Poster
-    const posterInput = document.getElementById('fileposter');
-    const posterHeader = posterInput.closest('.file-container').querySelector('.file-header');
+    // ── Poster upload preview ─────────────────────────────────
+    const posterInput  = document.getElementById('fileposter');
+    const posterHeader = posterInput?.closest('.file-container')?.querySelector('.am-upload-preview');
 
-    posterInput.addEventListener('change', function () {
+    posterInput?.addEventListener('change', function () {
         const file = this.files[0];
         if (!file) return;
-
         const reader = new FileReader();
-        reader.onload = function (e) {
-            posterHeader.innerHTML = `<img src="${e.target.result}" style="width:101%; height:100%; object-fit:cover; border-radius:10px;">`;
+        reader.onload = e => {
+            posterHeader.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">`;
         };
         reader.readAsDataURL(file);
+        posterInput.closest('.am-upload-card')?.classList.add('ready');
         BorderPoster(document.getElementById('borderposter'));
+        updateSectionLocks();
     });
-});
 
-window.addEventListener('DOMContentLoaded', () => {
+    // ── Trailer upload preview ────────────────────────────────
+    const trailerInput  = document.getElementById('filetrailer');
+    const trailerHeader = trailerInput?.closest('.file-container')?.querySelector('.am-upload-preview');
 
-    const trailerInput = document.getElementById('filetrailer');
-
-    trailerInput.addEventListener('change', function () {
+    trailerInput?.addEventListener('change', function () {
         const file = this.files[0];
         if (!file) return;
+        if (!file.type.startsWith('video/')) { alert('Please select a video file.'); return; }
 
-        if (!file.type.startsWith('video/')) {
-            alert('Please select a video file.');
-            return;
-        }
-
-        const trailerContainer = trailerInput.closest('.file-container').querySelector('.file-header');
-
-        trailerContainer.innerHTML = '';
-
-        // Create a video element
+        trailerHeader.innerHTML = '';
         const video = document.createElement('video');
-        video.style.width = '100%';
-        video.style.height = '100%';
-        video.style.objectFit = 'cover';
-        video.style.borderRadius = '10px';
+        video.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px;';
         video.controls = true;
         video.autoplay = true;
-        video.muted = true;
-        video.loop = true;
+        video.muted    = true;
+        video.loop     = true;
 
-        // Set video source
         const reader = new FileReader();
-        reader.onload = function (e) {
-            video.src = e.target.result;
-            trailerContainer.appendChild(video);
-        };
+        reader.onload = e => { video.src = e.target.result; trailerHeader.appendChild(video); };
         reader.readAsDataURL(file);
 
-        // Optional: trigger border effect
-        if (typeof BorderTrial === 'function') {
-            BorderTrial(document.getElementById('bordertrial'));
-        }
+        trailerInput.closest('.am-upload-card')?.classList.add('ready');
+        if (typeof BorderTrial === 'function') BorderTrial(document.getElementById('bordertrial'));
+        updateSectionLocks();
     });
-});
 
-window.addEventListener('DOMContentLoaded', () => {
+    // ── Venue image upload preview ────────────────────────────
+    const venueImgInput  = document.getElementById('filevenue');
+    const venueImgHeader = venueImgInput?.closest('.file-container')?.querySelector('.am-upload-preview, .file-header-venue');
 
-    // Venue
-    const trailerInput = document.getElementById('filevenue');
-    const trailerHeader = trailerInput.closest('.file-container').querySelector('.file-header-venue');
-
-    trailerInput.addEventListener('change', function () {
+    venueImgInput?.addEventListener('change', function () {
         const file = this.files[0];
         if (!file) return;
-
         const reader = new FileReader();
-        reader.onload = function (e) {
-            trailerHeader.innerHTML = `<img src="${e.target.result}" style="width:101%; height:100%; object-fit:cover; border-radius:10px;">`;
+        reader.onload = e => {
+            venueImgHeader.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">`;
         };
         reader.readAsDataURL(file);
-        BorderTrial(document.getElementById('bordervenue'));
+        venueImgInput.closest('.am-upload-card')?.classList.add('ready');
+        BorderVenue(document.getElementById('bordervenue'));
     });
-});
 
-function BorderPoster(border){
-    const finalbackgroundColor = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
-    border.style.background = `${finalbackgroundColor}`;
-// ImageSize(border); // Fixed missing function
-}
+    // ── Genre checkboxes ──────────────────────────────────────
+    const genreBorder    = document.querySelector('.genre-border');
+    const genreCheckboxes = genreBorder?.querySelectorAll('input[type="checkbox"]') || [];
 
-
-function BorderTrial(border){
-    const finalbackgroundColor = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
-    border.style.background = `${finalbackgroundColor}`;
-    ImageSize(border);
-}
-
-function BorderVenue(border){
-    const finalbackgroundColor = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
-    border.style.background = `${finalbackgroundColor}`;
-    ImageSize(border);
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    const greenBackground = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
-    const defaultBackground = "linear-gradient(135deg, rgba(255, 0, 0, 0.404), rgba(255, 0, 0, 0.244))";
-    
-    const genreBorder = document.querySelector('.genre-border');
-    const checkboxes = genreBorder.querySelectorAll('input[type="checkbox"]');
-
-    function updateBorder() {
-        const anyChecked = Array.from(checkboxes).some(c => c.checked);
-        if (anyChecked) {
-            genreBorder.style.background = greenBackground; 
-        } else {
-            genreBorder.style.background = defaultBackground; 
-        }
+    function updateGenreBorder() {
+        const any = Array.from(genreCheckboxes).some(c => c.checked);
+        if (genreBorder) genreBorder.style.background = any ? GREEN_BG : RED_BG;
     }
 
-    updateBorder();
+    genreCheckboxes.forEach(c => c.addEventListener('change', () => {
+        updateGenreBorder();
+        updateSectionLocks();
+    }));
+    updateGenreBorder();
 
-    checkboxes.forEach(c => c.addEventListener('change', updateBorder));
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-    const greenBackground = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
-    const redBackground   = "linear-gradient(135deg, rgba(255, 0, 0, 0.404), rgba(255, 0, 0, 0.244))";
-
+    // ── Movie info inputs ─────────────────────────────────────
     const infoBorder = document.querySelector('.info-border');
-    const inputs = infoBorder.querySelectorAll('.movie-info input');
+    const movieInputs = infoBorder?.querySelectorAll('input') || [];
 
-    function updateBorder() {
-        const allFilled = Array.from(inputs).every(input => input.value.trim() !== "");
-        
-        if (allFilled) {
-            infoBorder.style.background = greenBackground; 
-        } else {
-            infoBorder.style.background = redBackground; 
-        }
+    function updateInfoBorder() {
+        const all = Array.from(movieInputs).every(i => i.value.trim() !== '');
+        if (infoBorder) infoBorder.style.background = all ? GREEN_BG : RED_BG;
     }
 
-    updateBorder();
+    movieInputs.forEach(i => i.addEventListener('input', () => {
+        updateInfoBorder();
+        updateSectionLocks();
+    }));
+    updateInfoBorder();
 
-    inputs.forEach(input => input.addEventListener('input', updateBorder));
-});
+    // ── Description ───────────────────────────────────────────
+    const textarea      = document.querySelector('.description-border textarea');
+    const descBorder    = document.querySelector('.description-border');
 
-document.addEventListener("DOMContentLoaded", () => {
-    const textarea = document.querySelector(".description-border textarea");
-    const borderDiv = document.querySelector(".description-border");
-    const greenBackground = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
+    textarea?.addEventListener('input', () => {
+        if (descBorder) descBorder.style.background = textarea.value.trim() ? GREEN_BG : CLEAR_BG;
+        updateSectionLocks();
+    });
 
-    function updateBorderColor() {
-        if (textarea.value.trim().length > 0) {
-            borderDiv.style.background = greenBackground;
-        } else {
-            borderDiv.style.background = "";
-        }
-    }
+    // ── Venue name input drives schedule lock ─────────────────
+    const venueNameInput = document.getElementById('venue-name');
+    venueNameInput?.addEventListener('input', () => {
+        updateVenueBorder();
+        updateSectionLocks();
+    });
 
-    textarea.addEventListener("input", updateBorderColor);
-    updateBorderColor();
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    const venueBorder = document.querySelector(".venue-border");
-    const inputs = venueBorder.querySelectorAll("input.input");
-    const greenBackground = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
+    // ── Venue border ──────────────────────────────────────────
+    const venueBorder  = document.querySelector('.venue-border');
+    const venueInputs  = venueBorder?.querySelectorAll('input.input') || [];
 
     function updateVenueBorder() {
-        const allFilled = Array.from(inputs).every(input => input.value.trim().length > 0);
-
-        venueBorder.style.background = allFilled ? greenBackground : "";
+        const all = Array.from(venueInputs).every(i => i.value.trim() !== '');
+        if (venueBorder) venueBorder.style.background = all ? GREEN_BG : CLEAR_BG;
     }
-    
-    inputs.forEach(input => input.addEventListener("input", updateVenueBorder));
 
+    venueInputs.forEach(i => i.addEventListener('input', updateVenueBorder));
     updateVenueBorder();
-});
 
-document.addEventListener("DOMContentLoaded", () => {
-    const mapBorder = document.querySelector(".map-border");
-    const inputs = mapBorder.querySelectorAll("input.input");
-    const greenBackground = "linear-gradient(120deg, rgba(98, 255, 0, 0.521), rgba(57, 67, 55, 0.2))";
+    // ── Map border ────────────────────────────────────────────
+    const mapBorder   = document.querySelector('.map-border');
+    const mapInputs   = mapBorder?.querySelectorAll('input.input') || [];
 
     function updateMapBorder() {
-        const allFilled = Array.from(inputs).every(input => input.value.trim().length > 0);
-        mapBorder.style.background = allFilled ? greenBackground : "";
+        const all = Array.from(mapInputs).every(i => i.value.trim() !== '');
+        if (mapBorder) mapBorder.style.background = all ? GREEN_BG : CLEAR_BG;
     }
 
-    inputs.forEach(input => input.addEventListener("input", updateMapBorder));
+    mapInputs.forEach(i => i.addEventListener('input', updateMapBorder));
 
-    updateMapBorder();
-});
+    // ── Hidden input for venue_date_input ─────────────────────
+    const hiddenVenueDate = document.getElementById('venue_date_input');
+    if (hiddenVenueDate) hiddenVenueDate.value = '';
 
-document.addEventListener("DOMContentLoaded", () => {
-    const venueDateSpan = document.querySelector('.venue-date');
-    const venueDate = venueDateSpan.textContent;
+    // ── Initial state ─────────────────────────────────────────
+    updateSectionLocks();
 
-    const hiddenInput = document.getElementById('venue_date_input');
-    hiddenInput.value = venueDate; 
-});
+}); // end DOMContentLoaded
 
-// =========================== VALIDATION CHECKLIST ===========================
+// ═══════════════════════════════════════════════════════════════
+//  SCHEDULE MODAL
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
 
-document.addEventListener("DOMContentLoaded", () => {
-    const posterInput = document.getElementById('fileposter');
-    const trailerInput = document.getElementById('filetrailer');
-    const venueInput = document.getElementById('filevenue');
-    const genreCheckboxes = document.querySelectorAll('input[name="genres[]"]');
-
-    const posterCheck = document.getElementById('check-poster');
-    const trailerCheck = document.getElementById('check-trailer');
-    const venueCheck = document.getElementById('check-venue');
-    const genreCheck = document.getElementById('check-genre');
-    const scheduleCheck = document.getElementById('check-schedule');
-
-    const submitBtn = document.getElementById('submit-btn');
-
-    function updateCheck(input, checkElement) {
-        checkElement.style.color = input.files.length > 0 ? 'green' : '';
-    }
-
-    function updateGenreCheck() {
-        const anyChecked = Array.from(genreCheckboxes).some(c => c.checked);
-        genreCheck.style.color = anyChecked ? 'green' : '';
-    }
-    
-    // Function to update schedule check
-    function updateScheduleCheck() {
-        const hasSchedule = movieSchedules.length > 0;
-        scheduleCheck.style.color = hasSchedule ? 'green' : '';
-        if (scheduleCheck.parentElement) {
-            if (!hasSchedule) {
-                scheduleCheck.parentElement.querySelector('.no-schedule-message')?.remove();
-                const container = document.querySelector('.movie-border');
-                let dataWrapper = container.querySelector('.schedule-data-wrapper');
-                if (dataWrapper) {
-                    dataWrapper.innerHTML = '<p class="no-schedule-message" style="color: #aaa; text-align: center;">No schedules added yet. Click "Add Movie" to create a schedule.</p>';
-                }
-            }
-        }
-        return hasSchedule;
-    }
-
-    function updateSubmitButton() {
-        const hasPoster = posterInput.files.length > 0;
-        const hasVenue = venueInput.files.length > 0;
-        const hasSchedule = movieSchedules.length > 0;
-        const hasGenre = Array.from(genreCheckboxes).some(c => c.checked);
-
-        // Rule: Movie only → OK. Movie + Venue → schedule required. Movie + Venue + Schedule → OK.
-        // If venue is added, schedule becomes required.
-        const scheduleRequiredAndMissing = hasVenue && !hasSchedule;
-
-        const canSubmit = hasPoster && hasGenre && !scheduleRequiredAndMissing;
-
-        if (canSubmit) {
-            submitBtn.style.backgroundColor = '#4CAF50';
-            submitBtn.disabled = false;
-            submitBtn.style.cursor = 'pointer';
-            submitBtn.style.opacity = '1';
-        } else {
-            submitBtn.style.backgroundColor = '#666';
-            submitBtn.disabled = true;
-            submitBtn.style.cursor = 'not-allowed';
-            submitBtn.style.opacity = '0.6';
-        }
-
-        // Update the schedule checklist item to reflect conditional requirement
-        if (scheduleCheck) {
-            if (hasSchedule) {
-                scheduleCheck.style.color = 'green';
-                scheduleCheck.textContent = 'Movie Schedule ✓';
-            } else if (hasVenue) {
-                // Venue was added → schedule is now required, highlight as warning
-                scheduleCheck.style.color = 'orange';
-                scheduleCheck.textContent = 'Movie Schedule (required — venue added)';
-            } else {
-                // No venue → schedule is optional
-                scheduleCheck.style.color = '#aaa';
-                scheduleCheck.textContent = 'Movie Schedule (optional)';
-            }
-        }
-
-        // Update venue check item
-        if (venueCheck) {
-            venueCheck.style.color = hasVenue ? 'green' : '';
-        }
-
-        console.log(`Submit status: poster=${hasPoster}, venue=${hasVenue}, schedule=${hasSchedule}, genre=${hasGenre}, scheduleRequiredAndMissing=${scheduleRequiredAndMissing}`);
-    }
-
-    [posterInput, trailerInput, venueInput].forEach(input => {
-        input.addEventListener('change', () => {
-            updateCheck(posterInput, posterCheck);
-            updateCheck(trailerInput, trailerCheck);
-            updateCheck(venueInput, venueCheck);
-            updateSubmitButton(); // re-evaluate schedule requirement based on venue presence
-        });
-    });
-
-    genreCheckboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-            updateGenreCheck();
-            updateSubmitButton();
-        });
-    });
-    
-    // Expose the schedule check function globally so it can be called when schedules are added/deleted
-    window.updateScheduleCheck = function() {
-        updateScheduleCheck(); // updates visual checklist
-        updateSubmitButton();  // re-evaluates submit with venue→schedule conditional logic
-    };
-    
-    // Initialize button and checklist state on load
-    setTimeout(() => {
-        updateSubmitButton(); // handles both venue check and schedule requirement
-        console.log('Submit initialized with venue→schedule conditional logic');
-    }, 1000);
-});
-
-// document.addEventListener("DOMContentLoaded", () => {
-//     const statusSelect = document.getElementById("statusSelect");
-
-//     function updateStatusColor() {
-//         const val = statusSelect.value;
-
-//         statusSelect.style.background = ""; 
-//         if(val === "onscreen"){
-//             statusSelect.style.background = "#2ecc71"; 
-//         } else if(val === "schedule"){
-//             statusSelect.style.background = "#f39c12"; 
-//         } else if(val === "cancel"){
-//             statusSelect.style.background = "#e74c3c"; 
-//         } else if(val === "hold"){
-//             statusSelect.style.background = "#3498db"; 
-//         }
-//     }
-
-//     updateStatusColor();
-
-//     statusSelect.addEventListener("change", updateStatusColor);
-
-// });
-
-// =========================== MOVIE AVAILABILITY MODAL ===========================
-
-document.addEventListener("DOMContentLoaded", () => {
     const addMovieBtn = document.getElementById('add-movie-btn');
-    const modal = document.getElementById('availability-modal');
-    const cancelBtn = document.getElementById('cancel-btn');
-
-    // Store the schedule being edited for restoration if cancelled
+    const modal       = document.getElementById('availability-modal');
+    const cancelBtn   = document.getElementById('cancel-btn');
     let editingSchedule = null;
-    
-    // Function to update hidden input with all schedules formatted as "datetime | datetime | datetime"
+
     function updateHiddenInput() {
-        const hiddenInput = document.getElementById('venue_date_input');
-        // Format: startDate | endDate | time
-        const formattedSchedules = movieSchedules.map(s => {
-            return `${s.startDate} | ${s.time1} | ${s.time2}`;
-        }).join('|||');
-        hiddenInput.value = formattedSchedules;
+        const h = document.getElementById('venue_date_input');
+        if (!h) return;
+        h.value = movieSchedules.map(s => `${s.startDate} | ${s.time1} | ${s.time2}`).join('|||');
     }
 
-    addMovieBtn.addEventListener('click', () => {
-        // Clear editing state when adding new schedule
+    addMovieBtn?.addEventListener('click', () => {
         editingSchedule = null;
-        modal.style.display = 'flex'; 
+        modal.style.display = 'flex';
     });
 
-    function restoreEditingSchedule() {
-        if (!editingSchedule) return;
-
-        movieSchedules.push(editingSchedule);
-        updateHiddenInput();
-        renderScheduleEntry(editingSchedule);
-
-        editingSchedule = null;
-
-        document.getElementById('start-date').textContent = '';
-        document.getElementById('end-date').textContent = '';
-    }
-
-    cancelBtn.addEventListener('click', (e) => {
+    cancelBtn?.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
-
-        // Restore the schedule if we were editing
         if (editingSchedule) {
             movieSchedules.push(editingSchedule);
             updateHiddenInput();
             renderScheduleEntry(editingSchedule);
             editingSchedule = null;
         }
-        
-        initializeCurrentDate();
+        initializeCurrentDate?.();
         document.getElementById('time1').value = '';
         document.getElementById('time2').value = '';
         modal.style.display = 'none';
     });
 
-    modal.addEventListener('click', (e) => {
+    modal?.addEventListener('click', e => {
         if (!e.target.closest('.modal-content')) {
-            // Restore the schedule if we were editing
             if (editingSchedule) {
                 movieSchedules.push(editingSchedule);
                 updateHiddenInput();
                 renderScheduleEntry(editingSchedule);
                 editingSchedule = null;
             }
-            
-            initializeCurrentDate();
+            initializeCurrentDate?.();
             document.getElementById('time1').value = '';
             document.getElementById('time2').value = '';
             modal.style.display = 'none';
         }
     });
-    
-    // Function to render a schedule entry professionally
-    window.renderScheduleEntry = function(scheduleEntry) {
-       const container = document.getElementById('availability-data');
-        
-        // Use displayDate if available, otherwise combine startDate and endDate
-        const displayText = scheduleEntry.displayDate || `${scheduleEntry.startDate} - ${scheduleEntry.endDate}`;
-        
-        const entryHTML = `
-            <div class="schedule-entry" id="schedule-${scheduleEntry.id}" style="
-                background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-                border: 1px solid rgba(255,255,255,0.2);
-                border-radius: 10px;
-                padding: 15px;
-                margin: 10px 0;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 10px;
-                backdrop-filter: blur(10px);
-            ">
-                <div style="flex: 1; min-width: 200px;">
-                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                        <div>
-                            <strong style="color: #4CAF50; font-size: 1.2vw; ">Schedule:</strong>
-                            <span style="color: #fff; font-size: 1.2vw;">${displayText}</span>
-                        </div>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <button type="button" onclick="editSchedule(${scheduleEntry.id})" style="
-                        background: #3498db;
-                        color: white;
-                        border: none;
-                        padding: 8px 15px;
-                        border-radius: 5px;
-                        cursor: pointer;
-                        font-size: 1.2vw;
-                        transition: background 0.3s;
-                        hieght: 10vh;
-                    " onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button type="button" onclick="deleteSchedule(${scheduleEntry.id})" style="
-                        background: #e74c3c;
-                        color: white;
-                        border: none;
-                        padding: 8px 15px;
-                        border-radius: 5px;
-                        cursor: pointer;
-                        font-size: 1.2vw;
-                        transition: background 0.3s;
-                    " onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='#e74c3c'">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                </div>
+
+    // ── Render a schedule entry card ──────────────────────────
+    window.renderScheduleEntry = function(entry) {
+        const container = document.getElementById('availability-data');
+        const emptyMsg  = document.getElementById('schedule-empty-msg');
+        if (emptyMsg) emptyMsg.style.display = 'none';
+
+        const displayText = entry.displayDate || `${entry.startDate} (${entry.time1} – ${entry.time2})`;
+
+        const card = document.createElement('div');
+        card.className = 'schedule-entry';
+        card.id = `schedule-${entry.id}`;
+        card.innerHTML = `
+            <div>
+                <div class="schedule-entry-label"><i class="fas fa-calendar-check"></i> Screening Date</div>
+                <div class="schedule-entry-date">${displayText}</div>
+            </div>
+            <div class="schedule-entry-actions">
+                <button type="button" class="sch-edit-btn" onclick="editSchedule(${entry.id})">
+                    <i class="fas fa-pen"></i> Edit
+                </button>
+                <button type="button" class="sch-del-btn" onclick="deleteSchedule(${entry.id})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
             </div>
         `;
-        
-        // Remove old message if exists
-        const oldMessage = container.querySelector('.no-schedule-message');
-        if (oldMessage) {
-            oldMessage.remove();
-        }
-        
-        // Create a wrapper if it doesn't exist
-        let dataWrapper = container.querySelector('.schedule-data-wrapper');
-        if (!dataWrapper) {
-            dataWrapper = document.createElement('div');
-            dataWrapper.className = 'schedule-data-wrapper';
-            container.appendChild(dataWrapper);
-        }
-        
-        dataWrapper.insertAdjacentHTML('beforeend', entryHTML);
+        container.appendChild(card);
     };
-    
-    // Function to delete a schedule entry
+
+    // ── Delete ────────────────────────────────────────────────
     window.deleteSchedule = function(id) {
-        if (confirm('Are you sure you want to delete this schedule?')) {
-            movieSchedules = movieSchedules.filter(s => s.id !== id);
-            const element = document.getElementById(`schedule-${id}`);
-            if (element) {
-                element.remove();
-            }
-            updateHiddenInput();
-            
-            // Update schedule validation check
-            if (window.updateScheduleCheck) {
-                window.updateScheduleCheck();
-            }
-            
-            // Show message if no schedules left
-            if (movieSchedules.length === 0) {
-                const container = document.querySelector('.movie-border');
-                let dataWrapper = container.querySelector('.schedule-data-wrapper');
-                if (dataWrapper) {
-                    dataWrapper.innerHTML = '<p class="no-schedule-message" style="color: #aaa; text-align: center;">No schedules added yet. Click "Add Movie" to create a schedule.</p>';
-                }
-            }
+        if (!confirm('Remove this schedule?')) return;
+        movieSchedules = movieSchedules.filter(s => s.id !== id);
+        document.getElementById(`schedule-${id}`)?.remove();
+        updateHiddenInput();
+
+        if (movieSchedules.length === 0) {
+            const emptyMsg = document.getElementById('schedule-empty-msg');
+            if (emptyMsg) emptyMsg.style.display = 'flex';
         }
+
+        updateSectionLocks();
     };
-    
-    // Function to edit a schedule entry
+
+    // ── Edit ──────────────────────────────────────────────────
     window.editSchedule = function(id) {
-        const schedule = movieSchedules.find(s => s.id === id);
-        if (!schedule) return;
-        
-        // Store the original schedule for restoration if cancelled
-        editingSchedule = {...schedule};
-        
-        // Remove from display
-        const element = document.getElementById(`schedule-${id}`);
-        if (element) {
-            element.remove();
-        }
-        
-        // Remove from array
+        const s = movieSchedules.find(s => s.id === id);
+        if (!s) return;
+
+        editingSchedule = { ...s };
+        document.getElementById(`schedule-${id}`)?.remove();
         movieSchedules = movieSchedules.filter(s => s.id !== id);
         updateHiddenInput();
-        
-        // Open modal with pre-filled values
-        const modal = document.getElementById('availability-modal');
+
+        document.getElementById('start-date').textContent = s.startDate;
+        document.getElementById('time1').value = s.time1 || '';
+        document.getElementById('time2').value = s.time2 || '';
         modal.style.display = 'flex';
-        
-        // Pre-fill the span with the schedule date
-        document.getElementById('start-date').textContent = schedule.startDate;
-        
-        // Pre-fill time inputs
-        document.getElementById('time1').value = schedule.time1 || '';
-        document.getElementById('time2').value = schedule.time2 || '';
     };
 
-    document.getElementById('done-btn').addEventListener('click',()=>{
-        const time1 = document.getElementById('time1').value;
-        const time2 = document.getElementById('time2').value;
+    // ── Done (confirm schedule) ───────────────────────────────
+    document.getElementById('done-btn')?.addEventListener('click', () => {
+        const time1       = document.getElementById('time1').value;
+        const time2       = document.getElementById('time2').value;
+        const startDateEl = document.getElementById('start-date');
+        const startDate   = startDateEl?.textContent;
 
-        // Validate that both time1 AND time2 are selected
-        if (!time1 || !time2) {
-            alert('Please select both Starting Time and Ending Time');
-            return;
-        }
+        if (!time1 || !time2) { alert('Please select both Starting and Ending time.'); return; }
+        if (!startDate || startDate === 'none' || startDate === '') { alert('Please select a date from the calendar.'); return; }
 
-        // Get date from the span (which shows current date if nothing selected)
-        const startDateSpan = document.getElementById('start-date').textContent;
-
-        // Check if it's the default "none" text or empty
-        if (!startDateSpan || startDateSpan === '' || startDateSpan === 'none') {
-            alert('Please select a date');
-            return;
-        }
-
-        const scheduleEntry = {
+        const entry = {
             id: ++scheduleCounter,
-            startDate: startDateSpan,
-            endDate: startDateSpan, // Same as start date for single calendar
-            displayDate: `${startDateSpan} (${time1} - ${time2})`,
-            time1: time1,
-            time2: time2
+            startDate,
+            endDate: startDate,
+            displayDate: `${startDate}  (${time1} – ${time2})`,
+            time1,
+            time2
         };
-        
-        movieSchedules.push(scheduleEntry);
-        
-        // Add to hidden input for form submission
+
+        movieSchedules.push(entry);
         updateHiddenInput();
-        
-        // Display in movie-schedule container
-        renderScheduleEntry(scheduleEntry);
+        renderScheduleEntry(entry);
 
-        // Update schedule validation check
-        if (window.updateScheduleCheck) {
-            window.updateScheduleCheck();
-        }
-
-        document.getElementById('availability-modal').style.display = 'none';
-        
-        // Reset for next entry - show current date again
-        initializeCurrentDate();
-        
-        // Clear time inputs
+        editingSchedule = null;
+        modal.style.display = 'none';
+        initializeCurrentDate?.();
         document.getElementById('time1').value = '';
         document.getElementById('time2').value = '';
+
+        updateSectionLocks();
     });
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  BORDER UTILITIES (kept for compatibility)
+// ═══════════════════════════════════════════════════════════════
+function BorderPoster(border) {
+    if (border) border.style.background = "linear-gradient(120deg, rgba(98,255,0,.52), rgba(57,67,55,.2))";
+}
+
+function BorderTrial(border) {
+    if (border) border.style.background = "linear-gradient(120deg, rgba(98,255,0,.52), rgba(57,67,55,.2))";
+}
+
+function BorderVenue(border) {
+    if (border) border.style.background = "linear-gradient(120deg, rgba(98,255,0,.52), rgba(57,67,55,.2))";
+}
