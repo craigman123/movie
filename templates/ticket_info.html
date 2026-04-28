@@ -9,6 +9,9 @@
 {% endblock %}
 
 {% block body %}
+<!-- Pass user/schedule IDs to JS via data attributes -->
+<body data-user-id="{{ user.id }}" data-schedule-id="{{ schedule.id }}">
+
 <div id="app">
   <div class="layout">
 
@@ -72,7 +75,14 @@
               <div class="ptitle">Ticket Details</div>
               <div class="psub">{{ movie.movie_name }} · {{ schedule.date.strftime('%B %d, %Y') }}</div>
             </div>
-            <a href="{{ url_for('view_tickets') }}" class="pbtn">&#8592; My Tickets</a>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <!-- Refund button — hidden if ticket is already past -->
+              {% set now = namespace(val=None) %}
+              <button id="open-refund-btn" class="pbtn pbtn--refund" title="Request a refund for this booking">
+                ↩ Request Refund
+              </button>
+              <a href="{{ url_for('view_tickets') }}" class="pbtn">&#8592; My Tickets</a>
+            </div>
           </div>
 
           <!-- Ticket card -->
@@ -187,4 +197,102 @@
 
   </div>
 </div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     REFUND MODAL
+═══════════════════════════════════════════════════════════ -->
+<div id="refund-overlay" class="refund-overlay"></div>
+
+<div id="refund-modal" class="refund-modal" role="dialog" aria-modal="true" aria-labelledby="refund-modal-title">
+
+  <div class="refund-modal-head">
+    <div>
+      <div class="refund-modal-title" id="refund-modal-title">Request Refund</div>
+      <div class="refund-modal-sub">{{ movie.movie_name }} · {{ schedule.date.strftime('%b %d, %Y') }}</div>
+    </div>
+    <button id="refund-cancel-btn" class="refund-close-btn" aria-label="Close">✕</button>
+  </div>
+
+  <!-- Mode selector -->
+  <div class="refund-mode-row">
+    <button id="refund-mode-full" class="refund-mode-btn active">
+      <span class="refund-mode-icon">💸</span>
+      <span>Full Refund</span>
+    </button>
+    <button id="refund-mode-partial" class="refund-mode-btn">
+      <span class="refund-mode-icon">🪑</span>
+      <span>Partial Refund</span>
+    </button>
+  </div>
+
+  <!-- Partial: seat picker -->
+  <div id="seat-picker-section" class="seat-picker-section hidden">
+    <div class="seat-picker-lbl">Select seats to refund</div>
+    <div class="seat-picker-grid">
+      {% for row in ticket_rows %}
+      <label class="seat-pick-item">
+        <input
+          type="checkbox"
+          class="seat-checkbox"
+          data-seat="{{ row.seat_label }}"
+          data-price="{{ row.price }}"
+          data-type="{{ row.ticket_type }}"
+        >
+        <span class="seat-pick-card">
+          <span class="seat-pick-label">{{ row.seat_label }}</span>
+          <span class="type-pill {{ row.ticket_type }} seat-pick-type">{{ row.ticket_type }}</span>
+          <span class="seat-pick-price">PHP {{ row.price }}</span>
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Summary row -->
+  <div class="refund-summary">
+    <!-- Full refund summary -->
+    <div id="summary-full" class="refund-summary-row">
+      <span class="refund-summary-lbl">Total Refund</span>
+      <span class="refund-summary-val" id="summary-amount" data-total="{{ total_price }}">PHP {{ total_price }}</span>
+    </div>
+    <!-- Partial refund summary (JS-managed) -->
+    <div id="summary-partial" class="refund-summary-row hidden">
+      <span class="refund-hint">Select seats above to see refund amount.</span>
+    </div>
+  </div>
+
+  <!-- Policy note -->
+  <p class="refund-policy">
+    ℹ️ Refund requests are reviewed within 3–5 business days. Approved amounts will be credited back to your original payment method.
+  </p>
+
+  <!-- Actions -->
+  <div class="refund-actions">
+    <button id="refund-cancel-close" class="refund-btn-ghost" onclick="document.getElementById('refund-cancel-btn').click()">Cancel</button>
+    <button id="refund-confirm-btn" class="refund-btn-primary disabled" disabled>Confirm Refund</button>
+  </div>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     CONFIRMATION MODAL
+═══════════════════════════════════════════════════════════ -->
+<div id="confirm-overlay" class="refund-overlay"></div>
+
+<div id="confirm-modal" class="refund-modal refund-modal--sm" role="alertdialog" aria-modal="true">
+  <div class="refund-modal-head">
+    <div class="refund-modal-title">Are you sure?</div>
+  </div>
+  <p id="confirm-details-text" class="confirm-details-text"></p>
+  <p class="refund-policy" style="margin-top:0">This action cannot be undone once processed.</p>
+  <div class="refund-actions">
+    <button id="confirm-no"  class="refund-btn-ghost">Go Back</button>
+    <button id="confirm-yes" class="refund-btn-danger">Yes, Refund</button>
+  </div>
+</div>
+
+
+<script src="{{ url_for('static', filename='js/ticket_info.js') }}"></script>
 {% endblock %}

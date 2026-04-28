@@ -114,6 +114,19 @@ def send_notif(user_id, notif_type, title, message):
         db.session.commit()
     except Exception as e:
         print(f"[send_notif] failed: {e}")
+        
+def business_days_until(target_date):
+    """Returns the number of business days (Mon–Fri) from today until target_date."""
+    today = datetime.date.today()
+    if isinstance(target_date, datetime.datetime):
+        target_date = target_date.date()
+    count = 0
+    current = today
+    while current < target_date:
+        if current.weekday() < 5:  # Mon=0 … Fri=4
+            count += 1
+        current += datetime.timedelta(days=1)
+    return count
 
 class AdminActions(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -3762,6 +3775,126 @@ def inject_unread_count():
         user_id=session['user_id'], is_read=False
     ).count()
     return {'unread_count': count}
+
+@app.route('/api/refund', methods=['POST'])
+@login_required
+def api_refund():
+    data        = request.get_json(silent=True) or {}
+    user_id     = data.get('user_id')
+    schedule_id = data.get('schedule_id')
+    refund_type = data.get('refund_type', 'full')   # 'full' | 'partial'
+    seats       = data.get('seats', [])              # list of seat_labels e.g. ["A3", "B5"]
+ 
+    # ── Ownership check ──────────────────────────────────────────────────
+    if int(user_id) != session['user_id']:
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+ 
+    tickets = UserTickets.query.filter_by(
+        user_id=user_id,
+        schedule_id=schedule_id
+    ).all()
+
+    if not tickets:
+        return jsonify({"success": False, "error": "No tickets found for this booking."}), 404
+
+    schedule = Schedule.query.get(schedule_id)
+    movie    = Movies.query.get(schedule.movie_id) if schedule else None
+
+    # ── 3-business-day refund window check ───────────────────────────────
+    if schedule:
+        days_left = business_days_until(schedule.date)
+        if days_left <= 3:
+            return jsonify({
+                "success": False,
+                "error": f"Refunds are not allowed within 3 business days of the screening. "
+                         f"This movie starts in {days_left} business day(s)."
+            }), 403
+ 
+    schedule = Schedule.query.get(schedule_id)
+    movie    = Movies.query.get(schedule.movie_id) if schedule else None
+ 
+    try:
+        if refund_type == 'full':
+            # Delete every ticket for this user+schedule
+            for t in tickets:
+                db.session.delete(t)
+ 
+            # Remove the QR code record (keep the file — or delete it too if you prefer)
+            qr = QrCode.query.filter_by(user_id=user_id, schedule_id=schedule_id).first()
+            if qr:
+                # Optionally delete the QR image from disk
+                qr_path = os.path.join(app.config['QR_TICKET_CODES'], f"USER{user_id}_SCHED{schedule_id}.png")
+                if os.path.exists(qr_path):
+                    os.remove(qr_path)
+                db.session.delete(qr)
+ 
+            db.session.commit()
+ 
+            movie_name = movie.movie_name if movie else f"Schedule #{schedule_id}"
+            send_notif(
+                user_id, 'ticket',
+                '🔄 Refund Requested',
+                f'Your full refund request for "{movie_name}" has been submitted and is under review.'
+            )
+            log_event(
+                actor=User.query.get(user_id).username,
+                action='Full refund requested',
+                target=f'Schedule #{schedule_id}',
+                user_id=user_id
+            )
+            return jsonify({"success": True, "message": "Full refund submitted."})
+ 
+        elif refund_type == 'partial':
+            if not seats:
+                return jsonify({"success": False, "error": "No seats selected for partial refund."}), 400
+ 
+            # Build a map from seat_label → ticket object
+            def seat_label_for(t):
+                return f"{chr(t.seat_row + 64)}{t.seat_col}"
+ 
+            tickets_map = {seat_label_for(t): t for t in tickets}
+ 
+            deleted_labels = []
+            for label in seats:
+                t = tickets_map.get(label)
+                if t:
+                    db.session.delete(t)
+                    deleted_labels.append(label)
+ 
+            # If all seats were refunded, clean up QR too
+            remaining = len(tickets) - len(deleted_labels)
+            if remaining == 0:
+                qr = QrCode.query.filter_by(user_id=user_id, schedule_id=schedule_id).first()
+                if qr:
+                    qr_path = os.path.join(app.config['QR_TICKET_CODES'], f"USER{user_id}_SCHED{schedule_id}.png")
+                    if os.path.exists(qr_path):
+                        os.remove(qr_path)
+                    db.session.delete(qr)
+ 
+            db.session.commit()
+ 
+            movie_name = movie.movie_name if movie else f"Schedule #{schedule_id}"
+            seat_list  = ', '.join(deleted_labels)
+            send_notif(
+                user_id, 'ticket',
+                '🔄 Partial Refund Requested',
+                f'Partial refund for seat(s) {seat_list} on "{movie_name}" has been submitted and is under review.'
+            )
+            log_event(
+                actor=User.query.get(user_id).username,
+                action=f'Partial refund requested for seats: {seat_list}',
+                target=f'Schedule #{schedule_id}',
+                user_id=user_id
+            )
+            return jsonify({"success": True, "message": f"Partial refund for {len(deleted_labels)} seat(s) submitted."})
+ 
+        else:
+            return jsonify({"success": False, "error": "Invalid refund type."}), 400
+ 
+    except Exception as e:
+        db.session.rollback()
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == '__main__':
 

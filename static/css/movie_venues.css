@@ -171,13 +171,13 @@
   text-transform: uppercase;
 }
 .venue-hero-badge.available {
-  background: rgba(24,162,0,.18);
-  color: var(--green);
+  background: #378929dd;
+  color: white;
   border: 1px solid rgba(24,162,0,.35);
 }
 .venue-hero-badge.unavailable {
-  background: rgba(200,50,50,.15);
-  color: #e06060;
+  background: rgb(153, 41, 41);
+  color: #ffffff;
   border: 1px solid rgba(200,50,50,.3);
 }
 

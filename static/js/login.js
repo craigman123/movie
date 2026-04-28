@@ -288,6 +288,69 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
+    // Password strength bar
+    const registerPassword = document.getElementById("registerPassword");
+    const strengthFill = document.getElementById("strengthFill");
+    const strengthLabel = document.getElementById("strengthLabel");
+    const registerConfirmPassword = document.getElementById("registerConfirmPassword");
+    const confirmMatchStatus = document.getElementById("confirmMatchStatus");
+
+    function getStrength(pw) {
+        if (!pw.length) return { level: "null", pct: 0, label: "Null" };
+        let score = 0;
+        if (pw.length >= 6)  score++;
+        if (pw.length >= 12) score++;
+        if (pw.length >= 18) score++;
+        if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+        if (/\d/.test(pw)) score++;
+        if (/[^A-Za-z0-9]/.test(pw)) score++;
+        if (score <= 1) return { level: "weak",   pct: 20,  label: "Weak" };
+        if (score === 2) return { level: "fair",   pct: 40,  label: "Fair" };
+        if (score === 3) return { level: "good",   pct: 60,  label: "Good" };
+        if (score === 4) return { level: "strong", pct: 80, label: "Strong" };
+        return { level: "unique", pct: 100, label: "Unique" };
+    }
+
+    // Show the "null" starting state as soon as the input is focused
+    registerPassword?.addEventListener("focus", function() {
+        if (!this.value) {
+            const s = getStrength("");
+            strengthFill.style.width = s.pct + "%";
+            strengthFill.className = "strength-fill " + s.level;
+            strengthLabel.textContent = s.label;
+            strengthLabel.className = "strength-label " + s.level;
+        }
+    });
+
+    registerPassword?.addEventListener("input", function() {
+        const pw = this.value;
+        const s = getStrength(pw);
+        strengthFill.style.width = s.pct + "%";
+        strengthFill.className = "strength-fill " + s.level;
+        strengthLabel.textContent = s.label;
+        strengthLabel.className = "strength-label " + s.level;
+        checkConfirmMatch();
+    });
+
+    function checkConfirmMatch() {
+        const pw = registerPassword?.value || "";
+        const cpw = registerConfirmPassword?.value || "";
+        if (!cpw) {
+            confirmMatchStatus.textContent = "";
+            confirmMatchStatus.className = "confirm-status hidden";
+            return;
+        }
+        if (pw === cpw) {
+            confirmMatchStatus.textContent = "✓ Passwords match";
+            confirmMatchStatus.className = "confirm-status is-success";
+        } else {
+            confirmMatchStatus.textContent = "✗ Passwords do not match";
+            confirmMatchStatus.className = "confirm-status is-error";
+        }
+    }
+
+    registerConfirmPassword?.addEventListener("input", checkConfirmMatch);
+
     initializeGoogleButtons();
 });
 

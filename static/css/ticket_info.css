@@ -251,3 +251,351 @@
     .ti-right { border-top: 1px solid var(--border, #2a2a3e); flex-direction: row; flex-wrap: wrap; justify-content: center; }
     .ti-meta  { grid-template-columns: 1fr 1fr; }
 }
+
+/* ══════════════════════════════════════════════════════
+   REFUND MODAL — append this block to ticket_info.css
+   ══════════════════════════════════════════════════════ */
+
+/* Refund button in header */
+.pbtn--refund {
+    background: rgba(239, 68, 68, 0.08);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.25);
+}
+.pbtn--refund:hover {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+}
+
+/* Overlay */
+.refund-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 900;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.refund-overlay.open {
+    display: block;
+    opacity: 1;
+}
+
+/* Modal base */
+.refund-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -46%);
+    width: min(520px, 94vw);
+    background: var(--surface2, #1d2d21);
+    border: 3px solid var(--border, #2a2a3e);
+    border-radius: 20px;
+    padding: 2rem;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.refund-modal.open {
+    display: block;
+    opacity: 1;
+    transform: translate(-50%, -50%);
+}
+.refund-modal--sm {
+    width: min(400px, 94vw);
+}
+
+/* Modal header */
+.refund-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+.refund-modal-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text1, #fff);
+}
+.refund-modal-sub {
+    font-size: 0.78rem;
+    color: var(--text2, #aaa);
+    margin-top: 3px;
+}
+.refund-close-btn {
+    background: none;
+    border: none;
+    color: var(--text2, #aaa);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+    line-height: 1;
+}
+.refund-close-btn:hover { color: var(--text1, #fff); background: var(--surface3, #2a2a3e); }
+
+/* Mode toggle row */
+.refund-mode-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+.refund-mode-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border, #2a2a3e);
+    background: var(--surface3, #1e1e2e);
+    color: var(--text2, #aaa);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.refund-mode-btn .refund-mode-icon { font-size: 1.4rem; }
+.refund-mode-btn:hover {
+    background: var(--surface3, #252538);
+    color: var(--text1, #fff);
+}
+.refund-mode-btn.active {
+    background: rgba(167, 139, 250, 0.12);
+    border-color: rgba(167, 139, 250, 0.4);
+    color: #a78bfa;
+}
+
+/* Seat picker */
+.seat-picker-section {
+    margin-bottom: 1.25rem;
+}
+.seat-picker-section.hidden { display: none; }
+.seat-picker-lbl {
+    font-size: 0.68rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text2, #888);
+    margin-bottom: 10px;
+}
+.seat-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+}
+
+/* Individual seat pick card */
+.seat-pick-item {
+    cursor: pointer;
+    position: relative;
+}
+.seat-pick-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.seat-pick-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border, #2a2a3e);
+    background: var(--surface3, #1e1e2e);
+    transition: border-color 0.2s, background 0.2s;
+    user-select: none;
+}
+.seat-pick-item input:checked + .seat-pick-card {
+    border-color: rgba(167, 139, 250, 0.5);
+    background: rgba(167, 139, 250, 0.1);
+}
+.seat-pick-item:hover .seat-pick-card {
+    border-color: rgba(167, 139, 250, 0.3);
+}
+.seat-pick-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text1, #fff);
+}
+.seat-pick-type { margin-top: 2px; }
+.seat-pick-price {
+    font-size: 0.78rem;
+    color: var(--text2, #aaa);
+    margin-top: 2px;
+}
+
+/* Summary row */
+.refund-summary {
+    background: var(--surface3, #0f1a14);
+    border: 1px solid var(--border, #2a2a3e);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 1rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+.refund-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+.refund-summary-row.hidden { display: none; }
+.refund-summary-lbl {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text2, #aaa);
+}
+.refund-summary-val {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #a78bfa;
+}
+.refund-hint {
+    font-size: 0.8rem;
+    color: var(--text2, #888);
+    width: 100%;
+    text-align: center;
+}
+.refund-partial-label {
+    font-size: 0.78rem;
+    color: var(--text2, #aaa);
+}
+.refund-partial-val {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #a78bfa;
+}
+
+/* Policy note */
+.refund-policy {
+    font-size: 0.78rem;
+    color: var(--text2, #888);
+    line-height: 1.55;
+    margin-bottom: 1.25rem;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border-left: 3px solid rgba(167, 139, 250, 0.3);
+}
+
+/* Actions */
+.refund-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.refund-btn-ghost {
+    background: none;
+    border: 1px solid var(--border, #2a2a3e);
+    color: var(--text2, #aaa);
+    border-radius: 10px;
+    padding: 9px 20px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.refund-btn-ghost:hover { background: var(--surface3, #2a2a3e); color: var(--text1, #fff); }
+
+.refund-btn-primary {
+    background: #a78bfa;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 22px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+}
+.refund-btn-primary:hover:not(.disabled) { background: #9163f5; }
+.refund-btn-primary.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.refund-btn-danger {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 22px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.refund-btn-danger:hover:not(:disabled) { background: #dc2626; }
+.refund-btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Confirm modal text */
+.confirm-details-text {
+    font-size: 0.9rem;
+    color: var(--text1, #fff);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+/* Inline validation error */
+.refund-inline-error {
+    font-size: 0.78rem;
+    color: #f87171;
+    margin-bottom: 8px;
+    text-align: right;
+}
+
+/* Shake animation */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-5px); }
+    40%       { transform: translateX(5px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+}
+.shake { animation: shake 0.35s ease; }
+
+/* Toast notification */
+.luma-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    padding: 11px 22px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #fff;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+.luma-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.luma-toast--success { background: #16a34a; }
+.luma-toast--error   { background: #dc2626; }
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .refund-modal { padding: 1.5rem 1.25rem; }
+    .refund-mode-row { grid-template-columns: 1fr; }
+    .seat-picker-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+    .refund-actions { flex-direction: column-reverse; }
+    .refund-btn-ghost,
+    .refund-btn-primary,
+    .refund-btn-danger { width: 100%; text-align: center; }
+}
