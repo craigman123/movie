@@ -3,66 +3,214 @@
 {% block head %}
     <title>LUMA - About</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
-    <script src="{{ url_for('static', filename='about.js') }}?v={{ now }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-user-pack.css') }}">
+    
+    <script src="{{ url_for('static', filename='js/about.js') }}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 {% endblock %}
 
 {% block body %}
+<div class="layout">
 
-<header class="navbar">
-    <div class="logo">LUMA</div>
+    <!-- SIDEBAR -->
+    <aside class="side">
+      <div class="slogo">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height: 1.2em; margin-right: 10px;">
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Discover</div>
+        <a class="ni" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Community</div>
+        <a class="ni" href="{{ url_for('view_ratings') }}"><span class="nico">⭐</span> Ratings</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Account</div>
+        <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+        <a class="ni" href="{{ url_for('view_notifications') }}">
+          <span class="nico">🔔</span> Notifications
+          {% if unread_count > 0 %}
+            <span class="notif-badge">{{ unread_count }}</span>
+          {% endif %}
+        </a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Libraries</div>
+        <a class="ni" href="{{ url_for('view_library') }}"><span class="nico">💼</span> Library</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Information</div>
+        <a class="ni on" href="{{ url_for('about') }}"><span class="nico">❓</span> About</a>
+      </div>
+      <div class="sbot">
+        <a href="{{ url_for('view_profile') }}" class="uchip">
+          <div class="av" id="sav">
+            <img src="{{ profile_image }}" alt="Profile Image">
+          </div>
+          <div class="uinf">
+            <div class="uname" id="snm">{{ user.username }}</div>
+            <div class="urole" id="sumprof">
+              {% if user.role == "user" %}
+                  <span style="color:var(--gold)">User - Open Profile</span>
+              {% elif user.role == "verified" %}
+                  <span style="color:var(--green)">Verified - Open Profile</span>
+              {% else %}
+                  <span style="color:var(--text2)">{{ user.role }}</span>
+              {% endif %}
+              <span class="ulgo">↩</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </aside>
 
-    <div class="nav-links">
-        <a href="{{ url_for('user_dashboard') }}">HOME</a>
-        <a href="#">ORDER</a>
-        <a href="#" class="active">ABOUT</a>
-        <a href="#">LIBRARIES</a>
-        
-        <a href="{{ url_for('settings') }}">SETTINGS</a>
-    </div>
+    <!-- MAIN CONTENT -->
+    <main class="main">
 
-    <div class="profile">L</div>
-</header>
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+            <div class="page-eyebrow">Platform Overview</div>
+            <h1 class="page-title">ABOUT <span>LUMA</span></h1>
+            <p class="page-desc">A web-based movie ticketing platform built for Cebu, Philippines — fast, secure, and hassle-free ticket booking for everyone.</p>
+        </div>
 
-<section class="about">
-    <h1>ABOUT</h1>
+        <!-- HERO BANNER -->
+        <div class="hero-banner">
+            <div>
+                <div class="hb-eyebrow">Luma Cinemas · Cebu, Philippines</div>
+                <div class="hb-title">YOUR CINEMA,<br><span>YOUR WAY</span></div>
+                <p class="hb-desc">Book tickets in advance, avoid queues, and get unique QR codes for every purchase. Built to make movie-going smoother for everyone in Cebu.</p>
+            </div>
+            <div class="hb-badge">
+                <span class="hb-badge-icon">🎬</span>
+                <div class="hb-badge-label">Luma Cinemas</div>
+            </div>
+        </div>
 
-    <div class="cards">
+        <!-- STATS -->
+        <div class="section-eyebrow">By the numbers</div>
+        <div class="section-title">PLATFORM AT A GLANCE</div>
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-num count-up" data-target="2">{{ count_venues }} 🔺</div>
+                <div class="stat-lbl">Venues Supported (increading)</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num count-up" data-target="100">0</div>
+                <div class="stat-lbl">Costumer Complaints</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num count-up" data-target="99">99.9%</div>
+                <div class="stat-lbl">% Uptime</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num count-up" data-target="4">4</div>
+                <div class="stat-lbl">Devs Behind It</div>
+            </div>
+        </div>
 
-        <!-- CARD 1 -->
-        <!-- CARD 1 -->
-<div class="card" onclick="expandCard(this)" data-alt-img="{{ url_for('static', filename='assets/efficiency-big.png') }}">
-    <div class="card-text">
-        <p> This Movie Ticketing System is a web-based platform designed to allow users to purchase movie tickets in advance using virtual tickets. Instead of seat selection, the system focuses on ticket availability management to prevent tickets from going out of stock during peak times. </p>
-        <h3>EFFICIENT FRIENDLY</h3>
-    </div>
-    <div class="card-img">
-        <img src="{{ url_for('static', filename='assets/efficiency.png') }}">
-    </div>
+        <!-- FEATURE CARDS -->
+        <div class="section-eyebrow">Core features</div>
+        <div class="section-title">WHAT MAKES LUMA DIFFERENT</div>
+
+        <div class="feature-grid" id="featureGrid">
+            <div class="feat-card" data-idx="0" onclick="toggleCard(this)">
+                <span class="feat-num">01</span>
+                <span class="feat-icon">⚡</span>
+                <div class="feat-label">Efficiency</div>
+                <div class="feat-title">EFFORTLESSLY FAST</div>
+                <div class="feat-desc">Reserve tickets in seconds. No seat maps, no friction — just pick your film and you're in.</div>
+            </div>
+            <div class="feat-card" data-idx="1" onclick="toggleCard(this)">
+                <span class="feat-num">02</span>
+                <span class="feat-icon">🔐</span>
+                <div class="feat-label">Security</div>
+                <div class="feat-title">UNIQUE TICKET IDs</div>
+                <div class="feat-desc">Every Movie you Book gets a QR code and every ticket gets a unique Reference ID. Unforgeable, trackable, yours alone.</div>
+            </div>
+            <div class="feat-card" data-idx="2" onclick="toggleCard(this)">
+                <span class="feat-num">03</span>
+                <span class="feat-icon">🎯</span>
+                <div class="feat-label">Experience</div>
+                <div class="feat-title">REDUCE HASSLE</div>
+                <div class="feat-desc">No more missed screenings. Real-time availability tracking prevents overselling before it starts.</div>
+            </div>
+        </div>
+
+        <!-- DETAIL PANEL -->
+        <div class="detail-panel" id="detailPanel">
+            <div class="detail-visual" id="detailVisual">⚡</div>
+            <div class="detail-content">
+                <div class="detail-tag" id="detailTag">● Feature</div>
+                <div class="detail-heading" id="detailHeading">EFFORTLESSLY FAST</div>
+                <div class="detail-text" id="detailText">Detail text here.</div>
+            </div>
+            <button class="detail-close" onclick="closeDetail()">✕</button>
+        </div>
+
+        <hr class="divider">
+
+        <!-- TECH STACK -->
+        <div class="section-eyebrow">Built with</div>
+        <div class="section-title">TECH STACK</div>
+        <div class="tech-grid">
+            <div class="tech-pill"><span class="tech-dot"></span> Python / Flask</div>
+            <div class="tech-pill"><span class="tech-dot"></span> Jinja2 Templates</div>
+            <div class="tech-pill"><span class="tech-dot"></span> SQLite / SQLAlchemy</div>
+            <div class="tech-pill"><span class="tech-dot"></span> HTML5 / CSS3</div>
+            <div class="tech-pill"><span class="tech-dot"></span> Vanilla JavaScript</div>
+            <div class="tech-pill"><span class="tech-dot"></span> QR Code Generation</div>
+            <div class="tech-pill"><span class="tech-dot"></span> Hex Token System</div>
+            <div class="tech-pill"><span class="tech-dot"></span> DM Sans + Bebas Neue</div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- FAQ ACCORDION -->
+        <div class="section-eyebrow">Got questions?</div>
+        <div class="section-title">FREQUENTLY ASKED</div>
+        <div class="accordion" id="accordion">
+            <div class="acc-item">
+                <div class="acc-header" onclick="toggleAcc(this)">
+                    <span>How do I book a ticket?</span>
+                    <span class="acc-arrow">▼</span>
+                </div>
+                <div class="acc-body">
+                    <div class="acc-inner">Browse movies from the dashboard, choose a screening from the Schedule page, and confirm your booking. You'll receive a unique QR code and hex ID to your account instantly.</div>
+                </div>
+            </div>
+            <div class="acc-item">
+                <div class="acc-header" onclick="toggleAcc(this)">
+                    <span>Can tickets sell out?</span>
+                    <span class="acc-arrow">▼</span>
+                </div>
+                <div class="acc-body">
+                    <div class="acc-inner">Yes — LUMA tracks ticket availability in real time. If a screening reaches capacity, it will show as unavailable to prevent overselling. Book early to secure your spot!</div>
+                </div>
+            </div>
+            <div class="acc-item">
+                <div class="acc-header" onclick="toggleAcc(this)">
+                    <span>What is the hex code on my ticket?</span>
+                    <span class="acc-arrow">▼</span>
+                </div>
+                <div class="acc-body">
+                    <div class="acc-inner">Every ticket is assigned a cryptographically unique hexadecimal identifier alongside a QR code. This dual-layer system ensures no two tickets are ever the same and makes counterfeiting virtually impossible.</div>
+                </div>
+            </div>
+            <div class="acc-item">
+                <div class="acc-header" onclick="toggleAcc(this)">
+                    <span>Which venues does LUMA support?</span>
+                    <span class="acc-arrow">▼</span>
+                </div>
+                <div class="acc-body">
+                    <div class="acc-inner">Currently LUMA serves Gaisano Grand Main and Minglanilla in Cebu, Philippines, with Standard and Premium screening experiences at each location.</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
 </div>
-
-<!-- CARD 2 -->
-<div class="card" onclick="expandCard(this)" data-alt-img="{{ url_for('static', filename='assets/ticksec-big.png') }}">
-    <div class="card-text">
-        <p> Tickets are sold virtually USING QR CODES AND A HEXA CODE AS A UNIQUE IDENTIFICATION OF THAT TICKET and registered in advance to ensure availability. By tracking ticket purchases in real time, the system helps prevent tickets from going out of stock during peak movie schedules. </p>
-        <h3>TICKET UNIQUE SECURITY</h3>
-    </div>
-    <div class="card-img">
-        <img src="{{ url_for('static', filename='assets/ticksec.png') }}">
-    </div>
-</div>
-
-<!-- CARD 3 -->
-<div class="card" onclick="expandCard(this)" data-alt-img="{{ url_for('static', filename='assets/redhas-big.png') }}">
-    <div class="card-text">
-        <p> The system provides a fast, reliable, and user-friendly way to secure movie tickets early. It reduces missed screenings, improves demand management, and offers a smoother movie-going experience. </p>
-        <h3>REDUCE HASSLE</h3>
-    </div>
-    <div class="card-img">
-        <img src="{{ url_for('static', filename='assets/redhas.png') }}">
-    </div>
-</div>
-
-    </div>
-</section>
-
 {% endblock %}

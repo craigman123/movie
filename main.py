@@ -1465,8 +1465,37 @@ def settings():
     return render_template('settings.html')
 
 @app.route('/about')
+@user_required
 def about():
-    return render_template('about.html')
+    user=User.query.get(session['user_id'])
+    profile = Profiles.query.filter_by(user_id=user.id).first()
+    
+    first_letter = user.username[0].lower() if user.username else "a"
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path,
+            "static",
+            "uploads",
+            "uploadedPictures",
+            profile.profile_image
+        )
+
+        if os.path.exists(uploaded_path):
+            profile_image = url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+        else:
+            profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+    
+    print("DEBUG: Profile Image Path:", profile_image)
+    
+    return render_template(
+        'about.html',
+        user=user, 
+        profile_image=profile_image, 
+        count_venues=Venue.query.count(), 
+        
+        )
 
 @app.route('/logout', methods=['POST'])
 def logout():
