@@ -7,10 +7,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/seat-plan-generator-pack.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/calendar-pack.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-pack.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="{{ url_for('static', filename='js/movieViewAdmin.js') }}"></script>
     <script src="{{ url_for('static', filename='js/file-container-pack.js') }}"></script>
     <script src="{{ url_for('static', filename='js/calendar-pack.js') }}"></script>
     <script src="{{ url_for('static', filename='js/admin_seat_plan.js') }}"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <title>Admin Dashboard - Movies</title>
 {% endblock %}
 
@@ -191,7 +193,8 @@
 
         <div id="backdrop">
             <div class="movie-info-modal">
-                <form id="editForm" action="{{ url_for('update_movie', movie_id=movie.id) }}" method="POST" enctype="multipart/form-data" novalidate>
+                <form id="editForm" action="" method="POST" enctype="multipart/form-data" novalidate
+                      data-action-template="{{ url_for('update_movie', movie_id=0) }}">
                 <input type="hidden" id="edit_movie_id" name="movie_id">
                 <button class="exit-btn" type="button" onclick="closeModal()" >X</button>
 
@@ -421,7 +424,36 @@
                                         </div>
 
                                         <div class="schedule-infos">
-                                            <input class="input" id="venue-link" name="venu_link" placeholder="Venue Link" type="text" required>
+                                            <div class="mv-map-selector">
+                                                <button type="button" id="venue-map-open-btn" class="mv-map-btn">
+                                                    <i class="fas fa-map-marker-alt"></i> Pin Venue Location
+                                                </button>
+
+                                                <div class="mv-map-pinned" id="map-pinned-result" style="display:none;">
+                                                    <div class="mv-map-info">
+                                                        <i class="fas fa-map-marker-alt mv-map-pin-icon"></i>
+                                                        <div class="mv-map-text">
+                                                            <span class="mv-map-title" id="map-selected-label"></span>
+                                                            <span class="mv-map-subtitle" id="map-coords-label"></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mv-map-actions">
+                                                        <button type="button" id="venue-directions-btn" class="mv-map-btn mv-map-btn--secondary" style="display:none;">
+                                                            <i class="fas fa-route"></i> Open Map
+                                                        </button>
+                                                        <button type="button" id="venue-map-open-btn-edit" class="mv-map-btn mv-map-btn--secondary">
+                                                            <i class="fas fa-pen"></i> Change Pin
+                                                        </button>
+                                                        <button type="button" id="venue-map-clear" class="mv-map-btn mv-map-btn--danger">
+                                                            <i class="fas fa-times"></i> Clear
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <input id="venue-link" name="venue_link" type="hidden">
+                                                <input id="venue-lat" type="hidden">
+                                                <input id="venue-lng" type="hidden">
+                                            </div>
                                             <input class="input" id="venue-name" name="venue_name" placeholder="Venue Name" type="text" required>
 
                                             <select title="Availability" id="venue_availability" class="input" name="venue_availability" required>
@@ -523,7 +555,6 @@
                                     <th>Schedule</th>
                                     <th>Status</th>
                                     <th>Start</th>
-                                    <th>End</th>
                                     <th>Schedule Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -596,8 +627,7 @@
         <div class="time-container">
             <label class="time-label">Starting Time</label>
             <input type="time" title="Time" class="time-size" id="time1-edit" name="time_avail">
-            <label class="time-label">Ending Time</label>
-            <input type="time" title="Time" class="time-size" id="time2-edit" name="time_avail2">
+            <!-- end_time removed: derived from start_time + movie duration -->
             <label class="time-label">Schedule Status</label>
             <select title="Select Status" name="schedule_status" id="schedule_status">
                 <option value="Active">Active</option>
@@ -640,8 +670,7 @@
         <div class="time-container">
             <label class="time-label">Starting Time</label>
             <input type="time" title="Time" class="time-size" id="time1" name="time_avail">
-            <label class="time-label">Ending Time</label>
-            <input type="time" title="Time" class="time-size" id="time2" name="time_avail2">
+            <!-- end_time removed: derived from start_time + movie duration -->
         </div>
 
         <span class="selected-date-time">
@@ -654,5 +683,66 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
+    <div id="map-picker-modal" style="display:none; position:fixed; inset:0; z-index:999999999; background:rgba(0,0,0,.72); align-items:center; justify-content:center;">
+        <div style="background:#1a1a2e; border-radius:16px; width:min(860px,95vw); max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,.6);">
+            <div style="padding:18px 24px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.08);">
+                <div>
+                    <h3 style="margin:0; color:#fff; font-size:1rem; letter-spacing:.08em;">PIN VENUE LOCATION</h3>
+                    <p style="margin:4px 0 0; color:rgba(255,255,255,.45); font-size:.78rem;">Search or click on the map to drop a pin.</p>
+                </div>
+                <button type="button" id="map-modal-close" style="background:none; border:none; color:rgba(255,255,255,.5); font-size:1.4rem; cursor:pointer; line-height:1;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div style="padding:14px 24px; display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,.06);">
+                <input id="map-modal-search" type="text" placeholder="Search address or place name..." autocomplete="off"
+                    style="flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:9px 14px; color:#fff; font-size:.88rem; outline:none;">
+                <button type="button" id="map-modal-search-btn"
+                    style="background:linear-gradient(135deg,#2563eb,#1d4ed8); border:none; border-radius:8px; color:#fff; padding:9px 18px; cursor:pointer; font-size:.88rem; white-space:nowrap;">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+            <div id="leaflet-map" style="flex:1; min-height:400px;"></div>
+            <div style="padding:14px 24px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid rgba(255,255,255,.08); gap:12px; flex-wrap:wrap;">
+                <span id="map-modal-status" style="color:rgba(255,255,255,.5); font-size:.82rem; flex:1;">Click on the map to place a pin.</span>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" id="map-modal-cancel"
+                        style="background:rgba(255,255,255,.08); border:none; border-radius:8px; color:#fff; padding:9px 20px; cursor:pointer; font-size:.85rem;">
+                        Cancel
+                    </button>
+                    <button type="button" id="map-modal-confirm" disabled
+                        style="background:linear-gradient(135deg,#2563eb,#1d4ed8); border:none; border-radius:8px; color:#fff; padding:9px 22px; cursor:pointer; font-size:.85rem; opacity:.4; transition:opacity .2s;">
+                        <i class="fas fa-check"></i> Confirm Pin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Update the editForm action URL dynamically when a movie is selected for editing.
+    // The form uses data-action-template with movie_id=0 as a placeholder;
+    // this replaces "0" with the real ID each time the hidden edit_movie_id input is set.
+    (function () {
+        const form = document.getElementById('editForm');
+        const movieIdInput = document.getElementById('edit_movie_id');
+        if (!form || !movieIdInput) return;
+
+        const template = form.dataset.actionTemplate; // e.g. /update_movie/0
+
+        function applyId(id) {
+            if (id && template) {
+                form.action = template.replace(/\/0$/, '/' + id);
+            }
+        }
+
+        // Intercept direct .value = '...' assignments from external JS
+        let _val = movieIdInput.value;
+        Object.defineProperty(movieIdInput, 'value', {
+            get() { return _val; },
+            set(v) { _val = v; applyId(v); },
+            configurable: true
+        });
+    })();
+    </script>
+{% endblock %}

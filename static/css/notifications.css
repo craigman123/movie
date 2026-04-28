@@ -1,0 +1,229 @@
+/* ═══════════════════════════════════════════
+   notifications.css  — LUMA Movie Ticketing
+   Place in: static/css/notifications.css
+   ═══════════════════════════════════════════ */
+
+/* ── Sidebar badge ── */
+.notif-badge {
+  margin-left: auto;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ── Filter tabs ── */
+.notif-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 18px 32px 0;
+  flex-wrap: wrap;
+}
+
+.ntab {
+  padding: 7px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .3px;
+}
+
+.ntab:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+.ntab.on {
+  background: var(--gold-dim);
+  border-color: rgba(232,193,74,.25);
+  color: var(--gold);
+}
+
+/* ── List container ── */
+.notif-list {
+  padding: 18px 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Single notification card ── */
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  position: relative;
+  transition: border-color .18s, background .18s;
+  animation: fin .25s ease both;
+}
+
+.notif-item:hover {
+  border-color: var(--border2);
+  background: var(--surf);
+}
+
+.notif-item.unread {
+  border-color: rgba(78, 203, 122, 0.15);
+  background: rgba(78, 203, 122, 0.04);
+}
+
+.notif-item.unread:hover {
+  border-color: rgba(78, 203, 122, 0.28);
+}
+
+/* ── Unread green dot ── */
+.notif-dot {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  flex-shrink: 0;
+}
+
+/* ── Icon pill ── */
+.notif-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+}
+
+.notif-icon--ticket  { background: rgba(91,141,238,.10); border-color: rgba(91,141,238,.22); }
+.notif-icon--movie   { background: rgba(232,193,74,.08); border-color: rgba(232,193,74,.20); }
+.notif-icon--system  { background: rgba(224, 85, 85,.10); border-color: rgba(224, 85, 85,.22); }
+.notif-icon--reminder{ background: rgba(78,203,122,.10); border-color: rgba(78,203,122,.22); }
+
+/* ── Text body ── */
+.notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-item.unread .notif-title {
+  color: #fff;
+}
+
+.notif-msg {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.notif-time {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: .4px;
+}
+
+/* ── Action buttons ── */
+.notif-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity .15s;
+}
+
+.notif-item:hover .notif-actions {
+  opacity: 1;
+}
+
+.nact-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text2);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+}
+
+.nact-read:hover {
+  background: rgba(78,203,122,.15);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.nact-del:hover {
+  background: rgba(224,85,85,.15);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* ── Empty state ── */
+.notif-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 20px;
+  text-align: center;
+  gap: 10px;
+  animation: fin .3s ease;
+}
+
+.notif-empty-icon {
+  font-size: 48px;
+  margin-bottom: 6px;
+  filter: grayscale(0.3);
+}
+
+.notif-empty-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 1.5px;
+  color: var(--text);
+}
+
+.notif-empty-sub {
+  font-size: 13px;
+  color: var(--text3);
+  max-width: 320px;
+  line-height: 1.6;
+}

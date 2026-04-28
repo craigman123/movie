@@ -10,7 +10,7 @@ let movieSchedules   = [];
 let scheduleCounter  = 0;
 
 // ── Helpers ──────────────────────────────────────────────────────
-const GREEN_BG  = "linear-gradient(120deg, rgba(98,255,0,.52), rgba(57,67,55,.2))";
+const GREEN_BG  = "linear-gradient(120deg, rgba(109, 170, 73, 0.52), rgba(57,67,55,.2))";
 const RED_BG    = "linear-gradient(135deg, rgba(255,0,0,.4), rgba(255,0,0,.24))";
 const CLEAR_BG  = "";
 
@@ -184,7 +184,31 @@ function updateSubmitButton() {
 // ═══════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
 
-    // ── Poster upload preview ─────────────────────────────────
+    // ── Sync VENUE_STATE.imageUrl → hidden input automatically ───
+    // This ensures that whenever any script (e.g. admin_seat_plan.js) sets
+    // VENUE_STATE.imageUrl during prefill, the form submits the existing
+    // venue image filename so main.py can use it as a fallback.
+    (function watchVenueStateImageUrl() {
+        let _imageUrl = window.VENUE_STATE?.imageUrl ?? null;
+        const state = window.VENUE_STATE || (window.VENUE_STATE = {});
+        Object.defineProperty(state, 'imageUrl', {
+            get() { return _imageUrl; },
+            set(val) {
+                _imageUrl = val;
+                const hidden = document.getElementById('venue-existing-image');
+                if (hidden) {
+                    // val may be a full URL like "/static/uploads/foo.jpg" — extract just the filename
+                    if (val) {
+                        const parts = val.split('/');
+                        hidden.value = parts[parts.length - 1];
+                    } else {
+                        hidden.value = '';
+                    }
+                }
+            },
+            configurable: true
+        });
+    })();
     const posterInput  = document.getElementById('fileposter');
     const posterHeader = posterInput?.closest('.file-container')?.querySelector('.am-upload-preview');
 
@@ -512,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateHiddenInput() {
         const h = document.getElementById('venue_date_input');
         if (!h) return;
-        h.value = movieSchedules.map(s => `${s.startDate} | ${s.time1} | ${s.time2}`).join('|||');
+        h.value = movieSchedules.map(s => `${s.startDate} | ${s.time1}`).join('|||');
     }
 
     addMovieBtn?.addEventListener('click', () => {
@@ -531,7 +555,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         initializeCurrentDate?.();
         document.getElementById('time1').value = '';
-        document.getElementById('time2').value = '';
         modal.style.display = 'none';
     });
 
@@ -545,7 +568,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             initializeCurrentDate?.();
             document.getElementById('time1').value = '';
-            document.getElementById('time2').value = '';
             modal.style.display = 'none';
         }
     });
@@ -556,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const emptyMsg  = document.getElementById('schedule-empty-msg');
         if (emptyMsg) emptyMsg.style.display = 'none';
 
-        const displayText = entry.displayDate || `${entry.startDate} (${entry.time1} – ${entry.time2})`;
+        const displayText = entry.displayDate || `${entry.startDate} (${entry.time1})`;
 
         const card = document.createElement('div');
         card.className = 'schedule-entry';
@@ -605,27 +627,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('start-date').textContent = s.startDate;
         document.getElementById('time1').value = s.time1 || '';
-        document.getElementById('time2').value = s.time2 || '';
         modal.style.display = 'flex';
     };
 
     // ── Done (confirm schedule) ───────────────────────────────
     document.getElementById('done-btn')?.addEventListener('click', () => {
         const time1       = document.getElementById('time1').value;
-        const time2       = document.getElementById('time2').value;
         const startDateEl = document.getElementById('start-date');
         const startDate   = startDateEl?.textContent;
 
-        if (!time1 || !time2) { alert('Please select both Starting and Ending time.'); return; }
+        if (!time1) { alert('Please select a Starting time.'); return; }
         if (!startDate || startDate === 'none' || startDate === '') { alert('Please select a date from the calendar.'); return; }
 
         const entry = {
             id: ++scheduleCounter,
             startDate,
             endDate: startDate,
-            displayDate: `${startDate}  (${time1} – ${time2})`,
+            displayDate: `${startDate}  (${time1})`,
             time1,
-            time2
         };
 
         movieSchedules.push(entry);
@@ -636,7 +655,6 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'none';
         initializeCurrentDate?.();
         document.getElementById('time1').value = '';
-        document.getElementById('time2').value = '';
 
         updateSectionLocks();
     });
@@ -656,3 +674,260 @@ function BorderTrial(border) {
 function BorderVenue(border) {
     if (border) border.style.background = "linear-gradient(120deg, rgba(98,255,0,.52), rgba(57,67,55,.2))";
 }
+
+
+// ═══════════════════════════════════════════════════════════════
+//  VENUE SAVE — validation + toast notification
+// ═══════════════════════════════════════════════════════════════
+
+// ── Toast utility ─────────────────────────────────────────────
+function showVenueToast(type, message) {
+    // Remove any existing toast first
+    document.getElementById('venue-toast')?.remove();
+
+    const isSuccess = type === 'success';
+
+    const toast = document.createElement('div');
+    toast.id = 'venue-toast';
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 20px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: 'Segoe UI', sans-serif;
+        color: #fff;
+        background: ${isSuccess
+            ? 'linear-gradient(135deg, #1f7a4a, #15603b)'
+            : 'linear-gradient(135deg, #7a1f1f, #601515)'};
+        border: 1px solid ${isSuccess ? 'rgba(70,229,157,.35)' : 'rgba(239,68,68,.35)'};
+        box-shadow: 0 8px 24px rgba(0,0,0,.4);
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity .25s ease, transform .25s ease;
+        max-width: 360px;
+        line-height: 1.4;
+    `;
+
+    const icon = isSuccess ? 'fa-check-circle' : 'fa-exclamation-circle';
+    const iconColor = isSuccess ? '#46e59d' : '#f87171';
+
+    toast.innerHTML = `
+        <i class="fas ${icon}" style="font-size:18px; color:${iconColor}; flex-shrink:0;"></i>
+        <span>${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Auto-dismiss
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(12px)';
+        setTimeout(() => toast.remove(), 300);
+    }, isSuccess ? 3500 : 5000);
+}
+
+// ── Field-level error highlight helper ────────────────────────
+function markFieldError(el, isError) {
+    if (!el) return;
+    el.style.outline = isError ? '2px solid rgba(239,68,68,.7)' : '';
+    el.style.boxShadow = isError ? '0 0 0 3px rgba(239,68,68,.15)' : '';
+}
+
+function clearFieldError(el) {
+    markFieldError(el, false);
+}
+
+// ── Venue validation ──────────────────────────────────────────
+function validateVenue() {
+    const venueName   = document.getElementById('venue-name');
+    const room        = document.getElementById('room');
+    const venueLink   = document.getElementById('venue-link');
+    const venueAvail  = document.getElementById('venue_availability');
+    const filevenue   = document.getElementById('filevenue');
+
+    const errors = [];
+
+    // Clear previous highlights
+    [venueName, room, venueAvail].forEach(el => clearFieldError(el));
+
+    // 1. Venue name — required, min 3 chars
+    if (!venueName || venueName.value.trim() === '') {
+        markFieldError(venueName, true);
+        errors.push('Venue name is required.');
+    } else if (venueName.value.trim().length < 3) {
+        markFieldError(venueName, true);
+        errors.push('Venue name must be at least 3 characters.');
+    }
+
+    // 2. Room / Hall — required
+    if (!room || room.value.trim() === '') {
+        markFieldError(room, true);
+        errors.push('Room / Hall name is required.');
+    }
+
+    // 3. Map pin — venue-link hidden input must be set
+    if (!venueLink || venueLink.value.trim() === '') {
+        errors.push('Please pin the venue location on the map.');
+    }
+
+    // 4. Venue image — either a new file or an existing URL in VENUE_STATE
+    const hasImage = (filevenue && filevenue.files.length > 0)
+                   || (window.VENUE_STATE && (window.VENUE_STATE.file || window.VENUE_STATE.imageUrl));
+    if (!hasImage) {
+        const bordervenue = document.getElementById('bordervenue');
+        if (bordervenue) {
+            bordervenue.style.outline = '2px solid rgba(239,68,68,.7)';
+            setTimeout(() => { bordervenue.style.outline = ''; }, 3000);
+        }
+        errors.push('Please upload a venue image.');
+    }
+
+    // 5. Availability — must not be empty
+    if (!venueAvail || venueAvail.value.trim() === '') {
+        markFieldError(venueAvail, true);
+        errors.push('Please select an availability schedule.');
+    }
+
+    // 6. At least one schedule must have been added via the calendar
+    const venueSchedules = window.APP_STATE?.schedules || [];
+    if (venueSchedules.length === 0) {
+        errors.push('Please add at least one screening schedule.');
+    }
+
+    return errors;
+}
+
+// ── Wire up Save Venue & Clear buttons ────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+
+    const doneVenueBtn   = document.getElementById('done-btn-venue');
+    const cancelVenueBtn = document.getElementById('cancel-btn-venue');
+
+    // ── Save Venue ─────────────────────────────────────────────
+    doneVenueBtn?.addEventListener('click', () => {
+        const errors = validateVenue();
+
+        if (errors.length > 0) {
+            // Show the first error as the toast message; list all below it
+            const firstError = errors[0];
+            const extra = errors.length > 1
+                ? `<br><span style="font-size:12px;font-weight:400;opacity:.85">+${errors.length - 1} more issue${errors.length > 2 ? 's' : ''}</span>`
+                : '';
+            showVenueToast('error', firstError + extra);
+
+            // Auto-clear field highlights after 3 s
+            setTimeout(() => {
+                ['venue-name', 'room', 'venue_availability'].forEach(id => {
+                    clearFieldError(document.getElementById(id));
+                });
+            }, 3000);
+
+            return;
+        }
+
+        // All good — collect a summary of what was saved
+        const venueName  = document.getElementById('venue-name').value.trim();
+        const room       = document.getElementById('room').value.trim();
+        const schedCount = (window.APP_STATE?.schedules || []).length;
+
+        showVenueToast(
+            'success',
+            `Venue "<strong>${venueName}</strong>" saved — ${room}, ${schedCount} schedule${schedCount !== 1 ? 's' : ''} added.`
+        );
+
+        // Trigger section-lock update so the submit checklist refreshes
+        updateSectionLocks?.();
+    });
+
+    // ── Clear / Reset venue fields ─────────────────────────────
+    cancelVenueBtn?.addEventListener('click', () => {
+        // Text inputs
+        const venueName  = document.getElementById('venue-name');
+        const room       = document.getElementById('room');
+        if (venueName) venueName.value  = '';
+        if (room)      room.value       = '';
+
+        // Availability select — reset to first option
+        const venueAvail = document.getElementById('venue_availability');
+        if (venueAvail) venueAvail.selectedIndex = 0;
+
+        // Map pin
+        const venueLink = document.getElementById('venue-link');
+        const venueLat  = document.getElementById('venue-lat');
+        const venueLng  = document.getElementById('venue-lng');
+        if (venueLink) venueLink.value = '';
+        if (venueLat)  venueLat.value  = '';
+        if (venueLng)  venueLng.value  = '';
+
+        // Hide the pinned-result card and restore the pin button
+        const pinnedResult = document.getElementById('map-pinned-result');
+        const mapOpenBtn   = document.getElementById('venue-map-open-btn');
+        const directionsBtn = document.getElementById('venue-directions-btn');
+        if (pinnedResult)  pinnedResult.style.display  = 'none';
+        if (mapOpenBtn)    mapOpenBtn.style.display     = 'inline-flex';
+        if (directionsBtn) directionsBtn.style.display  = 'none';
+
+        const mapSelectedLabel = document.getElementById('map-selected-label');
+        const mapCoordsLabel   = document.getElementById('map-coords-label');
+        if (mapSelectedLabel) mapSelectedLabel.textContent = '';
+        if (mapCoordsLabel)   mapCoordsLabel.textContent   = '';
+
+        // Venue image — reset file input and VENUE_STATE
+        const filevenue   = document.getElementById('filevenue');
+        const bordervenue = document.getElementById('bordervenue');
+        if (filevenue) filevenue.value = '';
+        if (window.VENUE_STATE) {
+            window.VENUE_STATE.file     = null;
+            window.VENUE_STATE.imageUrl = null;
+        }
+        const venueExistingImage = document.getElementById('venue-existing-image');
+        if (venueExistingImage) venueExistingImage.value = '';
+        // Restore the upload card preview header
+        const previewEl = bordervenue?.querySelector('.file-header-venue, .am-upload-preview');
+        if (previewEl && previewEl.tagName !== 'IMG') {
+            // Only reset if it was replaced with an <img>
+            const imgInside = bordervenue?.querySelector('.file-header-venue img, .am-upload-preview img');
+            if (imgInside) imgInside.closest('.file-header-venue, .am-upload-preview')?.replaceChildren();
+        }
+        if (bordervenue) {
+            bordervenue.style.outline    = '';
+            bordervenue.style.background = '';
+            bordervenue.classList.remove('ready');
+        }
+
+        // Venue-select (prefill dropdown) — reset to placeholder
+        const venueSelect = document.getElementById('venue-select');
+        if (venueSelect) venueSelect.selectedIndex = 0;
+
+        // Schedules list
+        if (window.APP_STATE) window.APP_STATE.schedules = [];
+        const venueData = document.getElementById('venue-data');
+        if (venueData) venueData.innerHTML = '';
+        const venueSchedulesInput = document.getElementById('venue-schedules-input');
+        if (venueSchedulesInput) venueSchedulesInput.value = '';
+
+        // Clear any lingering field highlights
+        ['venue-name', 'room', 'venue_availability'].forEach(id => {
+            clearFieldError(document.getElementById(id));
+        });
+
+        // Refresh border colours and section locks
+        updateSectionLocks?.();
+    });
+});

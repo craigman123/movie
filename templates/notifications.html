@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block head %}
+  <title>LUMA — Notifications</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/luma_dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
+  <script src="{{ url_for('static', filename='js/luma_dashboard.js') }}" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block body %}
+<div id="app">
+  <div class="layout">
+
+    <!-- ── SIDEBAR (same as dashboard) ── -->
+    <aside class="side">
+      <div class="slogo">
+        <img src="{{ url_for('static', filename='assets/logo-removebg-preview.png') }}" alt="LUMA Logo" style="height:1.2em;margin-right:10px;">
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Discover</div>
+        <a class="ni" href="{{ url_for('user_dashboard') }}"><span class="nico">🎬</span> Movies</a>
+        <a class="ni" href="{{ url_for('view_schedule') }}"><span class="nico">📅</span> Schedule</a>
+        <a class="ni" href="{{ url_for('view_venues') }}"><span class="nico">🏨</span> Venues</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Community</div>
+        <a class="ni" href="{{ url_for('view_ratings') }}"><span class="nico">⭐</span> Ratings</a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Account</div>
+        <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+        <a class="ni on" href="{{ url_for('view_notifications') }}">
+          <span class="nico">🔔</span> Notifications
+          {% if unread_count > 0 %}
+            <span class="notif-badge">{{ unread_count }}</span>
+          {% endif %}
+        </a>
+      </div>
+      <div class="nsec">
+        <div class="nlbl">Libraries</div>
+        <a class="ni" href="{{ url_for('view_library') }}"><span class="nico">💼</span> Library</a>
+      </div>
+      <div class="sbot">
+        <a href="{{ url_for('view_profile') }}" class="uchip">
+          <div class="av" id="sav">
+            <img src="{{ profile_image }}" alt="Profile Image">
+          </div>
+          <div class="uinf">
+            <div class="uname" id="snm">{{ user.username }}</div>
+            <div class="urole" id="sumprof">
+              {% if user.role == "user" %}
+                <span style="color:var(--gold)">User - Open Profile</span>
+              {% elif user.role == "verified" %}
+                <span style="color:var(--green)">Verified - Open Profile</span>
+              {% else %}
+                <span style="color:var(--text2)">{{ user.role }}</span>
+              {% endif %}
+              <span class="ulgo">↩</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ── MAIN ── -->
+    <main class="main">
+      <div class="pg on" id="pg-notifications">
+
+        <!-- Page Header -->
+        <div class="phead">
+          <div>
+            <div class="ptitle">Notifications</div>
+            <div class="psub">Stay up to date with your bookings and upcoming shows</div>
+          </div>
+          {% if notifications %}
+          <form action="{{ url_for('mark_all_read') }}" method="POST">
+            <button type="submit" class="pbtn" style="font-size:12px;padding:8px 16px;">
+              ✓ Mark all as read
+            </button>
+          </form>
+          {% endif %}
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="notif-tabs">
+          <button class="ntab on" data-filter="all">All</button>
+          <button class="ntab" data-filter="unread">Unread</button>
+          <button class="ntab" data-filter="ticket">🎟️ Tickets</button>
+          <button class="ntab" data-filter="movie">🎬 Movies</button>
+          <button class="ntab" data-filter="system">📢 System</button>
+        </div>
+
+        <!-- Notifications List -->
+        <div class="notif-list" id="notif-list">
+
+          {% if notifications %}
+            {% for n in notifications %}
+            <div class="notif-item {{ 'unread' if not n.is_read else 'read' }}"
+                 data-type="{{ n.notif_type }}"
+                 data-id="{{ n.id }}">
+
+              <!-- Icon -->
+              <div class="notif-icon notif-icon--{{ n.notif_type }}">
+                {% if n.notif_type == 'ticket' %}🎟️
+                {% elif n.notif_type == 'movie' %}🎬
+                {% elif n.notif_type == 'system' %}📢
+                {% elif n.notif_type == 'reminder' %}⏰
+                {% else %}🔔{% endif %}
+              </div>
+
+              <!-- Content -->
+              <div class="notif-body">
+                <div class="notif-title">{{ n.title }}</div>
+                <div class="notif-msg">{{ n.message }}</div>
+                <div class="notif-time">{{ n.created_at.strftime('%b %d, %Y · %I:%M %p') }}</div>
+              </div>
+
+              <!-- Actions -->
+              <div class="notif-actions">
+                {% if not n.is_read %}
+                <form action="{{ url_for('mark_notification_read', notif_id=n.id) }}" method="POST" style="display:inline">
+                  <button type="submit" class="nact-btn nact-read" title="Mark as read">✓</button>
+                </form>
+                {% endif %}
+                <form action="{{ url_for('delete_notification', notif_id=n.id) }}" method="POST" style="display:inline">
+                  <button type="submit" class="nact-btn nact-del" title="Delete">✕</button>
+                </form>
+              </div>
+
+              <!-- Unread dot -->
+              {% if not n.is_read %}
+              <span class="notif-dot"></span>
+              {% endif %}
+            </div>
+            {% endfor %}
+
+          {% else %}
+            <!-- Empty state -->
+            <div class="notif-empty">
+              <div class="notif-empty-icon">🔕</div>
+              <div class="notif-empty-title">All caught up!</div>
+              <div class="notif-empty-sub">You have no notifications right now. Check back after booking a ticket or when new movies drop.</div>
+            </div>
+          {% endif %}
+
+        </div><!-- /notif-list -->
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // Client-side tab filter
+  document.querySelectorAll('.ntab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.ntab').forEach(t => t.classList.remove('on'));
+      tab.classList.add('on');
+      const filter = tab.dataset.filter;
+      document.querySelectorAll('.notif-item').forEach(item => {
+        const show = filter === 'all'
+          || (filter === 'unread' && item.classList.contains('unread'))
+          || item.dataset.type === filter;
+        item.style.display = show ? 'flex' : 'none';
+      });
+      // Ghost empty state
+      const visible = [...document.querySelectorAll('.notif-item')].filter(i => i.style.display !== 'none');
+      const list = document.getElementById('notif-list');
+      let ghost = list.querySelector('.notif-filter-empty');
+      if (visible.length === 0 && !document.querySelector('.notif-empty')) {
+        if (!ghost) {
+          ghost = document.createElement('div');
+          ghost.className = 'notif-empty notif-filter-empty';
+          ghost.innerHTML = `<div class="notif-empty-icon">🔍</div>
+            <div class="notif-empty-title">Nothing here</div>
+            <div class="notif-empty-sub">No notifications in this category.</div>`;
+          list.appendChild(ghost);
+        }
+        ghost.style.display = 'flex';
+      } else if (ghost) {
+        ghost.style.display = 'none';
+      }
+    });
+  });
+</script>
+{% endblock %}

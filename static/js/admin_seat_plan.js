@@ -1,4 +1,3 @@
-
 // global declaration ni very important
 window.VENUE_STATE = {
     file: null,
@@ -545,6 +544,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         document.getElementById("generate").click();
         buildSeatPlan();
+
+        // ── Sync map pin UI so the pinned-result card shows ──
+        const pinnedResult  = document.getElementById('map-pinned-result');
+        const mapOpenBtn    = document.getElementById('venue-map-open-btn');
+        const directionsBtn = document.getElementById('venue-directions-btn');
+        const labelEl       = document.getElementById('map-selected-label');
+        const coordsEl      = document.getElementById('map-coords-label');
+
+        if (pinnedResult && venue.venue_link) {
+            if (labelEl)        labelEl.textContent  = venue.venue_name || 'Pinned location';
+            if (coordsEl)       coordsEl.textContent = venue.venue_link;
+            if (directionsBtn) {
+                directionsBtn.style.display = 'inline-flex';
+                directionsBtn.onclick = () => window.open(venue.venue_link, '_blank', 'noopener');
+            }
+            pinnedResult.style.display = 'flex';
+            if (mapOpenBtn) mapOpenBtn.style.display = 'none';
+        }
+
+        // ── Unlock schedule section now that venue-name is filled ──
+        if (typeof updateSectionLocks === 'function') updateSectionLocks();
+        if (typeof updateMapBorder    === 'function') updateMapBorder();
     });
 
     const seatContainer = document.getElementById('seat-container');

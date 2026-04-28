@@ -1,12 +1,17 @@
 function openEditUserModal(btn) {
     if (btn.disabled) {
-        showFlash("You cannot edit your own account from Users Management.", "warning");
+        showFlash("You cannot edit your own account from Users Management. Use the Account page instead.", "warning");
         return;
     }
 
     const user = btn.dataset;
 
+    // ✅ Update the form action to target the correct user
+    document.getElementById("editUserForm").action = `/edit_user/${user.id}`;
+
     document.getElementById("edit_user_id").value = user.id;
+    console.log("Editing user:", user.id, user.name);
+
     document.getElementById("edit_name").value = user.name;
     document.getElementById("edit_email").value = user.email;
     document.getElementById("edit_role").value = user.role;
@@ -107,3 +112,23 @@ function openAddUserModal() {
 function closeAddUserModal() {
     document.getElementById("addUserModal").style.display = "none";
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Edit modal preview (existing)
+    const input = document.getElementById("profile_picture");
+    const preview = document.getElementById("profilePreview");
+    if (input && preview) {
+        input.addEventListener("change", function () {
+            if (this.files[0]) preview.src = URL.createObjectURL(this.files[0]);
+        });
+    }
+
+    // Add modal preview (new)
+    const addInput = document.getElementById("add_profile_picture");
+    const addPreview = document.getElementById("addProfilePreview");
+    if (addInput && addPreview) {
+        addInput.addEventListener("change", function () {
+            if (this.files[0]) addPreview.src = URL.createObjectURL(this.files[0]);
+        });
+    }
+});

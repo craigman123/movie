@@ -198,8 +198,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     gap:26px;
     position:relative;
     z-index:1;
-    width:40vw;
+    width:55vw;
     height: max-content;
+    justify-content: flex-end;
 }
 .hs{text-align:center}
 .hsn{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);line-height:1}
@@ -327,23 +328,24 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 .cards-container {
     display: flex;
-    gap: 30px;
+    gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
-    margin-bottom: 40px;
 }
 
 .card {
-    background: var(--gold-bg); /* same dark color as movie cards */
-    border-radius: 16px;
-    flex: 1 1 1vw;
-    width: 10vw;
-    padding: 5px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--rsm);
+    padding: 12px 18px;
+    min-height: 140px;
+    min-width: 170px;
     text-align: center;
-    color: #e0e7ff;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: default;
+    align-items: center;
+    justify-content: center;
 }
 
 .card:hover {
@@ -352,17 +354,19 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 }
 
 .card h3{
-    width:100%;
-    padding:15px 0;
-    text-align:center;   /* 🔥 FIX CENTER */
-    font-size: 0.8vw;
-    letter-spacing:1px;
-    z-index:3;
+    font-size: 1.1vw;
+    font-weight: bolder;
+    color: var(--text3);
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
 }
 
 .card p {
-    font-size: 2vw;
-    color: var(--text);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--gold);
+    line-height: 1;
 }
 
 .movies-grid {
@@ -592,16 +596,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     background: #000000;
     cursor: pointer;
     font-size: 12px;
-    transition: 0.2s;
+    transition: 0.2s all ease-in-out;
 }
 
 .genre:hover {
-    background: #3f3f3f;
+    background: #2c53279f;
 }
 
 .genre.active {
-    background: #2bff00;
-    color: black;
+    border: 2px solid #4caf50;
+    color: #ffffff;
 }
 
 .status-tags {
@@ -617,11 +621,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     background: #000000;
     cursor: pointer;
     font-size: 12px;
+    transition: 0.2s all ease-in-out;
 }
 
 .status.active {
-    background: #4caf50;
+    border: 2px solid #4caf50;
     color: white;
+}
+.status:hover {
+    background: #2c53279f;
 }
 
 .movie-link {
@@ -663,8 +671,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 }
 
 /* Optional: Color coding for higher restrictions */
-.age-badge.r, 
-.age-badge.nc17, 
+
+.age-badge.r,
+.age-badge.pg13 {
+    border-color: #ff944d;
+    color: #ff944d;
+}
+
+.age-badge.nc17,
 .age-badge.r18+ {
     border-color: #ff4d4d;
     color: #ff4d4d;

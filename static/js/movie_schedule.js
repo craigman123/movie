@@ -194,7 +194,7 @@
     const venueName  = venue.venue_name || `Venue #${s.venue_id}`;
     const room       = venue.room ? ` · ${venue.room}` : "";
     const isInactive = s.active !== "True" && s.active !== true;
-    const bookUrl    = `/book/${s.id}`;
+    const bookUrl    = `/view_movie/${s.id}`;
     const isEnded    = status === "ended";
     const isShowing  = status === "showing";
 

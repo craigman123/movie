@@ -92,6 +92,29 @@ app.config['QR_TICKET_CODES'] = QR_TICKET_CODES
 
 db = SQLAlchemy(app)
 
+class Notification(db.Model):
+    __tablename__ = 'notification'
+ 
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    notif_type  = db.Column(db.String(30), nullable=False, default='system')
+    # notif_type values: 'ticket' | 'movie' | 'system' | 'reminder'
+    title       = db.Column(db.String(150), nullable=False)
+    message     = db.Column(db.String(500), nullable=False)
+    is_read     = db.Column(db.Boolean, nullable=False, default=False)
+    created_at  = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+ 
+    user = db.relationship('User', backref='notifications', lazy='joined')
+
+def send_notif(user_id, notif_type, title, message):
+    """Fire-and-forget helper. Call this anywhere to push a notification."""
+    try:
+        n = Notification(user_id=user_id, notif_type=notif_type, title=title, message=message)
+        db.session.add(n)
+        db.session.commit()
+    except Exception as e:
+        print(f"[send_notif] failed: {e}")
+
 class AdminActions(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -112,8 +135,8 @@ class SystemLog(db.Model):
 
 class MovieRating(db.Model):
     id         = db.Column(db.Integer, primary_key=True)
-    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'),    nullable=False)
-    movie_id   = db.Column(db.Integer, db.ForeignKey('movies.id'),  nullable=False)
+    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'),    nullable=True)
+    movie_id   = db.Column(db.Integer, db.ForeignKey('movies.id'),  nullable=True)
     stars      = db.Column(db.Integer, nullable=False)          # 1 – 5
     review     = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
@@ -136,7 +159,7 @@ class QrCode(db.Model):
 class UserTickets(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'), nullable=False)
+    schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'), nullable=True)
     seat_row = db.Column(db.Integer, nullable=False)
     seat_col = db.Column(db.Integer, nullable=False)
     ticket_type = db.Column(db.String(50), nullable=False, default='standard')
@@ -193,16 +216,25 @@ class Schedule(db.Model):
 
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
-    end_time = db.Column(db.Time, nullable=False)
-    
+    # end_time is derived: start_time + movie.duration (minutes) — not stored in DB
+
     active = db.Column(db.String(50), nullable=False, default="True")
     user_tickets = db.relationship('UserTickets', backref='schedule', lazy=True)
+
+    @property
+    def end_time(self):
+        """Compute end time from start_time + movie.duration (minutes)."""
+        if self.start_time is None or self.movie is None:
+            return None
+        start_dt = datetime.datetime.combine(datetime.date.today(), self.start_time)
+        end_dt = start_dt + datetime.timedelta(minutes=int(self.movie.duration))
+        return end_dt.time()
 
 
 class Libraries(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
 
 class User(db.Model):
@@ -601,8 +633,7 @@ def view_users():
 @admin_required
 def movieViewAdmin():
     user = User.query.get(session['user_id'])
-    # movies = Movies.query.all()
-    
+
     search = request.args.get("search", "").strip()
 
     now = datetime.datetime.now()
@@ -613,8 +644,7 @@ def movieViewAdmin():
             Movies.movie_name.ilike(f"%{search}%")
         ).all()
     else:
-         movies = Movies.query.all()
-        
+        movies = Movies.query.all()
 
     showing_movies = []
     coming_soon_movies = []
@@ -625,80 +655,18 @@ def movieViewAdmin():
     for movie in movies:
         schedules = movie.schedules
 
-        if not schedules:
-            no_schedules_movies.append(movie)
-            continue
-        
-        upcoming_schedules = []
-
-        for s in schedules:
-            date_val = s.date.date() if isinstance(s.date, datetime.datetime) else s.date
-            start = datetime.datetime.combine(date_val, s.start_time)
-
-            if start >= now:
-                upcoming_schedules.append((start, s))
-
-        upcoming_schedules.sort(key=lambda x: x[0])
-        skip_movie = False
-
-        if upcoming_schedules:
-            next_schedule = upcoming_schedules[0][1]
-            
-            print(f"{movie.movie_name} -> Next Active:", next_schedule.active, type(next_schedule.active))
-            
-            if str(next_schedule.active) != "True":
-                cancelled_movies.append(movie)
-                print("CANCELLED MOVIE ADDED:", movie.movie_name)
-        
-        if skip_movie:
-            continue
-
-        is_showing = False
-        is_coming = True
-        is_ended = True
-
-        for s in schedules:
-            date = s.date.date() if isinstance(s.date, datetime.datetime) else s.date
-            start = datetime.datetime.combine(date, s.start_time)
-            end = datetime.datetime.combine(date, s.end_time)
-
-            if start <= now and now <= end:
-                is_showing = True
-                
-            if now >= start:
-                is_coming = False
-
-            if now <= end:
-                is_ended = False
-
-        if is_showing:
-            showing_movies.append(movie)
-
-        elif all(s_end < now for s_end in [
-            datetime.datetime.combine(
-                s.date.date() if hasattr(s.date, "date") else s.date,
-                s.end_time
-            ) for s in movie.schedules
-        ]):
-            ended_movies.append(movie)
-        
-        else:
-            coming_soon_movies.append(movie)
-    
-    for movie in movies:
+        # ── Build schedule_data here (merged from second loop) ──
         movie.schedule_data = []
+        for s in schedules:
+            s_date = s.date.date() if isinstance(s.date, datetime.datetime) else s.date
 
-        for s in movie.schedules:
-            
-            if s.date > today:
+            if s_date > today:
                 status = "Coming Soon"
-            elif s.date < today:
+            elif s_date < today:
                 status = "Ended"
-            elif s.date == today:
-                status = "On Schedule"
             else:
-                status = "Unknown"
-                
+                status = "On Schedule"
+
             if s.active == "True":
                 active = "Active"
             else:
@@ -709,17 +677,67 @@ def movieViewAdmin():
                 "id": s.id,
                 "venue": s.venue.venue_name,
                 "venue_link": s.venue.venue_linkMap,
-                "date": s.date.strftime("%Y-%m-%d"),
+                "date": s_date.strftime("%Y-%m-%d"),
                 "start": s.start_time.strftime("%H:%M"),
                 "end": s.end_time.strftime("%H:%M"),
                 "time_status": status,
                 "active_status": active
             })
 
+        # ── Categorise the movie ──────────────────────────────
+        if not schedules:
+            no_schedules_movies.append(movie)
+            continue
+
+        upcoming_schedules = []
+        for s in schedules:
+            date_val = s.date.date() if isinstance(s.date, datetime.datetime) else s.date
+            start = datetime.datetime.combine(date_val, s.start_time)
+            if start >= now:
+                upcoming_schedules.append((start, s))
+
+        upcoming_schedules.sort(key=lambda x: x[0])
+
+        if upcoming_schedules:
+            next_schedule = upcoming_schedules[0][1]
+            print(f"{movie.movie_name} -> Next Active:", next_schedule.active, type(next_schedule.active))
+            if str(next_schedule.active) != "True":
+                cancelled_movies.append(movie)
+                print("CANCELLED MOVIE ADDED:", movie.movie_name)
+                continue  # ← was using skip_movie flag before; just continue directly
+
+        is_showing = False
+        is_coming = True
+        is_ended = True
+
+        for s in schedules:
+            date = s.date.date() if isinstance(s.date, datetime.datetime) else s.date
+            start = datetime.datetime.combine(date, s.start_time)
+            end = datetime.datetime.combine(date, s.end_time)
+
+            if start <= now <= end:
+                is_showing = True
+            if now >= start:
+                is_coming = False
+            if now <= end:
+                is_ended = False
+
+        if is_showing:
+            showing_movies.append(movie)
+        elif all(
+            datetime.datetime.combine(
+                s.date.date() if hasattr(s.date, "date") else s.date,
+                s.end_time
+            ) < now
+            for s in schedules
+        ):
+            ended_movies.append(movie)
+        else:
+            coming_soon_movies.append(movie)
+
     return render_template(
         'movieViewAdmin.html',
         user=user,
-        movie=movie,
         movies=movies,
         no_schedules_movies=no_schedules_movies,
         showing_movies=showing_movies,
@@ -1752,6 +1770,9 @@ def reset_password(token):
             target=f'User #{user.id}',
             user_id=user.id
         )
+        send_notif(user.id, 'system',
+                   '🔐 Password Changed',
+                   'Your LUMA account password was just reset. If this wasn\'t you, contact support immediately.')
         flash("Your password has been updated. Please log in.", "success")
         return redirect(url_for('gotologin'))
 
@@ -1883,6 +1904,10 @@ def verify_registration_pin():
     log_event(actor=user.username, action='Email verified via PIN',
               target=f'User #{user.id}', user_id=user.id)
 
+    send_notif(user.id, 'system',
+               '👋 Welcome to LUMA!',
+               f'Hi {user.username}, your account is verified and ready. Book your first seat anytime!')
+
     flash("Email verified! You are now logged in.", "success")
     return jsonify({"ok": True, "redirect_url": url_for('user_dashboard')})
 
@@ -1936,6 +1961,9 @@ def add_movie():
                 return redirect(url_for('admin_dashboard'))
             venue_filename = secure_filename(venue_image_file.filename)
             venue_image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], venue_filename))
+        else:
+            # No new file uploaded — use the existing image passed from prefill
+            venue_filename = request.form.get('venue_existing_image') or None
 
         # --- Movie Info ---
         movie_name = request.form.get('movie_name')
@@ -2021,6 +2049,8 @@ def add_movie():
             existing_venue = Venue.query.filter_by(
                 venue_name=venue_name,
                 venue_room=room,
+                venue_linkMap=venue_link,
+                venue_availability=venue_availability,
                 venue_row=rows,
                 venue_col=cols,
                 venue_row_gap=int(row_gap_str),
@@ -2060,11 +2090,11 @@ def add_movie():
                 for sched in schedules:
                     parts = [p.strip() for p in sched.split("|")]
 
-                    if len(parts) != 3:
+                    if len(parts) != 2:
                         print(f"Skipping invalid schedule: {sched}")
                         continue
 
-                    date_str, start_time_str, end_time_str = parts
+                    date_str, start_time_str = parts
 
                     try:
                         schedule_date_obj = datetime.datetime.strptime(date_str, "%b %d, %Y").date()
@@ -2076,13 +2106,6 @@ def add_movie():
                         else:
                             start_time_input = dt_time(int(start_time_str), 0)
 
-                        # Parse end time (HH:MM format)
-                        if ':' in end_time_str:
-                            eh, em = end_time_str.split(':', 1)
-                            end_time_input = dt_time(int(eh), int(em))
-                        else:
-                            end_time_input = dt_time(int(end_time_str), 0)
-
                     except Exception as e:
                         print(f"Error parsing schedule '{sched}': {e}")
                         continue
@@ -2092,13 +2115,12 @@ def add_movie():
                         venue_id=venue_id_to_use,
                         date=schedule_date_obj,
                         start_time=start_time_input,
-                        end_time=end_time_input
                     )
 
                     db.session.add(new_schedule)
                     schedule_count += 1
 
-                    print(f"Added schedule: {schedule_date_obj} {start_time_input}-{end_time_input}")
+                    print(f"Added schedule: {schedule_date_obj} {start_time_input}")
 
                 flash(f'Movie added with {schedule_count} schedules!', 'success')
 
@@ -2122,6 +2144,15 @@ def add_movie():
             user_id=session.get('user_id')
         )
 
+        # ── Notify all active users about the new movie ──────────────────
+        all_users = User.query.filter_by(access='active').all()
+        for u in all_users:
+            send_notif(
+                u.id, 'movie',
+                f'🎬 New Movie: {movie_name}',
+                f'"{movie_name}" has just been added to LUMA. Check it out and book your seat!'
+            )
+
         flash(f"Movies added successfully! Schedules: {schedule_count if 'schedule_count' in locals() else 0}", "success")
         return redirect(url_for('admin_dashboard'))
     
@@ -2141,6 +2172,16 @@ def delete_movie(movie_id):
     try:
         movie = Movies.query.get_or_404(movie_id)
         movie_name = movie.movie_name
+
+        # ── Notify users who had tickets for this movie ───────────────────
+        affected_user_ids = db.session.query(UserTickets.user_id).join(
+            Schedule, UserTickets.schedule_id == Schedule.id
+        ).filter(Schedule.movie_id == movie_id).distinct().all()
+        for (uid,) in affected_user_ids:
+            send_notif(uid, 'system',
+                       f'⚠️ Show Cancelled: {movie_name}',
+                       f'We\'re sorry — "{movie_name}" has been removed from the schedule. '
+                       f'Please contact support for a refund if applicable.')
 
         for s in movie.schedules:
             db.session.delete(s)
@@ -2180,7 +2221,6 @@ def create_schedule():
 
     date = data["date"]
     start = data["start"]
-    end = data["end"]
 
     # TODO: insert into DB
     # db.insert(...)
@@ -2211,7 +2251,6 @@ def update_schedule(schedule_id):
 
     schedule.date = datetime.datetime.strptime(data["date"], "%Y-%m-%d").date()
     schedule.start_time = datetime.datetime.strptime(data["start"], "%H:%M").time()
-    schedule.end_time = datetime.datetime.strptime(data["end"], "%H:%M").time()
     stat = data["status"]
     
     if stat == "Active":
@@ -2223,7 +2262,7 @@ def update_schedule(schedule_id):
 
     log_event(actor=session.get('username', 'admin'), action='Updated schedule',
               target=f'Schedule #{schedule_id}',
-              details=f'Date: {data["date"]} | {data["start"]}–{data["end"]} | Status: {stat}',
+              details=f'Date: {data["date"]} | {data["start"]} | Status: {stat}',
               user_id=session.get('user_id'))
 
     return jsonify({
@@ -2267,6 +2306,16 @@ def update_movie(movie_id):
 
     log_event(actor=session.get('username', 'admin'), action='Updated movie',
               target=f'Movie #{movie_id}: {movie.movie_name}', user_id=session.get('user_id'))
+
+    # ── Notify users who have tickets for this movie ─────────────────────
+    affected_user_ids = db.session.query(UserTickets.user_id).join(
+        Schedule, UserTickets.schedule_id == Schedule.id
+    ).filter(Schedule.movie_id == movie_id).distinct().all()
+    for (uid,) in affected_user_ids:
+        send_notif(uid, 'movie',
+                   f'📝 Movie Updated: {movie.movie_name}',
+                   f'Details for "{movie.movie_name}" have been updated. Check your ticket for the latest info.')
+
     flash("Movie updated successfully", "success")
     return redirect(url_for('movieViewAdmin'))
 
@@ -2293,14 +2342,11 @@ def create_venue():
         for s in schedules:
             date_obj = datetime.datetime.strptime(s.get("date"), "%b %d, %Y").date()
             start_time_obj = datetime.datetime.strptime(s.get("startTime"), "%H:%M").time()
-            end_time_obj = datetime.datetime.strptime(s.get("endTime"), "%H:%M").time()
-            
             insert_schedule(
                 venue_id=venue_id,
                 movie_id=movie_id,
                 date=date_obj,
                 start=start_time_obj,
-                end=end_time_obj
             )
 
         return jsonify({"success": True})
@@ -2312,14 +2358,13 @@ def create_venue():
                   details=str(e), level='ERROR', user_id=session.get('user_id'))
         return jsonify({"success": False, "error": str(e)}), 500
     
-def insert_schedule(venue_id, date, start, end, movie_id):
+def insert_schedule(venue_id, date, start, movie_id):
 
     new_schedule = Schedule(
         venue_id=venue_id,
         movie_id=movie_id,
         date=date,
         start_time=start,
-        end_time=end,
         active="True"
     )
 
@@ -2369,12 +2414,15 @@ def insert_venue(venue):
 
 
 # ===================================== CRUD FOR USERS ======================================
-@app.route('/edit_user/<int:user_id>', methods=['POST'])
+@app.route('/edit_user/<int:user_edit_id>', methods=['POST'])
 @admin_required
-def edit_user(user_id):
-    user = User.query.get_or_404(user_id)
+def edit_user(user_edit_id):
+    user = User.query.get_or_404(user_edit_id)
+    current_user = User.query.get(session['user_id'])
 
-    if user.id == session.get('user_id'):
+    print("🔥 EDIT USER HIT", user_edit_id)
+          
+    if user_edit_id == current_user.id:
         flash("You cannot edit your own account from Users Management. Use the Account page instead.", "warning")
         return redirect(url_for('view_users'))
 
@@ -2421,7 +2469,7 @@ def edit_user(user_id):
     db.session.commit()
 
     log_event(actor=session.get('username', 'admin'), action='Edited user',
-              target=f'User #{user_id}: {user.username}',
+              target=f'User #{user_edit_id}: {user.username}',
               details=f'Role: {user.role} | Access: {user.access}',
               user_id=session.get('user_id'))
     flash(f"User '{user.username}' updated successfully.", "success")
@@ -2682,8 +2730,13 @@ def view_tickets():
 
     for t in raw_tickets:
         schedule = t.schedule
-        movie    = schedule.movie
-        venue    = schedule.venue
+        if schedule is None:
+            continue                  # orphaned ticket — schedule was deleted
+
+        movie = schedule.movie
+        venue = schedule.venue
+        if movie is None or venue is None:
+            continue                  # orphaned schedule — movie or venue was deleted
 
         # Convert seat_row int → letter, seat_col int → number  e.g. row=6,col=8 → "F8"
         seat_label = f"{chr(64 + t.seat_row)}{t.seat_col}"
@@ -2694,21 +2747,21 @@ def view_tickets():
         is_past   = show_end < now
 
         tickets.append({
-            "id":           t.id,
+            "id":             t.id,
             "reference_code": t.reference_code,
-            "movie_name":   movie.movie_name,
-            "movie_image":  movie.movie_image,
-            "date":         schedule.date.strftime("%b %d, %Y") if hasattr(schedule.date, 'strftime') else str(schedule.date),
-            "start_time":   schedule.start_time.strftime("%H:%M"),
-            "end_time":     schedule.end_time.strftime("%H:%M"),
-            "venue_name":   venue.venue_name,
-            "venue_room":   venue.venue_room,
-            "seat_label":   seat_label,
-            "ticket_type":  t.ticket_type,
-            "booking_time": t.booking_time,
-            "is_past":      is_past,
-            "user_id":      user.id,
-            "schedule_id":  t.schedule_id,
+            "movie_name":     movie.movie_name,
+            "movie_image":    movie.movie_image,
+            "date":           schedule.date.strftime("%b %d, %Y") if hasattr(schedule.date, 'strftime') else str(schedule.date),
+            "start_time":     schedule.start_time.strftime("%H:%M"),
+            "end_time":       schedule.end_time.strftime("%H:%M"),
+            "venue_name":     venue.venue_name,
+            "venue_room":     venue.venue_room,
+            "seat_label":     seat_label,
+            "ticket_type":    t.ticket_type,
+            "booking_time":   t.booking_time,
+            "is_past":        is_past,
+            "user_id":        user.id,
+            "schedule_id":    t.schedule_id,
         })
 
     return render_template(
@@ -2931,10 +2984,17 @@ def view_profile():
     print("DEBUG: Profile Image Path:", profile_image)
  
     # Ticket stats
-    all_tickets      = UserTickets.query.filter_by(user_id=user.id).all()
+    all_tickets_raw  = UserTickets.query.filter_by(user_id=user.id).all()
+    # Filter out orphaned tickets whose schedule, movie, or venue was deleted
+    all_tickets      = [
+        t for t in all_tickets_raw
+        if t.schedule is not None
+        and t.schedule.movie is not None
+        and t.schedule.venue is not None
+    ]
     ticket_count     = len(all_tickets)
     now              = datetime.datetime.now()
- 
+
     movies_watched = sum(
         1 for t in all_tickets
         if datetime.datetime.combine(
@@ -2942,7 +3002,7 @@ def view_profile():
             t.schedule.end_time
         ) < now
     )
- 
+
     upcoming_count = sum(
         1 for t in all_tickets
         if datetime.datetime.combine(
@@ -2950,15 +3010,9 @@ def view_profile():
             t.schedule.start_time
         ) >= now
     )
- 
-    # Most recent 5 tickets
-    recent_tickets = (
-        UserTickets.query
-        .filter_by(user_id=user.id)
-        .order_by(UserTickets.booking_time.desc())
-        .limit(5)
-        .all()
-    )
+
+    # Most recent 5 tickets (orphans already excluded)
+    recent_tickets = sorted(all_tickets, key=lambda t: t.booking_time, reverse=True)[:5]
  
     from national import nationalities as all_nationalities
  
@@ -3012,6 +3066,9 @@ def update_profile():
  
     db.session.commit()
     log_event(actor=user.username, action='Updated profile', target=f'User #{user.id}', user_id=user.id)
+    send_notif(user.id, 'system',
+               '✅ Profile Updated',
+               'Your LUMA profile info has been saved successfully.')
     flash("Profile updated successfully!", "success")
     return redirect(url_for('view_profile'))
 
@@ -3195,6 +3252,18 @@ def payment_success():
 
     db.session.commit()
     session.pop('pending_booking', None)
+
+    # ── Notify user: booking confirmed ──────────────────────────────────
+    if saved:
+        seat_list = ', '.join(saved)
+        send_notif(
+            user_id,
+            'ticket',
+            '🎟️ Booking Confirmed!',
+            f'Your {ticket_type.capitalize()} seat(s) {seat_list} for '
+            f'{movie.movie_name} on {schedule.date.strftime("%b %d")} at '
+            f'{schedule.start_time.strftime("%I:%M %p")} @ {venue.venue_name} are confirmed.'
+        )
 
     log_event(
         actor=user.username,
@@ -3486,8 +3555,6 @@ def reset_system():
         log_admin_action('Triggered full system reset — all data wiped')
         # 🚨 Drop ALL tables
         db.drop_all()
-
-        # 🔄 Recreate ALL tables from models
         db.create_all()
 
         admin = User(
@@ -3570,6 +3637,79 @@ def system_stats():
         "venues":    Venue.query.count(),
         "logs":      SystemLog.query.count(),
     })
+
+@app.route('/notifications')
+@login_required
+def view_notifications():
+    user_id = session['user_id']
+    user    = User.query.get(user_id)
+ 
+    profile = Profiles.query.filter_by(user_id=user_id).first()
+    first_letter = user.username[0].lower() if user.username else "a"
+    if profile and profile.profile_image:
+        uploaded_path = os.path.join(
+            current_app.root_path, "static", "uploads",
+            "uploadedPictures", profile.profile_image
+        )
+        profile_image = (
+            url_for('static', filename=f'uploads/uploadedPictures/{profile.profile_image}')
+            if os.path.exists(uploaded_path)
+            else url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+        )
+    else:
+        profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
+ 
+    notifications = (
+        Notification.query
+        .filter_by(user_id=user_id)
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+    unread_count = sum(1 for n in notifications if not n.is_read)
+ 
+    return render_template(
+        'notifications.html',
+        user          = user,
+        profile_image = profile_image,
+        notifications = notifications,
+        unread_count  = unread_count,
+    )
+ 
+ 
+@app.route('/notifications/<int:notif_id>/read', methods=['POST'])
+@login_required
+def mark_notification_read(notif_id):
+    n = Notification.query.filter_by(id=notif_id, user_id=session['user_id']).first_or_404()
+    n.is_read = True
+    db.session.commit()
+    return redirect(url_for('view_notifications'))
+ 
+ 
+@app.route('/notifications/mark_all_read', methods=['POST'])
+@login_required
+def mark_all_read():
+    Notification.query.filter_by(user_id=session['user_id'], is_read=False).update({'is_read': True})
+    db.session.commit()
+    return redirect(url_for('view_notifications'))
+ 
+ 
+@app.route('/notifications/<int:notif_id>/delete', methods=['POST'])
+@login_required
+def delete_notification(notif_id):
+    n = Notification.query.filter_by(id=notif_id, user_id=session['user_id']).first_or_404()
+    db.session.delete(n)
+    db.session.commit()
+    return redirect(url_for('view_notifications'))
+ 
+@app.context_processor
+def inject_unread_count():
+    """Makes `unread_count` available in every template automatically."""
+    if 'user_id' not in session:
+        return {'unread_count': 0}
+    count = Notification.query.filter_by(
+        user_id=session['user_id'], is_read=False
+    ).count()
+    return {'unread_count': count}
 
 if __name__ == '__main__':
 

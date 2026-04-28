@@ -110,8 +110,8 @@
   width: 100%;
 }
 .vp-room {
-  font-size: 9px;
-  color: var(--text3);
+  font-weight: bold;
+  font-size: 0.8vw;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -306,6 +306,11 @@
   flex-direction: column;
   gap: 12px;
 }
+a.vm-card {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
 .vm-card {
   display: flex;
   gap: 14px;
@@ -417,4 +422,236 @@
   .venue-hero     { height: 160px; }
   .venue-body     { padding: 16px; }
   .vp-thumb       { width: 38px; height: 28px; }
+}
+/* ═══════════════════════════════════════════════
+   SEARCH BAR
+   ═══════════════════════════════════════════════ */
+.venue-search-wrap {
+  position: relative;
+  margin: 20px 32px 0;
+}
+.venue-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surf);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  transition: border-color .18s;
+}
+.venue-search-box:focus-within {
+  border-color: var(--gold);
+}
+.venue-search-icon {
+  font-size: 15px;
+  opacity: .5;
+  flex-shrink: 0;
+}
+.venue-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+}
+.venue-search-input::placeholder {
+  color: var(--text3);
+}
+.venue-search-clear {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color .15s;
+}
+.venue-search-clear:hover {
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════════════
+   TWO-PANEL LAYOUT
+   ═══════════════════════════════════════════════ */
+.venue-panels {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  margin: 18px 32px 32px;
+  align-items: start;
+}
+
+/* ── Left panel ── */
+.venue-list-panel {
+  background: var(--surf);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+.venue-list-panel::-webkit-scrollbar { width: 4px; }
+.venue-list-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── Venue group card ── */
+.venue-group-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+  user-select: none;
+}
+.venue-group-card:last-child { border-bottom: none; }
+.venue-group-card:hover      { background: var(--bg3); }
+.venue-group-card.active     { background: var(--gold-dim); }
+.venue-group-card.active .vg-name { color: var(--gold); }
+
+.vg-thumb {
+  width: 48px;
+  height: 36px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+}
+.vg-thumb img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.vg-thumb-ph {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; opacity: .35;
+}
+.vg-info {
+  flex: 1; min-width: 0;
+}
+.vg-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vg-rooms-count {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 2px;
+  letter-spacing: .3px;
+}
+.vg-arrow {
+  font-size: 14px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+
+/* ── Room pills (inside left panel, below active group) ── */
+.room-pill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.room-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px 9px 28px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all .14s;
+}
+.room-pill:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+.room-pill.active {
+  border-left-color: var(--gold);
+  color: var(--gold);
+  background: rgba(24,162,0,.06);
+}
+.room-pill-icon {
+  font-size: 13px;
+  opacity: .6;
+}
+
+/* ── Right panel ── */
+.venue-detail-panel {
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.venue-detail-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 80px 0;
+  color: var(--text3);
+  font-size: 13px;
+  background: var(--surf);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  min-height: 300px;
+}
+
+/* ── Ended movies collapsible ── */
+.vm-ended-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 14px 0 6px;
+  font-size: 10px;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.vm-toggle-ended {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  color: var(--text3);
+  font-size: 10px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all .14s;
+}
+.vm-toggle-ended:hover { border-color: var(--gold); color: var(--gold); }
+.vm-ended-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+.vm-ended-wrap.open { display: flex; }
+
+/* ── Date hint on movie card ── */
+.vm-date {
+  display: block;
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 5px;
+  letter-spacing: .3px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .venue-search-wrap { margin: 14px 16px 0; }
+  .venue-panels {
+    grid-template-columns: 1fr;
+    margin: 14px 16px 24px;
+  }
+  .venue-list-panel { max-height: 50vh; }
 }

@@ -29,6 +29,12 @@
       <div class="nsec">
         <div class="nlbl">Account</div>
         <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+        <a class="ni" href="{{ url_for('view_notifications') }}">
+          <span class="nico">🔔</span> Notifications
+          {% if unread_count > 0 %}
+            <span class="notif-badge">{{ unread_count }}</span>
+          {% endif %}
+        </a>
       </div>
       <div class="nsec">
         <div class="nlbl">Libraries</div>
@@ -68,19 +74,43 @@
           </div>
         </div>
 
-        <!-- Venue Selector Strip -->
-        <div class="venue-selector">
-          <button class="venue-nav" id="venuePrev" onclick="shiftVenues(-1)">‹</button>
-          <div class="venue-strip" id="venueStrip"></div>
-          <button class="venue-nav" id="venueNext" onclick="shiftVenues(1)">›</button>
+        <!-- Search Bar -->
+        <div class="venue-search-wrap">
+          <div class="venue-search-box">
+            <span class="venue-search-icon">🔍</span>
+            <input
+              type="text"
+              id="venueSearchInput"
+              class="venue-search-input"
+              placeholder="Search venues by name or room…"
+              autocomplete="off"
+            >
+            <button class="venue-search-clear" id="venueSearchClear" style="display:none">✕</button>
+          </div>
+          <div class="venue-search-results" id="venueSearchResults" style="display:none"></div>
         </div>
 
-        <!-- Venue Detail -->
-        <div id="venueDetail">
-          <div class="venue-loading">
-            <div class="venue-spinner"></div>
-            <p>Loading venues...</p>
+        <!-- Two-panel layout: venue group list + detail -->
+        <div class="venue-panels">
+
+          <!-- Left: grouped venue list -->
+          <div class="venue-list-panel" id="venueListPanel">
+            <div class="venue-loading" id="venueListLoading">
+              <div class="venue-spinner"></div>
+              <p>Loading venues…</p>
+            </div>
+            <div id="venueGroupList"></div>
           </div>
+
+          <!-- Right: room + movie detail -->
+          <div class="venue-detail-panel" id="venueDetailPanel">
+            <div class="venue-detail-placeholder" id="venueDetailPlaceholder">
+              <div style="font-size:3rem;opacity:.18">🏨</div>
+              <div>Select a venue to see its rooms and movies</div>
+            </div>
+            <div id="venueRoomDetail" style="display:none"></div>
+          </div>
+
         </div>
 
       </div>

@@ -2,14 +2,20 @@ let movieId = null;
 let schedules = [];
 
 document.addEventListener("DOMContentLoaded", () => {
-    const doneBtn =
-        document.getElementById("doneVenueBtn") ||
-        document.getElementById("doneVenueButton");
-        console.log("doneBtn clicked:", doneBtn);
-    const movieSchedules = window.APP_STATE.schedules;
+    const doneButtons = Array.from(
+        document.querySelectorAll("#doneVenueBtn, #doneVenueButton")
+    );
 
-    doneBtn.addEventListener("click", async (e) => {
+    if (!doneButtons.length) {
+        return;
+    }
+
+    const handleVenueSave = async (e) => {
         e.preventDefault();
+
+        // Always read live from APP_STATE — never cache the reference at startup
+        // because addSchedule() pushes to this array after DOMContentLoaded runs
+        const movieSchedules = window.APP_STATE?.schedules ?? [];
 
         const venueName = document.getElementById("venue-name").value.trim();
         const venueRoom = document.getElementById("room").value.trim();
@@ -91,7 +97,311 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error(err);
             alert("Server error");
         }
+    };
+
+    doneButtons.forEach((button) => {
+        button.addEventListener("click", handleVenueSave);
     });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const mapModal = document.getElementById("map-picker-modal");
+    const mapModalClose = document.getElementById("map-modal-close");
+    const mapModalCancel = document.getElementById("map-modal-cancel");
+    const mapModalConfirm = document.getElementById("map-modal-confirm");
+    const mapModalStatus = document.getElementById("map-modal-status");
+    const mapModalSearch = document.getElementById("map-modal-search");
+    const mapModalSearchBtn = document.getElementById("map-modal-search-btn");
+
+    const mapOpenBtn = document.getElementById("venue-map-open-btn");
+    const mapEditBtn = document.getElementById("venue-map-open-btn-edit");
+    const mapClearBtn = document.getElementById("venue-map-clear");
+    const pinnedResult = document.getElementById("map-pinned-result");
+    const mapSelectedLabel = document.getElementById("map-selected-label");
+    const mapCoordsLabel = document.getElementById("map-coords-label");
+    const directionsBtn = document.getElementById("venue-directions-btn");
+    const venueLinkHidden = document.getElementById("venue-link");
+    const venueLatHidden = document.getElementById("venue-lat");
+    const venueLngHidden = document.getElementById("venue-lng");
+    const venueNameInput = document.getElementById("venue-name");
+    const venueSelect = document.getElementById("venue-select");
+
+    if (!mapModal || !mapOpenBtn || !venueLinkHidden) {
+        return;
+    }
+
+    let leafletMap = null;
+    let leafletMarker = null;
+    let pendingLat = null;
+    let pendingLng = null;
+    let pendingLabel = "";
+
+    function extractLatLngFromLink(link) {
+        if (!link) return null;
+
+        const qMatch = link.match(/[?&]q=([-0-9.]+),([-0-9.]+)/i);
+        if (qMatch) {
+            return {
+                lat: parseFloat(qMatch[1]),
+                lng: parseFloat(qMatch[2])
+            };
+        }
+
+        const atMatch = link.match(/@([-0-9.]+),([-0-9.]+)/i);
+        if (atMatch) {
+            return {
+                lat: parseFloat(atMatch[1]),
+                lng: parseFloat(atMatch[2])
+            };
+        }
+
+        return null;
+    }
+
+    function setConfirmButtonState(enabled) {
+        mapModalConfirm.disabled = !enabled;
+        mapModalConfirm.style.opacity = enabled ? "1" : ".4";
+    }
+
+    function setPinnedPreview(link, label, lat, lng) {
+        if (!link) {
+            pinnedResult.style.display = "none";
+            mapOpenBtn.style.display = "inline-flex";
+            directionsBtn.style.display = "none";
+            directionsBtn.onclick = null;
+            mapSelectedLabel.textContent = "";
+            mapCoordsLabel.textContent = "";
+            return;
+        }
+
+        const fallbackLabel =
+            label ||
+            venueNameInput?.value.trim() ||
+            "Pinned venue location";
+
+        mapSelectedLabel.textContent = fallbackLabel;
+        mapCoordsLabel.textContent =
+            Number.isFinite(lat) && Number.isFinite(lng)
+                ? `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+                : "Map link saved";
+
+        directionsBtn.style.display = "inline-flex";
+        directionsBtn.onclick = () => window.open(link, "_blank", "noopener");
+
+        pinnedResult.style.display = "flex";
+        mapOpenBtn.style.display = "none";
+    }
+
+    function syncVenueMapFromForm(preferredLabel) {
+        const link = venueLinkHidden.value.trim();
+
+        if (!link) {
+            setPinnedPreview("", "", null, null);
+            return;
+        }
+
+        const parsed = extractLatLngFromLink(link);
+        const lat = parsed?.lat ?? parseFloat(venueLatHidden.value);
+        const lng = parsed?.lng ?? parseFloat(venueLngHidden.value);
+
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            venueLatHidden.value = lat;
+            venueLngHidden.value = lng;
+        } else {
+            venueLatHidden.value = "";
+            venueLngHidden.value = "";
+        }
+
+        setPinnedPreview(link, preferredLabel, lat, lng);
+    }
+
+    function clearPinnedVenue() {
+        venueLinkHidden.value = "";
+        venueLatHidden.value = "";
+        venueLngHidden.value = "";
+        pendingLat = null;
+        pendingLng = null;
+        pendingLabel = "";
+
+        if (leafletMarker && leafletMap) {
+            leafletMap.removeLayer(leafletMarker);
+            leafletMarker = null;
+        }
+
+        setConfirmButtonState(false);
+        mapModalStatus.textContent = "Click on the map to place a pin.";
+        setPinnedPreview("", "", null, null);
+    }
+
+    function initLeafletMap() {
+        if (leafletMap) return;
+
+        leafletMap = L.map("leaflet-map").setView([10.3157, 123.8854], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "&copy; OpenStreetMap contributors",
+            maxZoom: 19
+        }).addTo(leafletMap);
+
+        leafletMap.on("click", (event) => {
+            placePin(event.latlng.lat, event.latlng.lng);
+        });
+    }
+
+    function openMapModal() {
+        mapModal.style.display = "flex";
+        initLeafletMap();
+        setTimeout(() => leafletMap.invalidateSize(), 60);
+
+        const existingLink = venueLinkHidden.value.trim();
+        const storedLat = parseFloat(venueLatHidden.value);
+        const storedLng = parseFloat(venueLngHidden.value);
+        const parsed = extractLatLngFromLink(existingLink);
+        const lat = Number.isFinite(storedLat) ? storedLat : parsed?.lat;
+        const lng = Number.isFinite(storedLng) ? storedLng : parsed?.lng;
+
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            placePin(lat, lng, mapSelectedLabel.textContent || venueNameInput?.value.trim());
+        } else {
+            mapModalStatus.textContent = "Click on the map to place a pin.";
+            setConfirmButtonState(false);
+        }
+
+        if (venueNameInput?.value.trim() && !mapModalSearch.value.trim()) {
+            mapModalSearch.value = venueNameInput.value.trim();
+        }
+    }
+
+    function closeMapModal() {
+        mapModal.style.display = "none";
+    }
+
+    async function reverseGeocode(lat, lng) {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+                { headers: { "Accept-Language": "en" } }
+            );
+            const data = await response.json();
+            return data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        } catch {
+            return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        }
+    }
+
+    function placePin(lat, lng, label) {
+        pendingLat = lat;
+        pendingLng = lng;
+
+        if (leafletMarker) {
+            leafletMarker.setLatLng([lat, lng]);
+        } else {
+            leafletMarker = L.marker([lat, lng], { draggable: true }).addTo(leafletMap);
+            leafletMarker.on("dragend", () => {
+                const markerPosition = leafletMarker.getLatLng();
+                placePin(markerPosition.lat, markerPosition.lng);
+            });
+        }
+
+        leafletMap.setView([lat, lng], 16);
+
+        if (label) {
+            pendingLabel = label;
+            mapModalStatus.textContent = label;
+        } else {
+            mapModalStatus.textContent = "Fetching address...";
+            reverseGeocode(lat, lng).then((name) => {
+                pendingLabel = name;
+                mapModalStatus.textContent = name;
+            });
+        }
+
+        setConfirmButtonState(true);
+    }
+
+    async function searchPlace() {
+        const query = mapModalSearch.value.trim();
+        if (!query) return;
+
+        mapModalStatus.textContent = `Searching "${query}"...`;
+
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`,
+                { headers: { "Accept-Language": "en" } }
+            );
+            const data = await response.json();
+
+            if (!data.length) {
+                mapModalStatus.textContent = "Location not found. Try a more specific search.";
+                return;
+            }
+
+            placePin(parseFloat(data[0].lat), parseFloat(data[0].lon), data[0].display_name);
+        } catch {
+            mapModalStatus.textContent = "Search failed. Check your connection.";
+        }
+    }
+
+    function confirmPin() {
+        if (!Number.isFinite(pendingLat) || !Number.isFinite(pendingLng)) {
+            return;
+        }
+
+        const mapLink = `https://www.google.com/maps?q=${pendingLat},${pendingLng}`;
+
+        venueLinkHidden.value = mapLink;
+        venueLatHidden.value = pendingLat;
+        venueLngHidden.value = pendingLng;
+
+        setPinnedPreview(
+            mapLink,
+            pendingLabel || venueNameInput?.value.trim(),
+            pendingLat,
+            pendingLng
+        );
+
+        closeMapModal();
+    }
+
+    mapOpenBtn.addEventListener("click", openMapModal);
+    mapEditBtn?.addEventListener("click", openMapModal);
+    mapClearBtn?.addEventListener("click", clearPinnedVenue);
+    mapModalClose?.addEventListener("click", closeMapModal);
+    mapModalCancel?.addEventListener("click", closeMapModal);
+    mapModalConfirm?.addEventListener("click", confirmPin);
+    mapModalSearchBtn?.addEventListener("click", searchPlace);
+
+    mapModal.addEventListener("click", (event) => {
+        if (event.target === mapModal) {
+            closeMapModal();
+        }
+    });
+
+    mapModalSearch?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            searchPlace();
+        }
+    });
+
+    venueSelect?.addEventListener("change", () => {
+        setTimeout(() => {
+            syncVenueMapFromForm(venueNameInput?.value.trim());
+        }, 0);
+    });
+
+    venueNameInput?.addEventListener("change", () => {
+        if (venueNameInput.value.trim() && !mapModalSearch.value.trim()) {
+            mapModalSearch.value = venueNameInput.value.trim();
+        }
+
+        if (venueLinkHidden.value.trim()) {
+            syncVenueMapFromForm(venueNameInput.value.trim());
+        }
+    });
+
+    syncVenueMapFromForm(venueNameInput?.value.trim());
+    window.closeVenueMapModal = closeMapModal;
 });
 
 function deleteMovie(event) {
@@ -155,11 +465,10 @@ function openEditModal(event) {
                 <td>${s.date}</td>
                 <td>${s.time_status}</td>
                 <td>${s.start}</td>
-                <td>${s.end}</td>
                 <td>${s.active_status}</td>
                 <td>
                     <button type="button" class="vsched-btn vsched-edit" onclick="openEditScheduleModal(this)"
-                        data-id="${s.id}" data-date="${s.date}" data-start="${s.start}" data-end="${s.end}" 
+                        data-id="${s.id}" data-date="${s.date}" data-start="${s.start}"
                         data-active_status="${s.active_status}">
                             Edit</button>
 
@@ -358,7 +667,7 @@ function openScheduleModal() {
             html += `
                 <div class="schedule-item">
                     <p><strong>Date:</strong> ${s.date}</p>
-                    <p><strong>Time:</strong> ${s.start} - ${s.end}</p>
+                    <p><strong>Start:</strong> ${s.start}</p>
                 </div>
             `;
         });
@@ -385,6 +694,7 @@ function openAddScheduleModal() {
 }
 
 function closeAddScheduleModal() {
+    window.closeVenueMapModal?.();
     document.getElementById("addScheduleModal").style.display = "none";
 }
 
@@ -396,11 +706,10 @@ function CloseCalendar() {
     document.getElementById("selectScheduleModalBackdrop").style.display = "none";
 }
 
-function addSchedule(date, start, end, venue, room) {
+function addSchedule(date, start, venue, room) {
     window.APP_STATE.schedules.push({
         date,
         start,
-        end,
         venue,
         room
     });
@@ -465,7 +774,6 @@ function openEditScheduleModal(btn) {
         id: btn.dataset.id,
         date: btn.dataset.date,
         start: btn.dataset.start,
-        end: btn.dataset.end,
         status: btn.dataset.active_status
     };
 
@@ -477,7 +785,6 @@ function openEditScheduleModal(btn) {
 
     // ✅ SET TIME
     document.getElementById("time1-edit").value = schedule.start;
-    document.getElementById("time2-edit").value = schedule.end;
     document.getElementById("schedule_status").value = schedule.status;
 
     const [y, m, d] = schedule.date.split("-");
@@ -525,7 +832,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const payload = {
             date: correctedDate,
             start: document.getElementById("time1-edit").value,
-            end: document.getElementById("time2-edit").value,
             status: document.getElementById("schedule_status").value
         };
 

@@ -88,9 +88,9 @@ Create a `.env` file in the root directory:
 MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USE_TLS=true
-MAIL_USERNAME=your-email@gmail.com
+MAIL_USERNAME=luma.cinemas21@gmail.com
 MAIL_PASSWORD=your-app-password
-MAIL_FROM=your-email@gmail.com
+MAIL_FROM=luma.cinemas21@gmail.com
 PASSWORD_RESET_SALT=luma-password-reset
 RESET_CONFIRM_PHONE_LABEL=your phone
 GOOGLE_CLIENT_ID=your-google-client-id
@@ -104,6 +104,14 @@ GOOGLE_CLIENT_ID=your-google-client-id
 
 ```cmd
 netsh advfirewall firewall add rule name="Flask Port 5000" dir=in action=allow protocol=TCP localport=5000
+```
+
+### 6. Import All in case
+
+```
+py -m pip install qrcode[pil]
+py -m install requests
+py -m pip install python-dotenv
 ```
 
 **Start the server:**

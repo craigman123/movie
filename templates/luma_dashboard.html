@@ -28,6 +28,12 @@
       <div class="nsec">
         <div class="nlbl">Account</div>
         <a class="ni" href="{{ url_for('view_tickets') }}"><span class="nico">🎟️</span> My Tickets</a>
+        <a class="ni" href="{{ url_for('view_notifications') }}">
+          <span class="nico">🔔</span> Notifications
+          {% if unread_count > 0 %}
+            <span class="notif-badge">{{ unread_count }}</span>
+          {% endif %}
+        </a>
       </div>
       <div class="nsec">
         <div class="nlbl">Libraries</div>
@@ -74,19 +80,19 @@
                         <p>{{ movies|length }}</p>
                     </div>
                     <div class="card">
-                        <h3>SHOWING MOVIES</h3> 
+                        <h3>SHOWING<br> MOVIES</h3> 
                         <p>{{ showing_movies|length }}</p>
                     </div>
                     <div class="card">
-                        <h3>COMING SOON</h3>
+                        <h3>COMING <br>SOON</h3>
                         <p>{{ coming_soon_movies|length }}</p>
                     </div>
                     <div class="card">
-                        <h3>ENDED MOVIES</h3>
+                        <h3>ENDED <br>MOVIES</h3>
                         <p>{{ ended_movies|length }}</p>
                     </div>
                     <div class="card">
-                        <h3>CANCELLED MOVIES</h3>
+                        <h3>CANCELLED <br>MOVIES</h3>
                         <p>{{ cancelled_movies|length }}</p>
                     </div>
                 </div>

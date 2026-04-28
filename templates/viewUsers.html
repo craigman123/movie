@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movieViewAdmin.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/viewUsers.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/aside-pack.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/search-style-pack.css') }}">
@@ -9,7 +10,7 @@
 {% endblock %}
 
 {% block body %}
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar sidehide" id="sidebar">
         <nav class="nav">
             <div class="logoandname">
                 <header class="head">
@@ -95,7 +96,7 @@
 <main class="main-content">
     <section class="user-section"> 
         <div class="users-header">
-            <div style="display:flex; align-items:center; gap:16px; justify-content: space-between;width: 100%;">
+            <div style="display:flex; align-items:center; justify-content: space-between; width: 100%;">
                 <h4>USERS MANAGEMENT</h4>
                 <button class="add-user-btn" onclick="openAddUserModal()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"/></svg>
@@ -253,7 +254,7 @@
                 <div class="cred-head">
                     <h4>Credentials</h4>
                 </div>
-                <input type="hidden" id="edit_user_id" name="user_id">
+                <input type="hidden" id="edit_user_id" name="user_edit_id">
 
                 <label>Name</label>
                 <input title="User Name" type="text" id="edit_name" name="name" required>
@@ -354,45 +355,108 @@
     </div>
 </div>
 
-<!-- ── ADD USER MODAL ── -->
 <div id="addUserModal" class="editUserModal">
-    <div class="modal-box" style="height:auto; max-height:90vh;">
+    <div class="modal-box">
         <div class="modal-header">
             <h3>Add New User</h3>
             <span class="close-btn" onclick="closeAddUserModal()" style="left:unset; position:relative; font-size:1.6rem;">×</span>
         </div>
-        <form action="{{ url_for('add_user') }}" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
-            <label>Full Name</label>
-            <input class="add-input" type="text" name="username" placeholder="Full name" required>
 
-            <label>Email</label>
-            <input class="add-input" type="email" name="email" placeholder="Email address" required>
+        <form action="{{ url_for('add_user') }}" method="POST" enctype="multipart/form-data">
 
-            <label>Password</label>
-            <input class="add-input" type="password" name="password" placeholder="Password" required>
+            <div class="add-credentials">
+                <div class="cred-head"><h4>Credentials</h4></div>
+                <hr>
 
-            <label>Role</label>
-            <select title="Role" class="add-input" name="role">
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-                <option value="verified">Verified</option>
-            </select>
+                <label>Full Name</label>
+                <input class="add-input" type="text" name="username" placeholder="Full name" required>
 
-            <label>Status</label>
-            <select title="System Access" class="add-input" name="access">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="banned">Banned</option>
-            </select>
+                <label>Email</label>
+                <input class="add-input" type="email" name="email" placeholder="Email address" required>
 
-            <button type="submit" class="save-btn" style="margin-top:10px;">
-                Create User
-            </button>
+                <label>Password</label>
+                <input class="add-input" type="password" name="password" placeholder="Password" required>
+
+                <label>Role</label>
+                <select title="Role" class="add-input" name="role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                    <option value="verified">Verified</option>
+                </select>
+
+                <label>Status</label>
+                <select title="System Access" class="add-input" name="access">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="banned">Banned</option>
+                </select>
+            </div>
+
+            <div class="add-profile-info">
+                <div class="profile-head"><h4>Profile Info</h4></div>
+                <hr>
+
+                <div class="profile-wrapper">
+                    <img
+                        id="addProfilePreview"
+                        src="/static/uploads/defaultPictures/default.jpg"
+                        alt="Profile Preview"
+                        title="Profile Picture Preview"
+                    >
+                    <input
+                        title="Profile Picture"
+                        type="file"
+                        name="profile_picture"
+                        id="add_profile_picture"
+                        accept="image/*"
+                    >
+                </div>
+
+                <label>Bio</label>
+                <input class="add-input" type="text" name="bio" placeholder="Short bio">
+
+                <label>Nationality</label>
+                <input class="add-input" type="text" name="nationality" placeholder="Nationality">
+
+                <label>Gender</label>
+                <select title="Gender" class="add-input" name="gender">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label>Date of Birth</label>
+                <input class="add-input" type="date" name="dob">
+
+                <label>Preferred Genre</label>
+                <select title="Preferred Genre" class="add-input" name="genre">
+                    <option value="">Select Genre</option>
+                    <option value="Action">Action</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Animation">Animation</option>
+                    <option value="Biography">Biography</option>
+                    <option value="Comedy">Comedy</option>
+                    <option value="Crime">Crime</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Family">Family</option>
+                    <option value="Fantasy">Fantasy</option>
+                    <option value="History">History</option>
+                    <option value="Horror">Horror</option>
+                    <option value="Music">Music</option>
+                    <option value="Mystery">Mystery</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Thriller">Thriller</option>
+                    <option value="War">War</option>
+                    <option value="Western">Western</option>
+                </select>
+            </div>
+
+            <div class="add-submit">
+                <button type="submit" class="save-btn">Create User</button>
+            </div>
+
         </form>
     </div>
 </div>
-
-<script>
-    const users = {{ users | tojson }};
-</script>
 {% endblock %}

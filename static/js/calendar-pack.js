@@ -140,59 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize with current date displayed
     initializeCurrentDate();
     
-    // Time validation - prevent time2 from being earlier than time1
-    const time1Input = document.getElementById('time1');
-    const time2Input = document.getElementById('time2');
-    const time2InputEdit = document.getElementById('edit-time2');
-    const time1InputEdit = document.getElementById('edit-time1');
-
-    if (time1Input === null && time2Input === null) {
-        Increate == true;
-    } else {
-        InEdit == true;
-    }
-
-    
-    if(InEdit == true) {
-        time2InputEdit.addEventListener('change', function() {
-            if (time1Input.value && time2InputEdit.value) {
-                if (time2InputEdit.value < time1Input.value) {
-                    alert('Ending Time cannot be earlier than Starting Time');
-                    time2InputEdit.value = '';
-                }
-            }
-        });
-        
-        time1InputEdit.addEventListener('change', function() {
-            // Reset time2 if it's now invalid
-            if (time1Input.value && time2InputEdit.value) {
-                if (time2InputEdit.value < time1Input.value) {
-                    time2InputEdit.value = '';
-                }
-            }
-        });
-    } else if(Increate == true) {
-        time2Input.addEventListener('change', function() {
-            if (time1Input.value && time2Input.value) {
-                if (time2Input.value < time1Input.value) {
-                    alert('Ending Time cannot be earlier than Starting Time');
-                    time2Input.value = '';
-                }
-            }
-        });
-        
-        time1Input.addEventListener('change', function() {
-            // Reset time2 if it's now invalid
-            if (time1Input.value && time2Input.value) {
-                if (time2Input.value < time1Input.value) {
-                    time2Input.value = '';
-                }
-            }
-        });
-    } else {
-        console.log("Increate:", Increate);
-        console.log("InEdit:", InEdit);
-    }
+    // end_time is now derived from start_time + movie duration — no time2 field needed
 });
 
 
@@ -226,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         row.innerHTML = `
             <div class="venue-text">
-                DATE: ${schedule.date} == START TIME: ${schedule.startTime} == END TIME: ${schedule.endTime}
+                DATE: ${schedule.date} == START TIME: ${schedule.startTime}
             </div>
 
             <div class="venue-actions">
@@ -240,7 +188,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("done-btn-schedule").addEventListener("click", () => {
         const startTime = document.getElementById("time1").value;
-        const endTime = document.getElementById("time2").value;
         const date = document.getElementById("start-date").textContent;
 
         if (!date || date === "none") {
@@ -248,9 +195,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (!startTime || !endTime) {
-            console.log("startTime:", startTime, "endTime:", endTime);
-            alert("Please select both start and end time");
+        if (!startTime) {
+            console.log("startTime:", startTime);
+            alert("Please select a start time");
             return;
         }
 
@@ -258,7 +205,6 @@ document.addEventListener("DOMContentLoaded", () => {
             id: ++scheduleCounter,
             date: date,
             startTime: startTime,
-            endTime: endTime
         };
 
         window.APP_STATE.schedules.push(schedule);
@@ -269,7 +215,6 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.style.display = "none";
 
         document.getElementById("time1").value = "";
-        document.getElementById("time2").value = "";
     });
 
     window.deleteVenue = function (id) {
@@ -288,7 +233,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById("start-date").textContent = schedule.date;
         document.getElementById("time1").value = schedule.startTime;
-        document.getElementById("time2").value = schedule.endTime;
 
         modal.style.display = "flex";
         idToEdit = id;

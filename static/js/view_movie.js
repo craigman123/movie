@@ -27,12 +27,17 @@ async function fetchAll() {
   _cachedVenues    = v;
 }
  
+let _allVenueCards = []; // stores { venueId, name, html } for search filtering
+
 async function openVenueModal(movieId) {
   const overlay = document.getElementById('vmOverlay');
   const body    = document.getElementById('vmBody');
   const subEl   = document.getElementById('vmSub');
- 
+  const searchEl = document.getElementById('vmSearch');
+
   overlay.classList.add('open');
+  _allVenueCards = [];
+  if (searchEl) searchEl.value = '';
   body.innerHTML = `
     <div class="vm-loading">
       <div class="vm-spinner"></div>
@@ -62,7 +67,6 @@ async function openVenueModal(movieId) {
       return;
     }
  
-    let html = '';
     for (const v of venues) {
       const scheds = byVenue[v.id] || [];
  
@@ -70,9 +74,9 @@ async function openVenueModal(movieId) {
       const availClass = avail.includes('unavail') ? 'unavailable' : 'available';
       const availLabel = avail.includes('unavail') ? '✕ Unavailable' : '✓ Available';
  
-      // venue image
-      const imgHtml = v.venue_image
-        ? `<img class="vm-venue-img" src="/static/uploads/${v.venue_image}" alt="${v.venue_name}" onerror="this.style.display='none'">`
+      // venue image — API returns key "image"
+      const imgHtml = v.image
+        ? `<img class="vm-venue-img" src="/static/uploads/${v.image}" alt="${v.venue_name}" onerror="this.parentElement.innerHTML='<div class=\'vm-venue-img-placeholder\'>🏨</div>'">`
         : `<div class="vm-venue-img-placeholder">🏨</div>`;
  
       // schedule pills
@@ -137,8 +141,8 @@ async function openVenueModal(movieId) {
         ? `<a class="vm-map-link" href="${v.venue_link}" target="_blank" rel="noopener">📍 View on Map</a>`
         : '';
  
-      html += `
-        <div class="vm-venue-card">
+      const cardHtml = `
+        <div class="vm-venue-card" data-venue-name="${v.venue_name.toLowerCase()}">
           ${imgHtml}
           <div class="vm-venue-info">
             <div class="vm-venue-name">${v.venue_name}</div>
@@ -153,9 +157,11 @@ async function openVenueModal(movieId) {
             <div class="vm-sched-grid">${schedHtml}</div>
           </div>
         </div>`;
+
+      _allVenueCards.push({ name: v.venue_name.toLowerCase(), html: cardHtml });
     }
- 
-    body.innerHTML = html;
+
+    body.innerHTML = _allVenueCards.map(c => c.html).join('');
  
   } catch (err) {
     console.error('Venue modal error:', err);
@@ -168,6 +174,21 @@ function closeVenueModal(event, force) {
   if (force || (event && event.target === overlay)) {
     overlay.classList.remove('open');
   }
+}
+
+function filterVenues() {
+  const query = document.getElementById('vmSearch').value.trim().toLowerCase();
+  const body  = document.getElementById('vmBody');
+
+  const filtered = query
+    ? _allVenueCards.filter(c => c.name.includes(query))
+    : _allVenueCards;
+
+  if (!filtered.length) {
+    body.innerHTML = `<div class="vm-no-results">No venues match "<strong>${query}</strong>".</div>`;
+    return;
+  }
+  body.innerHTML = filtered.map(c => c.html).join('');
 }
  
 function formatDate(dateStr) {
