@@ -2896,6 +2896,11 @@ def ticket_info(user_id, schedule_id):
     else:
         profile_image = url_for('static', filename=f'uploads/defaultPictures/{first_letter}.jpg')
 
+    # Determine if the screening has already ended
+    now_dt = datetime.datetime.now()
+    screening_end_dt = datetime.datetime.combine(schedule.date, schedule.end_time) if schedule.end_time else None
+    is_expired = bool(screening_end_dt and now_dt > screening_end_dt)
+
     return render_template('ticket_info.html',
         user=user,
         schedule=schedule,
@@ -2907,6 +2912,7 @@ def ticket_info(user_id, schedule_id):
         total_price=total_price,
         qr_filename=qr_filename,
         profile_image=profile_image,
+        is_expired=is_expired,
     )
 
 @app.route('/book/<int:schedule_id>')
@@ -3350,6 +3356,11 @@ def view_ticket(user_id, schedule_id):
     total_price    = sum(r['price'] for r in ticket_rows)
     qr_filename    = f"USER{user_id}_SCHED{schedule_id}.png"
 
+    # Check if the screening has already ended — mark ticket as expired
+    now_dt = datetime.datetime.now()
+    screening_end_dt = datetime.datetime.combine(schedule.date, schedule.end_time) if schedule.end_time else None
+    is_expired = bool(screening_end_dt and now_dt > screening_end_dt)
+
     return render_template('ticket.html',
         user=user,
         schedule=schedule,
@@ -3359,7 +3370,8 @@ def view_ticket(user_id, schedule_id):
         standard_seats=standard_seats,
         premium_seats=premium_seats,
         total_price=total_price,
-        qr_filename=qr_filename
+        qr_filename=qr_filename,
+        is_expired=is_expired,
     )
 
 

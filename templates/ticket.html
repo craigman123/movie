@@ -186,6 +186,51 @@
       margin-right: 8px;
       vertical-align: middle;
   } 
+
+    /* ── EXPIRED STATE ── */
+    .expired-banner {
+      background: #7f1d1d;
+      color: #fca5a5;
+      text-align: center;
+      padding: 10px 1.5rem;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    .qr-section--expired { position: relative; }
+    .qr-expired-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 26, 20, 0.82);
+      border-radius: 0;
+      gap: 6px;
+    }
+    .qr-expired-stamp {
+      border: 3px solid #ef4444;
+      border-radius: 8px;
+      padding: 8px 18px;
+      text-align: center;
+      transform: rotate(-8deg);
+    }
+    .qr-expired-stamp .stamp-text {
+      font-size: 22px;
+      font-weight: 900;
+      color: #ef4444;
+      letter-spacing: 4px;
+      line-height: 1;
+    }
+    .qr-expired-stamp .stamp-sub {
+      font-size: 10px;
+      color: #f87171;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+    .qr-img--expired { filter: grayscale(1) opacity(0.3); }
   </style>
 </head>
 <body>
@@ -288,10 +333,25 @@
     </div>
 
     <!-- QR -->
-    <div class="qr-section">
+    <div class="qr-section{% if is_expired %} qr-section--expired{% endif %}">
+      {% if is_expired %}
+      <p class="qr-label">TICKET INVALID</p>
+      <img src="{{ url_for('static', filename='uploads/ticketCodes/' + qr_filename) }}" alt="QR Code" class="qr-img--expired">
+      <div class="qr-expired-overlay">
+        <div class="qr-expired-stamp">
+          <div class="stamp-text">EXPIRED</div>
+          <div class="stamp-sub">Screening has ended</div>
+        </div>
+      </div>
+      {% else %}
       <p class="qr-label">SCAN TO VERIFY</p>
       <img src="{{ url_for('static', filename='uploads/ticketCodes/' + qr_filename) }}" alt="QR Code">
+      {% endif %}
     </div>
+
+    {% if is_expired %}
+    <div class="expired-banner">🚫 This ticket has expired — the screening has ended.</div>
+    {% endif %}
 
     <div class="important-info">
       <p><strong>Important Information:</strong></p>

@@ -171,10 +171,23 @@
 
             <!-- RIGHT: QR -->
             <div class="ti-right">
+              {% if is_expired %}
+              <div class="ti-expired-banner">🚫 Screening Ended</div>
+              <div class="ti-qr-lbl">Invalid — Expired</div>
+              <div class="ti-qr-wrap ti-qr-wrap--expired">
+                <img src="{{ url_for('static', filename='uploads/ticketCodes/' + qr_filename) }}" alt="QR Code" style="filter:grayscale(1) opacity(0.35);">
+                <div class="ti-qr-expired-overlay">
+                  <span class="ti-qr-expired-icon">🚫</span>
+                  <span class="ti-qr-expired-label">EXPIRED</span>
+                  <span class="ti-qr-expired-sub">Screening has ended</span>
+                </div>
+              </div>
+              {% else %}
               <div class="ti-qr-lbl">Scan to Verify</div>
               <div class="ti-qr-wrap">
                 <img src="{{ url_for('static', filename='uploads/ticketCodes/' + qr_filename) }}" alt="QR Code">
               </div>
+              {% endif %}
 
               <!-- Type badges -->
               <div class="ti-badge-group">

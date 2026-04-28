@@ -130,7 +130,7 @@
 
 /* Selected / active cell */
 .cal-cell--active {
-  background: var(--accent, #a78bfa) !important;
+  background: var(--accent, #1f6723d6) !important;
   border-radius: 10px;
 }
 
