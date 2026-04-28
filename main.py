@@ -3605,6 +3605,58 @@ def alter_all_roles():
         flash("All users have been demoted to user.", "success")
         return redirect(url_for("user_dashboard"))
     
+
+@app.route("/delete_all_schedules", methods=["POST"])
+@admin_required
+def delete_all_schedules():
+    try:
+        count = Schedule.query.count()
+        # Remove dependent tickets and QR codes first to avoid FK violations
+        UserTickets.query.filter(UserTickets.schedule_id.isnot(None)).delete(synchronize_session=False)
+        QrCode.query.delete(synchronize_session=False)
+        Schedule.query.delete(synchronize_session=False)
+        db.session.commit()
+        log_admin_action(f'Deleted ALL movie schedules ({count} schedule(s) wiped)')
+        log_event(
+            actor=User.query.get(session['user_id']).username,
+            action='Deleted all movie schedules',
+            target=f'{count} schedule(s)',
+            level='WARNING',
+            user_id=session['user_id']
+        )
+        flash(f"All {count} schedule(s) have been permanently deleted.", "success")
+        return redirect(url_for("AdminAccount"))
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Failed to delete schedules: {str(e)}", "danger")
+        return redirect(url_for("AdminAccount"))
+
+
+@app.route("/alter_all_schedule_status", methods=["POST"])
+@admin_required
+def alter_all_schedule_status():
+    """Set Schedule.active for every schedule to 'True' or 'False'.
+    Setting all to 'False' effectively cancels every movie showing."""
+    new_active = request.form.get("schedule_active")
+    if new_active not in ["True", "False"]:
+        return "Invalid value", 400
+    schedules = Schedule.query.all()
+    for s in schedules:
+        s.active = new_active
+    db.session.commit()
+    label = "Active" if new_active == "True" else "Inactive (Cancelled)"
+    log_admin_action(f'Set ALL schedule statuses to "{label}"')
+    log_event(
+        actor=User.query.get(session['user_id']).username,
+        action=f'Set all schedule statuses to {label}',
+        target=f'{len(schedules)} schedule(s)',
+        level='WARNING',
+        user_id=session['user_id']
+    )
+    flash(f"All {len(schedules)} schedule(s) have been set to '{label}'.", "success")
+    return redirect(url_for("AdminAccount"))
+
+
 @app.route("/api/verify-admin", methods=["POST"])
 @admin_required
 def verify_admin():

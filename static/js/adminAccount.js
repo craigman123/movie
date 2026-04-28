@@ -183,3 +183,73 @@ window.confirmBulkRoleChange = async function () {
         }
     });
 };
+// ── DELETE ALL SCHEDULES ─────────────────────────────────────────────────────
+window.confirmDeleteAllSchedules = async function () {
+    const stats = await fetchStats();
+    const count = stats ? stats.schedules : null;
+    const countLine = count !== null
+        ? `\n\n⚠ ${count} schedule(s) will be permanently removed, along with all associated tickets.`
+        : "\n\nAll associated tickets will also be permanently removed.";
+
+    showModal({
+        title: "🗓 Delete All Schedules",
+        message: `This will permanently delete ALL movie schedules.${countLine}\n\nThis action cannot be undone.`,
+        confirmText: "Continue",
+        cancelText: "Cancel",
+        onConfirm: () => {
+            const text = prompt("Type DELETE to confirm:");
+            if (text === "DELETE") {
+                document.getElementById("deleteSchedulesForm").submit();
+            } else {
+                showModal({
+                    title: "Delete All Schedules",
+                    message: "Incorrect confirmation text. Action cancelled.",
+                    confirmText: "OK", cancelText: "Cancel", onConfirm: () => {}
+                });
+            }
+        }
+    });
+};
+
+// ── BULK SCHEDULE STATUS (ACTIVE / INACTIVE) ─────────────────────────────────
+window.confirmBulkScheduleStatus = async function () {
+    const val = document.getElementById("scheduleActiveSelect").value;
+
+    if (!val) {
+        showModal({
+            title: "Bulk Schedule Status",
+            message: "Please select a status before confirming.",
+            confirmText: "OK", cancelText: "Cancel", onConfirm: () => {}
+        });
+        return;
+    }
+
+    const stats = await fetchStats();
+    const count = stats ? stats.schedules : null;
+    const countLine = count !== null ? `\n\n⚠ ${count} schedule(s) will be affected.` : "";
+
+    const isInactive = val === "False";
+    const label      = isInactive ? "Inactive" : "Active";
+    const warning    = isInactive
+        ? "\n\nSetting all schedules to Inactive will effectively CANCEL every movie showing. Users will no longer be able to book tickets."
+        : "\n\nAll movie showings will be restored and open for booking.";
+
+    showModal({
+        title: "🎬 Bulk Schedule Status",
+        message: `This will set ALL schedules to "${label}".${warning}${countLine}`,
+        confirmText: "Confirm",
+        cancelText: "Cancel",
+        onConfirm: () => {
+            const text = prompt(`Type ${label.toUpperCase()} to confirm:`);
+            if (text === label.toUpperCase()) {
+                document.getElementById("scheduleStatusForm").submit();
+            } else {
+                showModal({
+                    title: "Bulk Schedule Status",
+                    message: "Incorrect confirmation text. Action cancelled.",
+                    confirmText: "OK", cancelText: "Cancel", onConfirm: () => {}
+                });
+            }
+        }
+    });
+};

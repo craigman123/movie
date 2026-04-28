@@ -128,7 +128,14 @@
                         <div class="ms-label">Log Events</div>
                     </div>
                 </div>
+                <form id="logoutForm" method="POST" action="{{ url_for('logout') }}">
+                    <button type="button" class="btn-out"
+                        onclick="confirmAction('Logout', 'Log out of the admin panel?', () => document.getElementById('logoutForm').submit())">
+                        🚪 Log Out
+                    </button>
+                </form>
             </div>
+            
 
             <!-- ── RIGHT ── -->
             <div class="right-col">
@@ -311,51 +318,62 @@
 
                     <div class="danger-actions">
 
-                        <!-- Logout -->
-                        <form id="logoutForm" method="POST" action="{{ url_for('logout') }}">
-                            <button type="button" class="btn-danger"
-                                onclick="confirmAction('Logout', 'Log out of the admin panel?', () => document.getElementById('logoutForm').submit())">
-                                🚪 Log Out
-                            </button>
-                        </form>
+                        <!-- LEFT col: simple action buttons stacked -->
+                        <div class="danger-btn-stack">
+                            <form id="deleteForm" method="POST" action="{{ url_for('delete_account') }}">
+                                <button type="button" class="btn-danger btn-danger-sm btn-danger-full"
+                                    onclick="confirmDeleteAccount()">
+                                    🗑️ Force Delete Account
+                                </button>
+                            </form>
+                            <form id="resetForm" method="POST" action="{{ url_for('reset_system') }}">
+                                <button type="button" class="btn-danger btn-danger-sm btn-danger-full"
+                                    onclick="confirmResetSystem()">
+                                    ⚡ Reset System
+                                </button>
+                            </form>
+                            <form id="deleteSchedulesForm" method="POST" action="{{ url_for('delete_all_schedules') }}">
+                                <button type="button" class="btn-danger btn-danger-sm btn-danger-full"
+                                    onclick="confirmDeleteAllSchedules()">
+                                    📅 Delete All Schedules
+                                </button>
+                            </form>
+                        </div>
 
-                        <!-- Delete Account -->
-                        <form id="deleteForm" method="POST" action="{{ url_for('delete_account') }}">
-                            <button type="button" class="btn-danger"
-                                onclick="confirmDeleteAccount()">
-                                🗑 Delete Account
-                            </button>
-                        </form>
-
-                        <!-- Reset System -->
-                        <form id="resetForm" method="POST" action="{{ url_for('reset_system') }}">
-                            <button type="button" class="btn-danger"
-                                onclick="confirmResetSystem()">
-                                ⚡ Reset System
-                            </button>
-                        </form>
-
-                        <div>
+                        <!-- RIGHT col: dropdown boxes stacked -->
+                        <div class="danger-select-stack">
                             <form id="roleForm" method="POST" action="{{ url_for('alter_all_roles') }}">
                                 <div class="danger-role-box">
-
-                                    <label for="roleSelect">Change ALL user roles:</label>
-
+                                    <label for="roleSelect">Change ALL user roles</label>
                                     <select id="roleSelect" name="new_role" required>
                                         <option value="" disabled selected>Select role...</option>
                                         {% for r in ['user', 'admin'] %}
                                         <option value="{{ r }}">{{ r.capitalize() }}</option>
                                         {% endfor %}
                                     </select>
-
                                     <button type="button" class="btn-danger"
                                         onclick="confirmBulkRoleChange()">
                                         ⚠ Update All Roles
                                     </button>
+                                </div>
+                            </form>
 
+                            <form id="scheduleStatusForm" method="POST" action="{{ url_for('alter_all_schedule_status') }}">
+                                <div class="danger-role-box">
+                                    <label for="scheduleActiveSelect">Set ALL schedule statuses</label>
+                                    <select id="scheduleActiveSelect" name="schedule_active" required>
+                                        <option value="" disabled selected>Select status...</option>
+                                        <option value="True">Active</option>
+                                        <option value="False">Inactive (Cancel All)</option>
+                                    </select>
+                                    <button type="button" class="btn-danger"
+                                        onclick="confirmBulkScheduleStatus()">
+                                        🎬 Update Schedule Statuses
+                                    </button>
                                 </div>
                             </form>
                         </div>
+
                     </div>
                 </div>
             </div>
